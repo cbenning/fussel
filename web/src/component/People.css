@@ -1,0 +1,5 @@
+
+.person-photo {
+    overflow: hidden;
+    object-fit: cover;
+}

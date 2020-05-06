@@ -1,0 +1,3 @@
+Pillow
+bs4
+python-dotenv

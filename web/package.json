@@ -1,0 +1,31 @@
+{
+  "name": "react-photo-gallery-with-image-viewer",
+  "version": "1.0.0",
+  "description": "example using react-images Lightbox component",
+  "keywords": [],
+  "dependencies": {
+    "bulma": "^0.8.2",
+    "react": "^16.13.1",
+    "react-dom": "^16.13.1",
+    "react-images": "1.0.0",
+    "react-photo-gallery": "^8.0.0",
+    "react-router-dom": "^5.1.2",
+    "react-scripts": "3.4.1"
+  },
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-scripts build"
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  }
+}
