@@ -1,5 +1,4 @@
-import React, { Component, useState, useCallback } from "react";
-import { render } from "react-dom";
+import React, { Component } from "react";
 import Gallery from "react-photo-gallery";
 import Carousel, { Modal, ModalGateway } from "react-images";
 
@@ -32,7 +31,7 @@ export default class Album extends Component {
   openLightbox = (event, obj) => {
     this.viewChange(obj['index'])
 
-    if(obj['updateState'] != true) {
+    if(obj['updateState'] !== true) {
         this.setState({
           currentImage: obj['index'],
           viewerIsOpen: true
@@ -72,9 +71,9 @@ export default class Album extends Component {
           <div class="hero-body">
             <div class="container">
               <span class="icon is-large"><i class="fas fa-book fa-lg"></i></span>
-              <b class="title is-3">Albums</b>
+              <b class="title is-4">Albums</b>
               <span class="icon is-large"><i class="fas fa-angle-right fa-lg"></i></span>
-              <b class="title is-3">{this.props.album["name"]}</b>
+              <b class="title is-4">{this.props.album["name"]}</b>
             </div>
           </div>
         </section>

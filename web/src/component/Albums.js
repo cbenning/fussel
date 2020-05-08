@@ -3,10 +3,6 @@ import "./Albums.css";
 
 export default class Albums extends React.Component {
 
-  constructor(props) {
-    super(props);
-  }
-
   generateCards = (albums) => {
     return (
       <div class="columns is-multiline">
@@ -25,8 +21,9 @@ export default class Albums extends React.Component {
             </figure>
           </div>
           <div class="card-content">
-            <div class="content">
-                <p class="title is-6">{album.name}</p>
+            <div class="media-content">
+              <p class="title is-5">{album.name}</p>
+              <p class="subtitle is-7">{album["photos"].length} Photo{album["photos"].length === 1 ? '' : 's'}</p>
             </div>
           </div>
         </div>
@@ -41,7 +38,7 @@ export default class Albums extends React.Component {
           <div class="hero-body">
             <div class="container">
               <span class="icon is-large"><i class="fas fa-book fa-lg"></i></span>
-              <b class="title is-3">Albums</b>
+              <b class="title is-4">Albums</b>
             </div>
           </div>
         </section>

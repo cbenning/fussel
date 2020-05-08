@@ -1,5 +1,4 @@
-import React, { Component, useState, useCallback } from "react";
-import { render } from "react-dom";
+import React, { Component } from "react";
 import Gallery from "react-photo-gallery";
 import Carousel, { Modal, ModalGateway } from "react-images";
 
@@ -31,7 +30,7 @@ export default class Person extends Component {
 
   openLightbox = (event, obj) => {
     this.viewChange(obj['index'])
-    if(obj['updateState'] != true) {
+    if(obj['updateState'] !== true) {
         this.setState({
           currentImage: obj['index'],
           viewerIsOpen: true
@@ -72,9 +71,9 @@ export default class Person extends Component {
           <div class="hero-body">
             <div class="container">
               <span class="icon is-large"><i class="fas fa-user-friends fa-lg"></i></span>
-              <b class="title is-3">People</b>
+              <b class="title is-4">People</b>
               <span class="icon is-large"><i class="fas fa-angle-right fa-lg"></i></span>
-              <b class="title is-3">{this.props.person["name"]}</b>
+              <b class="title is-4">{this.props.person["name"]}</b>
             </div>
           </div>
         </section>

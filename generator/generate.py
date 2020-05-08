@@ -81,45 +81,10 @@ class SiteGenerator:
         self.people_data[person]['photos'].append(photo)
 
     def generate_site(self, output_photos_path, output_data_path, external_root):
-        # TODO
-        # input_photos_dir = "./example_photos"
-        # static_root = "http://localhost:3000/static"
-
-        print(self.input_photos_dir)
-        print(output_photos_path)
-        print(output_data_path)
-        # print(os.path.realpath(self.input_photos_dir))
-
-        # exit(0)
-
-        # public_folder = "public"
-        # output_photos_dir = os.path.join(public_folder, "static", "_gallery")
-        # output_data_dir = os.path.join("src", "_gallery")
-
-        # output_photos_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), output_photos_dir)
-        # output_data_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), output_data_dir)
-        # component_output_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), "src", "_generated")
 
         output_albums_data_file = os.path.join(output_data_path, "albums_data.js")
         output_people_data_file = os.path.join(output_data_path, "people_data.js")
-
-        # albums_data = {}
-        # output_albums_photos_dir = os.path.join(output_photos_dir, "albums")
-        # output_albums_photos_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), output_albums_photos_dir)
         output_albums_photos_path = os.path.join(output_photos_path, "albums")
-
-        # output_people_photos_dir = os.path.join(output_photos_dir, "people")
-        # output_people_photos_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), output_people_photos_dir)
-        # output_people_photos_path = os.path.join(output_photos_path, "people")
-
-        # albums_photo_output_dir = os.path.join(output_photos_path, albums_photo_dir)
-        # component_output_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), static_folder, albums_photo_dir)
-        # albums_data_output_file = os.path.join(component_output_dir, albums_photo_dir, "albums_data.js")
-
-        # people_data = []
-        # people_photo_dir = "people"
-        # people_photo_output_dir = os.path.join(output_dir, people_photo_dir)
-        # people_data_output_file = os.path.join(people_photo_output_dir, "people_data.js")
 
         shutil.rmtree(output_photos_path, ignore_errors=True)
         os.mkdir(output_photos_path)
@@ -140,7 +105,6 @@ class SiteGenerator:
                     }
 
                     album_folder = os.path.join(output_albums_photos_path, album_name)
-                    # external_path = output_albums_photos_dir[len(public_folder):] + '/' + album_name
                     external_path = external_root + '/' + album_name
                     os.makedirs(album_folder)
 

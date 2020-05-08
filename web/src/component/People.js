@@ -3,10 +3,6 @@ import "./People.css";
 
 export default class People extends React.Component {
 
-  constructor(props) {
-    super(props);
-  }
-
   generateCards = (people) => {
     return (
       <div class="columns is-multiline">
@@ -26,8 +22,9 @@ export default class People extends React.Component {
               </figure>
             </div>
             <div class="card-content">
-              <div class="content">
-                  <p class="title is-6">{person.name}</p>
+              <div class="media-content">
+                <p class="title is-5">{person.name}</p>
+                <p class="subtitle is-7">{person["photos"].length} Photo{person["photos"].length === 1 ? '' : 's'}</p>
               </div>
             </div>
           </div>
@@ -42,7 +39,7 @@ export default class People extends React.Component {
           <div class="hero-body">
             <div class="container">
               <span class="icon is-large"><i class="fas fa-user-friends fa-lg"></i></span>
-              <b class="title is-3">People</b>
+              <b class="title is-4">People</b>
             </div>
           </div>
         </section>
