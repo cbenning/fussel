@@ -105,7 +105,8 @@ class SiteGenerator:
                     }
 
                     album_folder = os.path.join(output_albums_photos_path, album_name)
-                    external_path = external_root + '/' + album_name
+                    # TODO externalize this?
+                    external_path = external_root + "static/_gallery/albums/" + album_name
                     os.makedirs(album_folder)
 
                     for _, _, album_files in os.walk(album_dir):
