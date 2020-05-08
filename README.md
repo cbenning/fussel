@@ -28,7 +28,7 @@ TODO
  
 ### Generate your site
 
- - `./generate_site`
+ - `./generate_site.sh`
  
  ### Generate frontend
 
@@ -43,10 +43,11 @@ Point your web server at `web/build`
 
 #### Quick setup
 
- - `cd web`
- - `python -m http.server` (go to localhost:8000 in browser)
+After running `generate_site.sh`
 
-#### Dev setup
+ - `python -m http.server --directory web/build` (go to localhost:8000 in browser)
+
+#### Development setup
 
  - `cd web`
  - `yarn start`

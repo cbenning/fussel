@@ -68,10 +68,20 @@ export default class Album extends Component {
   render() {
     return (
       <div class="container" >
+        <section class="hero is-small">
+          <div class="hero-body">
+            <div class="container">
+              <span class="icon is-large"><i class="fas fa-book fa-lg"></i></span>
+              <b class="title is-3">Albums</b>
+              <span class="icon is-large"><i class="fas fa-angle-right fa-lg"></i></span>
+              <b class="title is-3">{this.props.album["name"]}</b>
+            </div>
+          </div>
+        </section>
         <Gallery photos={this.props.album["photos"]} onClick={this.openLightbox} />
         <ModalGateway>
           {this.state.viewerIsOpen ? (
-            <Modal onClose={this.closeLightbox}>
+            <Modal onClose={this.closeLightbox} >
               <Carousel
                 currentIndex={this.state.currentImage}
                 trackProps={{onViewChange:(index) => this.viewChange(index)}}

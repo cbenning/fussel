@@ -126,6 +126,7 @@ class App extends Component {
     return (
       <div>
         <Navbar changeCollectionType={this.handleChangeCollectionType} />
+
         { this.findComponent(this.state.collectionType, this.state.collection, this.state.photo) }
       </div>
     );

@@ -38,7 +38,14 @@ export default class People extends React.Component {
   render() {
     return (
       <div class="container">
-      People
+        <section class="hero is-small">
+          <div class="hero-body">
+            <div class="container">
+              <span class="icon is-large"><i class="fas fa-user-friends fa-lg"></i></span>
+              <b class="title is-3">People</b>
+            </div>
+          </div>
+        </section>
       {this.generateCards(this.props.people)}
       </div>
     );

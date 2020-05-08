@@ -37,7 +37,14 @@ export default class Albums extends React.Component {
   render() {
     return (
       <div class="container">
-      Albums
+        <section class="hero is-small">
+          <div class="hero-body">
+            <div class="container">
+              <span class="icon is-large"><i class="fas fa-book fa-lg"></i></span>
+              <b class="title is-3">Albums</b>
+            </div>
+          </div>
+        </section>
       {this.generateCards(this.props.albums)}
       </div>
     );

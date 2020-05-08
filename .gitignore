@@ -3,6 +3,7 @@ __pycache__/
 *$py.class
 
 *.swp
+.env
 
 web/src/_gallery
 web/build/

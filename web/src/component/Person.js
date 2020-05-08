@@ -68,6 +68,16 @@ export default class Person extends Component {
   render() {
     return (
       <div class="container" >
+        <section class="hero is-small">
+          <div class="hero-body">
+            <div class="container">
+              <span class="icon is-large"><i class="fas fa-user-friends fa-lg"></i></span>
+              <b class="title is-3">People</b>
+              <span class="icon is-large"><i class="fas fa-angle-right fa-lg"></i></span>
+              <b class="title is-3">{this.props.person["name"]}</b>
+            </div>
+          </div>
+        </section>
         <Gallery photos={this.props.person["photos"]} onClick={this.openLightbox} />
         <ModalGateway>
           {this.state.viewerIsOpen ? (
