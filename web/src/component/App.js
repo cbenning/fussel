@@ -78,28 +78,24 @@ class App extends Component {
 
   handleChangeCollectionType = (newCollectionType) => {
     this.props.history.push({
-      pathname: '/',
       search: this.buildUrlParams(newCollectionType, null, null)
     })
   }
 
   handleSelectAlbum = (albumName) => {
     this.props.history.push({
-      pathname: '/',
       search: this.buildUrlParams("album", albumName, null)
     })
   }
 
   handleSelectPerson = (personName) => {
     this.props.history.push({
-      pathname: '/',
       search: this.buildUrlParams("person", personName, null)
     })
   }
 
   handleSelectPhoto = (collectionType, collection, photo) => {
     this.props.history.push({
-      pathname: '/',
       search: this.buildUrlParams(collectionType, collection, photo)
     })
   }
