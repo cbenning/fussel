@@ -114,9 +114,9 @@ class SiteGenerator:
         output_albums_photos_path = os.path.join(output_photos_path, "albums")
 
         shutil.rmtree(output_photos_path, ignore_errors=True)
-        os.mkdir(output_photos_path)
+        os.makedirs(output_photos_path, exist_ok=True)
         shutil.rmtree(output_data_path, ignore_errors=True)
-        os.mkdir(output_data_path)
+        os.makedirs(output_data_path, exist_ok=True)
 
         for subdir, input_album_dirs, files in os.walk(self.input_photos_dir):
             for input_album_dir in input_album_dirs:
