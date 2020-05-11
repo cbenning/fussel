@@ -11,8 +11,12 @@ SUPPORTED_EXTENSIONS = ('jpg', 'jpeg', 'gif', 'png')
 
 class SiteGenerator:
     
-    def __init__(self, input_photos_dir):
+    def __init__(self, input_photos_dir, people_enabled, watermark_enabled, watermark_path, watermark_ratio):
         self.input_photos_dir = input_photos_dir
+        self.people_enabled = people_enabled
+        self.watermark_enabled = watermark_enabled
+        self.watermark_path = watermark_path
+        self.watermark_ratio = watermark_ratio
         self.people_data = {}
         self.albums_data = {}
 
@@ -23,9 +27,12 @@ class SiteGenerator:
 
         sizes = [(360, 360), (720, 720)]
         prefixes = ['small', 'medium']
-        faces = self.extract_faces(new_original_photo)
-        for face in faces:
-            print(" ------> Detected face '%s'" % face)
+
+        faces = []
+        if(self.people_enabled):
+            faces = self.extract_faces(new_original_photo)
+            for face in faces:
+                print(" ------> Detected face '%s'" % face)
 
         x, y = 4, 3
         with Image.open(new_original_photo) as im:
@@ -46,11 +53,32 @@ class SiteGenerator:
                 im.save(new_thumbnail_photo)
                 data['src_%s' % prefixes[i]] = external_path + '/' + os.path.basename(new_thumbnail_photo)
 
+        if self.watermark_enabled:
+            with Image.open(self.watermark_path) as watermark_im:
+                print(" ------> Adding watermark ... '%s'" % new_thumbnail_photo)
+                self.apply_watermark(new_original_photo, watermark_im)
+
         return (faces, data)
+
+    def apply_watermark(self, base_image_path, watermark_image):
+
+        with Image.open(base_image_path) as base_image:
+            width, height = base_image.size
+            orig_watermark_width, orig_watermark_height = watermark_image.size
+            watermark_width = int(width * self.watermark_ratio)
+            watermark_height = int(watermark_width/orig_watermark_width * orig_watermark_height)
+            # watermark_width, watermark_height = (int(width * self.watermark_ratio), int(height * self.watermark_ratio))
+            watermark_image = watermark_image.resize((watermark_width, watermark_height))
+            transparent = Image.new(base_image.mode, (width, height), (0, 0, 0, 0))
+            transparent.paste(base_image, (0, 0))
+
+            watermark_x = width - watermark_width
+            watermark_y = height - watermark_height
+            transparent.paste(watermark_image, box=(watermark_x, watermark_y), mask=watermark_image)
+            transparent.save(base_image_path)
 
     def extract_faces(self, photo_path):
         faces = {}
-
         with Image.open(photo_path) as im:
             for segment, content in im.applist:
                 marker, body = content.split(bytes('\x00', 'utf-8'), 1)
@@ -65,7 +93,6 @@ class SiteGenerator:
                                     name = description['mwg-rs:name'].strip()
                                     faces[name] = ''
         return faces.keys()
-
 
     def pick_album_thumbnail(self, album_photos):
         if(len(album_photos) > 0):

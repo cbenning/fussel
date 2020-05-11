@@ -121,8 +121,7 @@ class App extends Component {
   render() {
     return (
       <div>
-        <Navbar changeCollectionType={this.handleChangeCollectionType} />
-
+        <Navbar people={people_data} changeCollectionType={this.handleChangeCollectionType} />
         { this.findComponent(this.state.collectionType, this.state.collection, this.state.photo) }
       </div>
     );

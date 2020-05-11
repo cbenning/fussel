@@ -4,6 +4,25 @@ import logo from '../images/animal-track.jpg';
 
 export default class Navbar extends React.Component {
 
+  generateAlbumsButton = () => {
+    return(
+      <a class="navbar-item" onClick={(e) => this.props.changeCollectionType("albums")}>
+        Albums
+      </a>
+    )
+  }
+
+  generatePeopleButton = (people) => {
+    if(Object.keys(people).length > 0) {
+      return(
+        <a class="navbar-item" onClick={(e) => this.props.changeCollectionType("people")}>
+          People
+        </a>
+      )
+    }
+    return ''
+  }
+
   render() {
     return (
       <nav class="navbar is-light" role="navigation" aria-label="main navigation">
@@ -14,12 +33,8 @@ export default class Navbar extends React.Component {
         </div>
         <div class="navbar-menu">
           <div class="navbar-start">
-            <a class="navbar-item" onClick={(e) => this.props.changeCollectionType("albums")}>
-              Albums
-            </a>
-            <a class="navbar-item" onClick={(e) => this.props.changeCollectionType("people")}>
-              People
-            </a>
+            {this.generateAlbumsButton()}
+            {this.generatePeopleButton(this.props.people)}
           </div>
         </div>
       </nav>

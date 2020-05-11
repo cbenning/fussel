@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "example using react-images Lightbox component",
   "keywords": [],
-  "homepage": "https://family.benninger.ca/",
+  "homepage": "/",
   "dependencies": {
     "bulma": "^0.8.2",
     "react": "^16.13.1",

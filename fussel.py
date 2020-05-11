@@ -10,6 +10,26 @@ load_dotenv(verbose=True)
 input_path = os.getenv("INPUT_PATH")
 http_root = os.getenv("HTTP_ROOT")
 
+people_enabled = os.getenv("PEOPLE_ENABLE")
+if people_enabled == 'true':
+    people_enabled = True
+else:
+    people_enabled = False
+
+watermark_enabled = os.getenv("WATERMARK_ENABLE")
+if watermark_enabled == 'true':
+    watermark_enabled = True
+else:
+    watermark_enabled = False
+
+watermark_path = os.getenv("WATERMARK_PATH")
+
+watermark_ratio = float(os.getenv("WATERMARK_RATIO"))
+if watermark_ratio <= 0.0:
+    watermark_ratio = 0.0
+elif watermark_ratio >= 1.0:
+    watermark_ratio = 1.0
+
 filenames = [os.path.join(os.path.dirname(os.path.realpath(__file__)), "web", "package.json")]
 massedit.edit_files(filenames, ["re.sub(r'^.*\"homepage\":.*$', '  \"homepage\": \""+http_root+"\",', line)"], dry_run=False)
 
@@ -20,6 +40,11 @@ external_root = os.path.join(http_root, "static", "_gallery", "albums")
 # TODO check exists
 input_photo_path = os.path.realpath(input_path)
 
-generator = SiteGenerator(input_photo_path)
-#generator.generate_site(output_photos_path, output_data_path, external_root)
+generator = SiteGenerator(
+    input_photo_path,
+    people_enabled,
+    watermark_enabled,
+    watermark_path,
+    watermark_ratio
+)
 generator.generate_site(output_photos_path, output_data_path, http_root)

@@ -12,23 +12,22 @@ export default class People extends React.Component {
   }
 
   generateCard = (person) => {
-    console.log(person)
     return (
-        <div class="column is-one-quarter" onClick={(e) => this.props.changePerson(person.name)}>
-          <div class="card">
-            <div class="card-image">
-              <figure class="image is-4by3 person-photo">
-                <img class="person-photo" src={person.src} alt={person.name} />
-              </figure>
-            </div>
-            <div class="card-content">
-              <div class="media-content">
-                <p class="title is-5">{person.name}</p>
-                <p class="subtitle is-7">{person["photos"].length} Photo{person["photos"].length === 1 ? '' : 's'}</p>
-              </div>
+      <div class="column is-one-quarter" onClick={(e) => this.props.changePerson(person.name)}>
+        <div class="card">
+          <div class="card-image">
+            <figure class="image is-4by3 person-photo">
+              <img class="person-photo" src={person.src} alt={person.name} />
+            </figure>
+          </div>
+          <div class="card-content">
+            <div class="media-content">
+              <p class="title is-5">{person.name}</p>
+              <p class="subtitle is-7">{person["photos"].length} Photo{person["photos"].length === 1 ? '' : 's'}</p>
             </div>
           </div>
         </div>
+      </div>
     );
   }
 
