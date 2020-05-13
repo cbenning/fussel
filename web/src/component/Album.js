@@ -69,12 +69,17 @@ export default class Album extends Component {
       <div class="container" >
         <section class="hero is-small">
           <div class="hero-body">
-            <div class="container">
-              <span class="icon is-large"><i class="fas fa-book fa-lg"></i></span>
-              <b class="title is-4">Albums</b>
-              <span class="icon is-large"><i class="fas fa-angle-right fa-lg"></i></span>
-              <b class="title is-4">{this.props.album["name"]}</b>
-            </div>
+            <nav class="breadcrumb" aria-label="breadcrumbs">
+              <ul>
+                <li onClick={(e) => this.props.changeCollectionType("albums")}>
+                  <i class="fas fa-book fa-lg"></i>
+                  <a class="title is-4">&nbsp;&nbsp;Albums</a>
+                </li>
+                <li class="is-active">
+                  <a class="title is-4">{this.props.album["name"]}</a>
+                </li>
+              </ul>
+            </nav>
           </div>
         </section>
         <Gallery photos={this.props.album["photos"]} onClick={this.openLightbox} />

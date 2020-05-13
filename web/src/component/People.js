@@ -5,7 +5,7 @@ export default class People extends React.Component {
 
   generateCards = (people) => {
     return (
-      <div class="columns is-multiline">
+      <div class="columns is-multiline is-mobile">
         {Object.keys(people).map(person => { return this.generateCard(people[person]) })}
       </div>
     )
@@ -36,10 +36,14 @@ export default class People extends React.Component {
       <div class="container">
         <section class="hero is-small">
           <div class="hero-body">
-            <div class="container">
-              <span class="icon is-large"><i class="fas fa-user-friends fa-lg"></i></span>
-              <b class="title is-4">People</b>
-            </div>
+            <nav class="breadcrumb" aria-label="breadcrumbs">
+              <ul>
+                <li class="is-active">
+                  <i class="fas fa-user-friends fa-lg"></i>
+                  <a class="title is-4">&nbsp;&nbsp;People</a>
+                </li>
+              </ul>
+            </nav>
           </div>
         </section>
       {this.generateCards(this.props.people)}

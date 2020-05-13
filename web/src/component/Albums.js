@@ -5,7 +5,7 @@ export default class Albums extends React.Component {
 
   generateCards = (albums) => {
     return (
-      <div class="columns is-multiline">
+      <div class="columns is-multiline is-mobile">
         {Object.keys(albums).map(album => { return this.generateCard(albums[album]) })}
       </div>
     )
@@ -36,10 +36,14 @@ export default class Albums extends React.Component {
       <div class="container">
         <section class="hero is-small">
           <div class="hero-body">
-            <div class="container">
-              <span class="icon is-large"><i class="fas fa-book fa-lg"></i></span>
-              <b class="title is-4">Albums</b>
-            </div>
+            <nav class="breadcrumb" aria-label="breadcrumbs">
+              <ul>
+                <li class="is-active">
+                  <i class="fas fa-book fa-lg"></i>
+                  <a class="title is-4">&nbsp;&nbsp;Albums</a>
+                </li>
+              </ul>
+            </nav>
           </div>
         </section>
       {this.generateCards(this.props.albums)}

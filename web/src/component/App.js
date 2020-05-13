@@ -6,7 +6,9 @@ import Albums from "./Albums";
 import Album from "./Album";
 import { albums_data } from "../_gallery/albums_data.js"
 import { people_data } from "../_gallery/people_data.js"
+import { site_data } from "../_gallery/site_data.js"
 import { withRouter } from "react-router-dom";
+import { Helmet } from "react-helmet";
 
 class App extends Component {
 
@@ -62,16 +64,30 @@ class App extends Component {
 
   findComponent = (collectionType, collection, photo) => {
     if (collectionType === "people") {
-      return <People people={people_data} changePerson={this.handleSelectPerson} />
+      return <People
+        people={people_data}
+        changePerson={this.handleSelectPerson} />
     }
     else if (collectionType === "albums") {
-      return <Albums albums={albums_data} changeAlbum={this.handleSelectAlbum} />
+      return <Albums
+        albums={albums_data}
+        changeAlbum={this.handleSelectAlbum} />
     }
     else if (collectionType === "person") {
-      return <Person person={people_data[collection]} photo={photo} changePhoto={this.handleSelectPhoto} changePerson={this.handleSelectPerson} />
+      return <Person
+        person={people_data[collection]}
+        photo={photo}
+        changePhoto={this.handleSelectPhoto}
+        changePerson={this.handleSelectPerson}
+        changeCollectionType={this.handleChangeCollectionType} />
     }
     else if (collectionType === "album") {
-      return <Album album={albums_data[collection]} photo={photo} changePhoto={this.handleSelectPhoto} changeAlbum={this.handleSelectAlbum} />
+      return <Album
+        album={albums_data[collection]}
+        photo={photo}
+        changePhoto={this.handleSelectPhoto}
+        changeAlbum={this.handleSelectAlbum}
+        changeCollectionType={this.handleChangeCollectionType} />
     }
     return <Albums albums={albums_data} changeAlbum={this.handleSelectAlbum} />
   }
@@ -121,6 +137,9 @@ class App extends Component {
   render() {
     return (
       <div>
+        <Helmet>
+            <title>{site_data['site_name']}</title>
+        </Helmet>
         <Navbar people={people_data} changeCollectionType={this.handleChangeCollectionType} />
         { this.findComponent(this.state.collectionType, this.state.collection, this.state.photo) }
       </div>

@@ -8,6 +8,10 @@ import massedit
 load_dotenv(verbose=True)
 
 input_path = os.getenv("INPUT_PATH")
+if input_path is None or len(input_path) < 1:
+    print("Please provide INPUT_PATH in your .env file")
+    exit(1)
+
 http_root = os.getenv("HTTP_ROOT")
 
 people_enabled = os.getenv("PEOPLE_ENABLE")
@@ -30,6 +34,8 @@ if watermark_ratio <= 0.0:
 elif watermark_ratio >= 1.0:
     watermark_ratio = 1.0
 
+site_name = os.getenv("SITE_NAME")
+
 filenames = [os.path.join(os.path.dirname(os.path.realpath(__file__)), "web", "package.json")]
 massedit.edit_files(filenames, ["re.sub(r'^.*\"homepage\":.*$', '  \"homepage\": \""+http_root+"\",', line)"], dry_run=False)
 
@@ -41,6 +47,7 @@ external_root = os.path.join(http_root, "static", "_gallery", "albums")
 input_photo_path = os.path.realpath(input_path)
 
 generator = SiteGenerator(
+    site_name,
     input_photo_path,
     people_enabled,
     watermark_enabled,

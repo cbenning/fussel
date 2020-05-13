@@ -7,7 +7,13 @@ export default class Navbar extends React.Component {
   generateAlbumsButton = () => {
     return(
       <a class="navbar-item" onClick={(e) => this.props.changeCollectionType("albums")}>
-        Albums
+        <span class="icon">
+          <i class="fas fa-book"></i>
+        </span>
+        <span>
+          &nbsp;
+          Albums
+        </span>
       </a>
     )
   }
@@ -16,7 +22,13 @@ export default class Navbar extends React.Component {
     if(Object.keys(people).length > 0) {
       return(
         <a class="navbar-item" onClick={(e) => this.props.changeCollectionType("people")}>
-          People
+          <span class="icon">
+            <i class="fas fa-user-friends"></i>
+          </span>
+          <span>
+          	&nbsp;
+            People
+          </span>
         </a>
       )
     }
@@ -25,18 +37,20 @@ export default class Navbar extends React.Component {
 
   render() {
     return (
-      <nav class="navbar is-light" role="navigation" aria-label="main navigation">
-        <div class="navbar-brand">
+      <nav class="navbar is-light has-shadow" role="navigation" aria-label="main navigation">
+        <div class="navbar-brand" onClick={(e) => this.props.changeCollectionType("albums")}>
           <a class="navbar-item">
-            <img src={logo} alt="logo" width="32" height="32" />
+            <img src={logo} alt="logo" width="36" height="36" />
           </a>
         </div>
-        <div class="navbar-menu">
-          <div class="navbar-start">
-            {this.generateAlbumsButton()}
-            {this.generatePeopleButton(this.props.people)}
+          <div class="navbar-menu">
+            <div class="navbar-start">
+              {this.generateAlbumsButton()}
+              {this.generatePeopleButton(this.props.people)}
+            </div>
           </div>
-        </div>
+          <div class="navbar-end">
+          </div>
       </nav>
     );
   }

@@ -11,7 +11,7 @@ SUPPORTED_EXTENSIONS = ('jpg', 'jpeg', 'gif', 'png')
 
 class SiteGenerator:
     
-    def __init__(self, input_photos_dir, people_enabled, watermark_enabled, watermark_path, watermark_ratio):
+    def __init__(self, site_name, input_photos_dir, people_enabled, watermark_enabled, watermark_path, watermark_ratio):
         self.input_photos_dir = input_photos_dir
         self.people_enabled = people_enabled
         self.watermark_enabled = watermark_enabled
@@ -19,6 +19,9 @@ class SiteGenerator:
         self.watermark_ratio = watermark_ratio
         self.people_data = {}
         self.albums_data = {}
+        self.site_data = {
+            'site_name': site_name
+        }
 
     def process_photo(self, external_path, photo, output_dir):
         new_original_photo = os.path.join(output_dir, "original_%s" % os.path.basename(photo))
@@ -111,6 +114,7 @@ class SiteGenerator:
 
         output_albums_data_file = os.path.join(output_data_path, "albums_data.js")
         output_people_data_file = os.path.join(output_data_path, "people_data.js")
+        output_site_data_file = os.path.join(output_data_path, "site_data.js")
         output_albums_photos_path = os.path.join(output_photos_path, "albums")
 
         shutil.rmtree(output_photos_path, ignore_errors=True)
@@ -161,6 +165,12 @@ class SiteGenerator:
         with open(output_people_data_file, 'w') as outfile:
             output_str = 'export const people_data = '
             output_str += json.dumps(self.people_data, sort_keys=True, indent=4)
+            output_str += ';'
+            outfile.write(output_str)
+
+        with open(output_site_data_file, 'w') as outfile:
+            output_str = 'export const site_data = '
+            output_str += json.dumps(self.site_data, sort_keys=True, indent=4)
             output_str += ';'
             outfile.write(output_str)
 
