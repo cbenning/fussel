@@ -5,7 +5,7 @@ export default class People extends React.Component {
 
   generateCards = (people) => {
     return (
-      <div class="columns is-multiline is-mobile">
+      <div class="columns is-multiline">
         {Object.keys(people).map(person => { return this.generateCard(people[person]) })}
       </div>
     )

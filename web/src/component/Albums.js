@@ -5,7 +5,7 @@ export default class Albums extends React.Component {
 
   generateCards = (albums) => {
     return (
-      <div class="columns is-multiline is-mobile">
+      <div class="columns is-multiline">
         {Object.keys(albums).map(album => { return this.generateCard(albums[album]) })}
       </div>
     )

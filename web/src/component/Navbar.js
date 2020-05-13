@@ -43,7 +43,7 @@ export default class Navbar extends React.Component {
             <img src={logo} alt="logo" width="36" height="36" />
           </a>
         </div>
-          <div class="navbar-menu">
+          <div class="navbar-menu is-active">
             <div class="navbar-start">
               {this.generateAlbumsButton()}
               {this.generatePeopleButton(this.props.people)}
