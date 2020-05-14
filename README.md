@@ -57,7 +57,7 @@ Features and Properties:
  
 ### Host your site
 
-Point your web server at `web/build`
+Point your web server at `web/build` or copy/upload the `web/build` folder to your web host HTTP root.
 
 #### Quick setup
 
