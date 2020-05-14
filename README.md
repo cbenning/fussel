@@ -1,5 +1,8 @@
 # Fussel
 
+![License Badge](https://img.shields.io/github/license/cbenning/fussel)
+![Version Badge](https://img.shields.io/github/v/release/cbenning/fussel)
+
 Fussel is a static photo gallery generator. It can build a simple static photo gallery site
 with nothing but a directory full of photos. 
 
@@ -8,7 +11,7 @@ Features and Properties:
  - Builds special "Person" gallery for people found in XMP face tags.
  - Adds watermarks
  - Mobile friendly
- 
+
 ## Screenshots
 | ![Albums Screenshot](https://user-images.githubusercontent.com/153700/81897761-1e904780-956c-11ea-9450-fbdb286b95fc.png?raw=true "Albums Screenshot") | ![Album Screenshot](https://user-images.githubusercontent.com/153700/81897716-120bef00-956c-11ea-9204-b8e90ffb24f8.png?raw=true "Album Screenshot") |  
 |---|---|
