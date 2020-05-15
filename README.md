@@ -42,18 +42,29 @@ Features and Properties:
 ### Configure
 
  - Copy `.env.example` to `.env`
- - Edit `.env` to your needs
- 
+ - Edit `.env` to your needs (minimal change is to set INPUT_PATH)
+
+### Curate photos
+The folder you point INPUT_PATH at, must have albums in subfolders inside it with the folder names as the name of the albums you want in the gallery. Any further-nested folders will be ignored.
+
+#### Example
+
+If you have your .env setup with:
+`INPUT_PATH = /home/user/Photos/gallery`
+
+Then that path should look like this:
+```
+/home/user/Photos/gallery:
+  - Album 1
+  - Album 2
+  - Album 3
+  - ...
+```
+
+
 ### Generate your site
-
+Run the following script to generate your site into `web/build` folder.
  - `./generate_site.sh`
- 
- ### Generate frontend
-
- - `cd web`
- - `yarn build`
- - `cd ../`
- 
  
 ### Host your site
 
