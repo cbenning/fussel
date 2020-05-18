@@ -1,0 +1,7 @@
+
+/* A fix for an issue I noticed in Safari.
+I reported the issue: https://github.com/neptunian/react-photo-gallery/issues/174
+Keep an eye on the ticket and maybe one day I can remove this */
+.react-photo-gallery--gallery > div > img {
+    align-self: flex-start;
+}
