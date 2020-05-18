@@ -1,6 +1,7 @@
 import React, { Component } from "react";
 import Gallery from "react-photo-gallery";
 import Carousel, { Modal, ModalGateway } from "react-images";
+import "./Gallery.css";
 
 export default class Album extends Component {
 
