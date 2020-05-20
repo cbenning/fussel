@@ -6,8 +6,7 @@ import json
 from PIL import Image
 from bs4 import BeautifulSoup
 
-SUPPORTED_EXTENSIONS = ('jpg', 'jpeg', 'gif', 'png')
-
+SUPPORTED_EXTENSIONS = ('.jpg', '.jpeg', '.gif', '.png')
 
 class SiteGenerator:
     
@@ -28,40 +27,62 @@ class SiteGenerator:
         print(" ----> Copying to '%s'" % new_original_photo)
         shutil.copyfile(photo, new_original_photo)
 
-        sizes = [(360, 360), (720, 720)]
-        prefixes = ['small', 'medium']
-
+        ## Faces
         faces = []
-        if(self.people_enabled):
+        if self.people_enabled:
             faces = self.extract_faces(new_original_photo)
             for face in faces:
                 print(" ------> Detected face '%s'" % face)
 
-        x, y = 4, 3
         with Image.open(new_original_photo) as im:
+            original_size = im.size
             x, y = im.size
+            #denominator = gcd(x, y)
+            #x = int(x / denominator)
+            #y = int(y / denominator)
+
+
+        # TODO expose to config
+        sizes = [(500, 500), (800, 800), (1024, 1024), (1600, 1600)]
 
         data = {
-            'src': external_path + '/' + os.path.basename(new_original_photo),
             'width': x,
             'height': y,
-            'name': os.path.basename(os.path.basename(photo))
+            'name': os.path.basename(os.path.basename(photo)),
+            'srcSet': [],
+            '_thumb': None,
+            'sizes': ["(min-width: 480px) 50vw,(min-width: 1024px) 33.3vw,100vw"],
         }
 
+        largest_src = None
+        smallest_src = None
         for i, size in enumerate(sizes):
-            new_thumbnail_photo = os.path.join(output_dir, "%s_%s" % (prefixes[i], os.path.basename(photo)))
-            print(" ------> Generating thumbnail... '%s'" % new_thumbnail_photo)
+            new_size = self.calculate_new_size(original_size, size)
+            new_sub_photo = os.path.join(output_dir, "%sx%s_%s" % (new_size[0], new_size[1], os.path.basename(photo)))
+            largest_src = new_sub_photo
+            if smallest_src is None:
+                smallest_src = new_sub_photo
+            print(" ------> Generating photo size... '%s'" % new_sub_photo)
             with Image.open(new_original_photo) as im:
-                im.thumbnail(size)
-                im.save(new_thumbnail_photo)
-                data['src_%s' % prefixes[i]] = external_path + '/' + os.path.basename(new_thumbnail_photo)
+                im.thumbnail(new_size)
+                im.save(new_sub_photo)
+                data['srcSet'] += ["%s/%s %sw" % (external_path, os.path.basename(new_sub_photo), new_size[0])]
+
+        data['src'] = "%s/%s" % (external_path, os.path.basename(largest_src))
+        data['_thumb'] = "%s/%s" % (external_path, os.path.basename(smallest_src))
 
         if self.watermark_enabled:
             with Image.open(self.watermark_path) as watermark_im:
-                print(" ------> Adding watermark ... '%s'" % new_thumbnail_photo)
-                self.apply_watermark(new_original_photo, watermark_im)
+                print(" ------> Adding watermark ... '%s'" % largest_src)
+                self.apply_watermark(largest_src, watermark_im)
 
-        return (faces, data)
+        return faces, data
+
+    def calculate_new_size(self, input_size, desired_size):
+        if input_size[0] <= desired_size[0]:
+            return input_size
+        reduction_factor = input_size[0] / desired_size[0]
+        return int(input_size[0] / reduction_factor), int(input_size[1] / reduction_factor)
 
     def apply_watermark(self, base_image_path, watermark_image):
 
@@ -98,8 +119,8 @@ class SiteGenerator:
         return faces.keys()
 
     def pick_album_thumbnail(self, album_photos):
-        if(len(album_photos) > 0):
-            return album_photos[0]['src_small']
+        if len(album_photos) > 0:
+            return album_photos[0]['_thumb']
         return ''
 
     def add_photo_to_person(self, person, photo):
@@ -112,11 +133,13 @@ class SiteGenerator:
 
     def generate_site(self, output_photos_path, output_data_path, external_root):
 
+        # Paths
         output_albums_data_file = os.path.join(output_data_path, "albums_data.js")
         output_people_data_file = os.path.join(output_data_path, "people_data.js")
         output_site_data_file = os.path.join(output_data_path, "site_data.js")
         output_albums_photos_path = os.path.join(output_photos_path, "albums")
 
+        # Cleanup and prep of deploy space
         shutil.rmtree(output_photos_path, ignore_errors=True)
         os.makedirs(output_photos_path, exist_ok=True)
         shutil.rmtree(output_data_path, ignore_errors=True)
@@ -142,6 +165,8 @@ class SiteGenerator:
 
                     for _, _, album_files in os.walk(album_dir):
                         for album_file in album_files:
+                            if not os.path.splitext(album_file)[1].lower() in SUPPORTED_EXTENSIONS:
+                                continue
                             photo_file = os.path.join(album_dir, album_file)
                             print(" --> Processing %s... " % photo_file)
                             faces, photo_data = self.process_photo(external_path, photo_file, album_folder)

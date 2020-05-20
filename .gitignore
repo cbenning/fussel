@@ -8,6 +8,7 @@ __pycache__/
 web/src/_gallery
 web/build/
 web/public/static/_gallery
+web/node_modules
 
 # Logs
 web/logs
