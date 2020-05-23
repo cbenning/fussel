@@ -1,6 +1,6 @@
 FROM alpine:3.11.6
 
-RUN apk update && apk add \
+RUN apk add --no-cache \
 	python3 \
 	py3-pillow \
 	py3-pip \
