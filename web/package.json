@@ -1,9 +1,10 @@
 {
-  "name": "react-photo-gallery-with-image-viewer",
+  "name": "fussel",
   "version": "1.0.0",
-  "description": "example using react-images Lightbox component",
+  "description": "Fussel Gallery",
   "keywords": [],
   "homepage": "/",
+  "license": "MIT",
   "dependencies": {
     "bulma": "^0.8.2",
     "react": "^16.13.1",

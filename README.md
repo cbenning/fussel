@@ -80,3 +80,37 @@ After running `generate_site.sh`
 
  - `cd web`
  - `yarn start`
+ 
+## Docker
+
+If you don't want to fuss with anything and would like to use docker instead fo generate your site...
+
+### Usage
+
+Required:
+ * `/my-input-folder` is the absolute path to top-level photo folder
+ * `/my-output-folder` is the absolute path to where you want the generated site written to
+
+```
+docker run \
+	-v /my-input-folder:/input:ro \
+	-v /my-output-folder:/fussel/web/build \
+	cbenning/fussel:latest
+```
+
+Optional:
+ You can provide any value found in the .env.sample file in a docker env variable using `-e MYVAR=THING`
+
+```
+docker run \
+	-v /my-input-folder:/input:ro \
+	-v /my-output-folder:/fussel/web/build \
+    -e HTTP_ROOT=/my/alternate/path \
+    -e WATERMARK_ENABLE=false \
+	cbenning/fussel:latest
+```
+
+Once complete you can upload the output folder to your webserver, or see what it looks like with
+`python -m http.server --directory /my-output-folder`
+
+
