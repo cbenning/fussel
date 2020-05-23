@@ -12,7 +12,7 @@ RUN apk add --no-cache \
 
 COPY docker/start.sh /
 
-RUN mkdir fussel 
+WORKDIR /fussel
 COPY fussel.py \
     generate_site.sh \
     LICENSE \
@@ -24,9 +24,8 @@ COPY fussel.py \
 COPY generator fussel/generator
 COPY web fussel/web
 
-RUN cd fussel && \
-    pip3 install -r requirements.txt
-RUN cd fussel/web && \
-    yarn install
+RUN pip3 install -r requirements.txt
 
+WORKDIR /fussel/web/
+RUN yarn install
 CMD ["./start.sh"]
