@@ -1,6 +1,6 @@
 FROM alpine:3.11.6
 
-RUN apk update && apk add \
+RUN apk add --no-cache \
 	python3 \
 	py3-pillow \
 	py3-pip \
@@ -10,25 +10,22 @@ RUN apk update && apk add \
 	sed \
 	bash
 
-RUN pip3 install --upgrade pip
-COPY docker/start.sh /
-RUN chmod +x start.sh
+WORKDIR /fussel
 
-RUN mkdir fussel 
+COPY requirements.txt /fussel/
+RUN pip3 install -r requirements.txt
+
+COPY docker/start.sh /
 COPY fussel.py \
     generate_site.sh \
     LICENSE \
     README.md \
-    requirements.txt \
     .env.sample \
-    fussel/
+    /fussel/
+COPY generator/ /fussel/generator/
+COPY web/ /fussel/web/
 
-COPY generator fussel/generator
-COPY web fussel/web
+WORKDIR /fussel/web/
+RUN yarn install
 
-RUN cd fussel && \
-    pip3 install -r requirements.txt
-RUN cd fussel/web && \
-    yarn install
-
-CMD ["./start.sh"]
+CMD ["/start.sh"]
