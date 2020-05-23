@@ -10,20 +10,20 @@ RUN apk add --no-cache \
 	sed \
 	bash
 
-COPY docker/start.sh /
-
 WORKDIR /fussel
+
+COPY requirements.txt /fussel/
+RUN pip3 install -r requirements.txt
+
+COPY docker/start.sh /
 COPY fussel.py \
     generate_site.sh \
     LICENSE \
     README.md \
-    requirements.txt \
     .env.sample \
     /fussel/
 COPY generator/ /fussel/generator/
 COPY web/ /fussel/web/
-
-RUN pip3 install -r requirements.txt
 
 WORKDIR /fussel/web/
 RUN yarn install
