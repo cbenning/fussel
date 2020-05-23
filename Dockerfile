@@ -11,7 +11,6 @@ RUN apk add --no-cache \
 	bash
 
 COPY docker/start.sh /
-RUN chmod +x start.sh
 
 RUN mkdir fussel 
 COPY fussel.py \
