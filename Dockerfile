@@ -19,10 +19,9 @@ COPY fussel.py \
     README.md \
     requirements.txt \
     .env.sample \
-    fussel/
-
-COPY generator fussel/generator
-COPY web fussel/web
+    /fussel/
+COPY generator/ /fussel/generator/
+COPY web/ /fussel/web/
 
 RUN pip3 install -r requirements.txt
 
