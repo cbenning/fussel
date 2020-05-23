@@ -27,4 +27,5 @@ RUN pip3 install -r requirements.txt
 
 WORKDIR /fussel/web/
 RUN yarn install
-CMD ["./start.sh"]
+
+CMD ["/start.sh"]
