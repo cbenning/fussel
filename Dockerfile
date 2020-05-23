@@ -10,7 +10,6 @@ RUN apk add --no-cache \
 	sed \
 	bash
 
-RUN pip3 install --upgrade pip
 COPY docker/start.sh /
 RUN chmod +x start.sh
 
