@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
-cd fussel
+
+pushd fussel
 
 export INPUT_PATH=/input
 export OUTPUT_PATH=web/build
@@ -44,4 +45,25 @@ cat .env
 
 ./generate_site.sh
 
+_PUID=$(id -u)
+_PGID=$(id -g)
+DO_CHOWN=0
+if [[ ! -z "${PUID}" ]]; then
+  _PUID=${PUID}
+  DO_CHOWN=1
+fi
+if [[ ! -z "${PGID}" ]]; then
+  _PGID=${PGID}
+  DO_CHOWN=1
+fi
+if (( DO_CHOWN > 0 )); then
+  echo "Fixing permissions..."
+  chown -R ${_PUID}:${_PGID} ${OUTPUT_PATH}
+fi
+
+echo "\nExtra docker instructions:"
+echo " To validate build run:"
+echo "   python -m http.server --directory <your-output-mapping>"
+
+popd
 

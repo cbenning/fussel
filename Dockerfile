@@ -28,4 +28,6 @@ COPY web/ /fussel/web/
 WORKDIR /fussel/web/
 RUN yarn install
 
+WORKDIR /
+
 CMD ["/start.sh"]
