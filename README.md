@@ -91,10 +91,16 @@ Required:
  * `/my-input-folder` is the absolute path to top-level photo folder
  * `/my-output-folder` is the absolute path to where you want the generated site written to
 
+Note: 
+ The two -e env variables PGID and PUID tells the container what to set the output folder permissions to
+ once done. Otherwise it is set to root permissions
+
 ```
 docker run \
-	-v /my-input-folder:/input:ro \
-	-v /my-output-folder:/fussel/web/build \
+    -e PGID=$(id -g) \
+    -e PUID=$(id -u) \
+    -v /my-input-folder:/input:ro \
+    -v /my-output-folder:/fussel/web/build \
 	cbenning/fussel:latest
 ```
 
@@ -103,11 +109,13 @@ Optional:
 
 ```
 docker run \
-	-v /my-input-folder:/input:ro \
-	-v /my-output-folder:/fussel/web/build \
+    -e PGID=$(id -g) \
+    -e PUID=$(id -u) \
+    -v /my-input-folder:/input:ro \
+    -v /my-output-folder:/fussel/web/build \
     -e HTTP_ROOT=/my/alternate/path \
     -e WATERMARK_ENABLE=false \
-	cbenning/fussel:latest
+    cbenning/fussel:latest
 ```
 
 Once complete you can upload the output folder to your webserver, or see what it looks like with
