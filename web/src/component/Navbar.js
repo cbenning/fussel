@@ -6,9 +6,9 @@ export default class Navbar extends React.Component {
 
   generateAlbumsButton = () => {
     return(
-      <a class="navbar-item" onClick={(e) => this.props.changeCollectionType("albums")}>
-        <span class="icon">
-          <i class="fas fa-book"></i>
+      <a className="navbar-item" onClick={(e) => this.props.changeCollectionType("albums")}>
+        <span className="icon">
+          <i className="fas fa-book"></i>
         </span>
         <span>
           &nbsp;
@@ -21,9 +21,9 @@ export default class Navbar extends React.Component {
   generatePeopleButton = (people) => {
     if(Object.keys(people).length > 0) {
       return(
-        <a class="navbar-item" onClick={(e) => this.props.changeCollectionType("people")}>
-          <span class="icon">
-            <i class="fas fa-user-friends"></i>
+        <a className="navbar-item" onClick={(e) => this.props.changeCollectionType("people")}>
+          <span className="icon">
+            <i className="fas fa-user-friends"></i>
           </span>
           <span>
           	&nbsp;
@@ -37,19 +37,19 @@ export default class Navbar extends React.Component {
 
   render() {
     return (
-      <nav class="navbar is-light has-shadow" role="navigation" aria-label="main navigation">
-        <div class="navbar-brand" onClick={(e) => this.props.changeCollectionType("albums")}>
-          <a class="navbar-item">
+      <nav className="navbar is-light has-shadow" role="navigation" aria-label="main navigation">
+        <div className="navbar-brand" onClick={(e) => this.props.changeCollectionType("albums")}>
+          <a className="navbar-item">
             <img src={logo} alt="logo" width="36" height="36" />
           </a>
         </div>
-          <div class="navbar-menu is-active">
-            <div class="navbar-start">
+          <div className="navbar-menu is-active">
+            <div className="navbar-start">
               {this.generateAlbumsButton()}
               {this.generatePeopleButton(this.props.people)}
             </div>
           </div>
-          <div class="navbar-end">
+          <div className="navbar-end">
           </div>
       </nav>
     );

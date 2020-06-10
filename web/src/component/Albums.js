@@ -5,7 +5,7 @@ export default class Albums extends React.Component {
 
   generateCards = (albums) => {
     return (
-      <div class="columns is-multiline">
+      <div className="columns is-multiline">
         {Object.keys(albums).map(album => { return this.generateCard(albums[album]) })}
       </div>
     )
@@ -13,17 +13,17 @@ export default class Albums extends React.Component {
 
   generateCard = (album) => {
     return (
-      <div class="column is-one-quarter" onClick={(e) => this.props.changeAlbum(album.name)}>
-        <div class="card">
-          <div class="card-image">
-            <figure class="image is-4by3 album-photo">
-              <img class="album-photo" src={album.src} alt={album.name} />
+      <div className="column is-one-quarter" onClick={(e) => this.props.changeAlbum(album.name)}>
+        <div className="card">
+          <div className="card-image">
+            <figure className="image is-4by3 album-photo">
+              <img className="album-photo" src={album.src} alt={album.name} />
             </figure>
           </div>
-          <div class="card-content">
-            <div class="media-content">
-              <p class="title is-5">{album.name}</p>
-              <p class="subtitle is-7">{album["photos"].length} Photo{album["photos"].length === 1 ? '' : 's'}</p>
+          <div className="card-content">
+            <div className="media-content">
+              <p className="title is-5">{album.name}</p>
+              <p className="subtitle is-7">{album["photos"].length} Photo{album["photos"].length === 1 ? '' : 's'}</p>
             </div>
           </div>
         </div>
@@ -33,14 +33,14 @@ export default class Albums extends React.Component {
 
   render() {
     return (
-      <div class="container">
-        <section class="hero is-small">
-          <div class="hero-body">
-            <nav class="breadcrumb" aria-label="breadcrumbs">
+      <div className="container">
+        <section className="hero is-small">
+          <div className="hero-body">
+            <nav className="breadcrumb" aria-label="breadcrumbs">
               <ul>
-                <li class="is-active">
-                  <i class="fas fa-book fa-lg"></i>
-                  <a class="title is-4">&nbsp;&nbsp;Albums</a>
+                <li className="is-active">
+                  <i className="fas fa-book fa-lg"></i>
+                  <a className="title is-4">&nbsp;&nbsp;Albums</a>
                 </li>
               </ul>
             </nav>

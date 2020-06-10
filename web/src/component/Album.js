@@ -67,17 +67,17 @@ export default class Album extends Component {
 
   render() {
     return (
-      <div class="container" >
-        <section class="hero is-small">
-          <div class="hero-body">
-            <nav class="breadcrumb" aria-label="breadcrumbs">
+      <div className="container" >
+        <section className="hero is-small">
+          <div className="hero-body">
+            <nav className="breadcrumb" aria-label="breadcrumbs">
               <ul>
                 <li onClick={(e) => this.props.changeCollectionType("albums")}>
-                  <i class="fas fa-book fa-lg"></i>
-                  <a class="title is-4">&nbsp;&nbsp;Albums</a>
+                  <i className="fas fa-book fa-lg"></i>
+                  <a className="title is-4">&nbsp;&nbsp;Albums</a>
                 </li>
-                <li class="is-active">
-                  <a class="title is-4">{this.props.album["name"]}</a>
+                <li className="is-active">
+                  <a className="title is-4">{this.props.album["name"]}</a>
                 </li>
               </ul>
             </nav>

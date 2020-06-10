@@ -67,17 +67,17 @@ export default class Person extends Component {
 
   render() {
     return (
-      <div class="container" >
-        <section class="hero is-small">
-          <div class="hero-body">
-            <nav class="breadcrumb" aria-label="breadcrumbs">
+      <div className="container" >
+        <section className="hero is-small">
+          <div className="hero-body">
+            <nav className="breadcrumb" aria-label="breadcrumbs">
               <ul>
                 <li onClick={(e) => this.props.changeCollectionType("people")}>
-                  <i class="fas fa-user-friends fa-lg"></i>
-                  <a class="title is-4">&nbsp;&nbsp;People</a>
+                  <i className="fas fa-user-friends fa-lg"></i>
+                  <a className="title is-4">&nbsp;&nbsp;People</a>
                 </li>
-                <li class="is-active">
-                  <a class="title is-4">{this.props.person["name"]}</a>
+                <li className="is-active">
+                  <a className="title is-4">{this.props.person["name"]}</a>
                 </li>
               </ul>
             </nav>
