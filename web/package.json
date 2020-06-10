@@ -14,7 +14,10 @@
     "react-images": "1.0.0",
     "react-photo-gallery": "^8.0.0",
     "react-router-dom": "^5.1.2",
-    "react-scripts": "3.4.1"
+    "react-scripts": "3.4.1",
+    "websocket-extensions": "^0.1.4",
+    "tsutils": "3.17.1",
+    "typescript": "^2.8.0"
   },
   "scripts": {
     "start": "react-scripts start",
