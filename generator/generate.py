@@ -153,7 +153,7 @@ class SiteGenerator:
     def calculate_face_crop_dimensions(self, input_size, face_size, face_position):
 
         target_ratio = float(4/3)
-        target_upsize_ratio = float(1.6)
+        target_upsize_ratio = float(2.5)
 
         x = int(input_size[0] * float(face_position[0]))
         y = int(input_size[1] * float(face_position[1]))
@@ -165,7 +165,6 @@ class SiteGenerator:
         top = y - int(h/2) + 1
         bottom = y + int(h/2) - 1
 
-        print((left, top, right, bottom))
         # try to increase
         if float(right - left + 1 / bottom - top - 1) < target_ratio:  # horizontal expansion needed
             left, top, right, bottom = self._increase_w(left, top, right, bottom, input_size[0], input_size[1], target_ratio)
