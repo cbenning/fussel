@@ -8,14 +8,18 @@ from bs4 import BeautifulSoup
 
 SUPPORTED_EXTENSIONS = ('.jpg', '.jpeg', '.gif', '.png')
 
+
 class SiteGenerator:
     
-    def __init__(self, site_name, input_photos_dir, people_enabled, watermark_enabled, watermark_path, watermark_ratio):
+    def __init__(self, site_name, input_photos_dir, people_enabled, watermark_enabled, watermark_path, watermark_ratio,
+                 recursive_albums, recursive_albums_name_pattern):
         self.input_photos_dir = input_photos_dir
         self.people_enabled = people_enabled
         self.watermark_enabled = watermark_enabled
         self.watermark_path = watermark_path
         self.watermark_ratio = watermark_ratio
+        self.recursive_albums = recursive_albums
+        self.recursive_albums_name_pattern = recursive_albums_name_pattern
         self.people_data = {}
         self.albums_data = {}
         self.site_data = {
@@ -89,6 +93,8 @@ class SiteGenerator:
             self.add_photo_to_person(person, data)
 
         return faces, data
+
+
 
     def calculate_new_size(self, input_size, desired_size):
         if input_size[0] <= desired_size[0]:
@@ -247,6 +253,54 @@ class SiteGenerator:
         self.init_person(person)
         self.people_data[person]['src'] = uri
 
+    def is_supported_album(self, path):
+        folder_name = os.path.basename(path)
+        return not folder_name.startswith(".") and os.path.isdir(path)
+
+    def is_supported_photo(self, path):
+        return os.path.splitext(path)[1].lower() in SUPPORTED_EXTENSIONS
+
+    def process_album(self, album_dir, album_name, output_albums_photos_path, external_root):
+
+        print(" > Importing album %s as '%s'" % (album_dir, album_name))
+
+        album_photos = []
+        album_data = {
+            'name': album_name,
+            'photos': album_photos
+        }
+
+        album_name_folder = os.path.basename(album_dir)
+        album_folder = os.path.join(output_albums_photos_path, album_name_folder)
+        #album_folder = os.path.join(output_albums_photos_path, album_name)
+        # TODO externalize this?
+        external_path = external_root + "static/_gallery/albums/" + album_name_folder
+        #external_path = external_root + "static/_gallery/albums/" + album_name
+        os.makedirs(album_folder)
+
+        entries = list(map(lambda e: os.path.join(album_dir, e), os.listdir(album_dir)))
+        dirs = list(filter(lambda e: self.is_supported_album(e), entries))
+        files = list(filter(lambda e: self.is_supported_photo(e), entries))
+
+        for album_file in files:
+            photo_file = os.path.join(album_dir, album_file)
+            print(" --> Processing %s... " % photo_file)
+            faces, photo_data = self.process_photo(external_path, photo_file, album_folder)
+            album_photos.append(photo_data)
+
+        if len(album_data['photos']) > 0:
+            album_data['src'] = self.pick_album_thumbnail(album_data['photos'])
+            self.albums_data[album_data['name']] = album_data
+
+        # Recursively process sub-dirs
+        if self.recursive_albums:
+            for sub_album_dir in dirs:
+                sub_album_name = "%s" % self.recursive_albums_name_pattern
+                sub_album_name = sub_album_name.replace("{parent_album}", album_name)
+                sub_album_name = sub_album_name.replace("{album}", os.path.basename(sub_album_dir))
+                self.process_album(sub_album_dir, sub_album_name, output_albums_photos_path, external_root)
+
+
     def generate_site(self, output_photos_path, output_data_path, external_root):
 
         # Paths
@@ -261,37 +315,12 @@ class SiteGenerator:
         shutil.rmtree(output_data_path, ignore_errors=True)
         os.makedirs(output_data_path, exist_ok=True)
 
-        for subdir, input_album_dirs, files in os.walk(self.input_photos_dir):
-            for input_album_dir in input_album_dirs:
-                album_dir = os.path.join(subdir, input_album_dir)
-                album_name = os.path.basename(input_album_dir)
-                if not album_name.startswith(".") and os.path.isdir(album_dir):
-                    print(" > Importing album %s as '%s'" % (album_dir, album_name))
+        entries = list(map(lambda e: os.path.join(self.input_photos_dir, e), os.listdir(self.input_photos_dir)))
+        dirs = list(filter(lambda e: self.is_supported_album(e), entries))
 
-                    album_photos = []
-                    album_data = {
-                        'name': album_name,
-                        'photos': album_photos
-                    }
-
-                    album_folder = os.path.join(output_albums_photos_path, album_name)
-                    # TODO externalize this?
-                    external_path = external_root + "static/_gallery/albums/" + album_name
-                    os.makedirs(album_folder)
-
-                    for _, _, album_files in os.walk(album_dir):
-                        for album_file in album_files:
-                            if not os.path.splitext(album_file)[1].lower() in SUPPORTED_EXTENSIONS:
-                                continue
-                            photo_file = os.path.join(album_dir, album_file)
-                            print(" --> Processing %s... " % photo_file)
-                            faces, photo_data = self.process_photo(external_path, photo_file, album_folder)
-
-
-                            album_photos.append(photo_data)
-
-                    album_data['src'] = self.pick_album_thumbnail(album_data['photos'])
-                    self.albums_data[album_data['name']] = album_data
+        for album_dir in dirs:
+            album_name = os.path.basename(album_dir)
+            self.process_album(album_dir, album_name, output_albums_photos_path, external_root)
 
         with open(output_albums_data_file, 'w') as outfile:
             output_str = 'export const albums_data = '

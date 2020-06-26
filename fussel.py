@@ -36,6 +36,14 @@ elif watermark_ratio >= 1.0:
 
 site_name = os.getenv("SITE_NAME")
 
+recursive_albums = os.getenv("RECURSIVE_ALBUMS")
+if recursive_albums == 'true':
+    recursive_albums = True
+else:
+    recursive_albums = False
+
+recursive_albums_name_pattern = os.getenv("RECURSIVE_ALBUMS_NAME_PATTERN")
+
 filenames = [os.path.join(os.path.dirname(os.path.realpath(__file__)), "web", "package.json")]
 massedit.edit_files(filenames, ["re.sub(r'^.*\"homepage\":.*$', '  \"homepage\": \""+http_root+"\",', line)"], dry_run=False)
 
@@ -52,6 +60,8 @@ generator = SiteGenerator(
     people_enabled,
     watermark_enabled,
     watermark_path,
-    watermark_ratio
+    watermark_ratio,
+    recursive_albums,
+    recursive_albums_name_pattern
 )
 generator.generate_site(output_photos_path, output_data_path, http_root)
