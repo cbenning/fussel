@@ -12,7 +12,7 @@ SUPPORTED_EXTENSIONS = ('.jpg', '.jpeg', '.gif', '.png')
 class SiteGenerator:
     
     def __init__(self, site_name, input_photos_dir, people_enabled, watermark_enabled, watermark_path, watermark_ratio,
-                 recursive_albums, recursive_albums_name_pattern):
+                 recursive_albums, recursive_albums_name_pattern, overwrite):
         self.input_photos_dir = input_photos_dir
         self.people_enabled = people_enabled
         self.watermark_enabled = watermark_enabled
@@ -20,6 +20,7 @@ class SiteGenerator:
         self.watermark_ratio = watermark_ratio
         self.recursive_albums = recursive_albums
         self.recursive_albums_name_pattern = recursive_albums_name_pattern
+        self.overwrite = overwrite
         self.people_data = {}
         self.albums_data = {}
         self.site_data = {
@@ -28,8 +29,11 @@ class SiteGenerator:
 
     def process_photo(self, external_path, photo, output_dir):
         new_original_photo = os.path.join(output_dir, "original_%s" % os.path.basename(photo))
-        print(" ----> Copying to '%s'" % new_original_photo)
-        shutil.copyfile(photo, new_original_photo)
+
+        # Only copy if overwrite explicitly asked for or if doesn't exist
+        if self.overwrite or not os.path.exists(new_original_photo):
+            print(" ----> Copying to '%s'" % new_original_photo)
+            shutil.copyfile(photo, new_original_photo)
 
         with Image.open(new_original_photo) as im:
             original_size = im.size
@@ -55,16 +59,21 @@ class SiteGenerator:
             largest_src = new_sub_photo
             if smallest_src is None:
                 smallest_src = new_sub_photo
-            print(" ------> Generating photo size... '%s'" % new_sub_photo)
-            with Image.open(new_original_photo) as im:
-                im.thumbnail(new_size)
-                im.save(new_sub_photo)
-                data['srcSet'] += ["%s/%s %sw" % (external_path, os.path.basename(new_sub_photo), new_size[0])]
+
+            # Only generate if overwrite explicitly asked for or if doesn't exist
+            if self.overwrite or not os.path.exists(new_sub_photo):
+                print(" ------> Generating photo size... '%s'" % new_sub_photo)
+                with Image.open(new_original_photo) as im:
+                    im.thumbnail(new_size)
+                    im.save(new_sub_photo)
+            data['srcSet'] += ["%s/%s %sw" % (external_path, os.path.basename(new_sub_photo), new_size[0])]
 
         data['src'] = "%s/%s" % (external_path, os.path.basename(largest_src))
         data['_thumb'] = "%s/%s" % (external_path, os.path.basename(smallest_src))
 
-        if self.watermark_enabled:
+
+        # Only copy if overwrite explicitly asked for or if doesn't exist
+        if self.watermark_enabled and (self.overwrite or not os.path.exists(new_original_photo)):
             with Image.open(self.watermark_path) as watermark_im:
                 print(" ------> Adding watermark ... '%s'" % largest_src)
                 self.apply_watermark(largest_src, watermark_im)
@@ -276,7 +285,7 @@ class SiteGenerator:
         # TODO externalize this?
         external_path = external_root + "static/_gallery/albums/" + album_name_folder
         #external_path = external_root + "static/_gallery/albums/" + album_name
-        os.makedirs(album_folder)
+        os.makedirs(album_folder, exist_ok=True)
 
         entries = list(map(lambda e: os.path.join(album_dir, e), os.listdir(album_dir)))
         dirs = list(filter(lambda e: self.is_supported_album(e), entries))
@@ -310,7 +319,8 @@ class SiteGenerator:
         output_albums_photos_path = os.path.join(output_photos_path, "albums")
 
         # Cleanup and prep of deploy space
-        shutil.rmtree(output_photos_path, ignore_errors=True)
+        if self.overwrite:
+            shutil.rmtree(output_photos_path, ignore_errors=True)
         os.makedirs(output_photos_path, exist_ok=True)
         shutil.rmtree(output_data_path, ignore_errors=True)
         os.makedirs(output_data_path, exist_ok=True)

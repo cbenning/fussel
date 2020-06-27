@@ -44,6 +44,12 @@ else:
 
 recursive_albums_name_pattern = os.getenv("RECURSIVE_ALBUMS_NAME_PATTERN")
 
+overwrite = os.getenv("OVERWRITE")
+if overwrite == 'true':
+    overwrite = True
+else:
+    overwrite = False
+
 filenames = [os.path.join(os.path.dirname(os.path.realpath(__file__)), "web", "package.json")]
 massedit.edit_files(filenames, ["re.sub(r'^.*\"homepage\":.*$', '  \"homepage\": \""+http_root+"\",', line)"], dry_run=False)
 
@@ -62,6 +68,7 @@ generator = SiteGenerator(
     watermark_path,
     watermark_ratio,
     recursive_albums,
-    recursive_albums_name_pattern
+    recursive_albums_name_pattern,
+    overwrite
 )
 generator.generate_site(output_photos_path, output_data_path, http_root)
