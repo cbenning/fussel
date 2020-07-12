@@ -300,6 +300,8 @@ class SiteGenerator:
         files = list(filter(lambda e: self.is_supported_photo(e), entries))
 
         for album_file in files:
+            if album_file.startswith('.'):  # skip dotfiles
+                continue
             photo_file = os.path.join(album_dir, album_file)
             print(" --> Processing %s... " % photo_file)
             try:
@@ -315,6 +317,8 @@ class SiteGenerator:
         # Recursively process sub-dirs
         if self.recursive_albums:
             for sub_album_dir in dirs:
+                if os.path.basename(sub_album_dir).startswith('.'):  # skip dotfiles
+                    continue
                 sub_album_name = "%s" % self.recursive_albums_name_pattern
                 sub_album_name = sub_album_name.replace("{parent_album}", album_name)
                 sub_album_name = sub_album_name.replace("{album}", os.path.basename(sub_album_dir))
@@ -341,6 +345,8 @@ class SiteGenerator:
 
         for album_dir in dirs:
             album_name = os.path.basename(album_dir)
+            if album_name.startswith('.'):  # skip dotfiles
+                continue
             self.process_album(album_dir, album_name, output_albums_photos_path, external_root)
 
         with open(output_albums_data_file, 'w') as outfile:
