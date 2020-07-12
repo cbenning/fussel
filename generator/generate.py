@@ -3,7 +3,7 @@
 import os
 import shutil
 import json
-from PIL import Image
+from PIL import Image, UnidentifiedImageError
 from bs4 import BeautifulSoup
 
 SUPPORTED_EXTENSIONS = ('.jpg', '.jpeg', '.gif', '.png')
@@ -35,9 +35,13 @@ class SiteGenerator:
             print(" ----> Copying to '%s'" % new_original_photo)
             shutil.copyfile(photo, new_original_photo)
 
-        with Image.open(new_original_photo) as im:
-            original_size = im.size
-            x, y = im.size
+        try:
+            with Image.open(new_original_photo) as im:
+                original_size = im.size
+                x, y = im.size
+        except UnidentifiedImageError as e:
+            shutil.rmtree(new_original_photo, ignore_errors=True)
+            raise PhotoProcessingFailure(message=str(e))
 
         # TODO expose to config
         sizes = [(500, 500), (800, 800), (1024, 1024), (1600, 1600)]
@@ -53,6 +57,8 @@ class SiteGenerator:
 
         largest_src = None
         smallest_src = None
+
+        print(" ------> Generating photo sizes: ", end="")
         for i, size in enumerate(sizes):
             new_size = self.calculate_new_size(original_size, size)
             new_sub_photo = os.path.join(output_dir, "%sx%s_%s" % (new_size[0], new_size[1], os.path.basename(photo)))
@@ -61,12 +67,14 @@ class SiteGenerator:
                 smallest_src = new_sub_photo
 
             # Only generate if overwrite explicitly asked for or if doesn't exist
+            print(f'{new_size[0]}x{new_size[1]} ', end="")
             if self.overwrite or not os.path.exists(new_sub_photo):
-                print(" ------> Generating photo size... '%s'" % new_sub_photo)
                 with Image.open(new_original_photo) as im:
                     im.thumbnail(new_size)
                     im.save(new_sub_photo)
             data['srcSet'] += ["%s/%s %sw" % (external_path, os.path.basename(new_sub_photo), new_size[0])]
+
+        print(' ')
 
         data['src'] = "%s/%s" % (external_path, os.path.basename(largest_src))
         data['_thumb'] = "%s/%s" % (external_path, os.path.basename(smallest_src))
@@ -75,7 +83,7 @@ class SiteGenerator:
         # Only copy if overwrite explicitly asked for or if doesn't exist
         if self.watermark_enabled and (self.overwrite or not os.path.exists(new_original_photo)):
             with Image.open(self.watermark_path) as watermark_im:
-                print(" ------> Adding watermark ... '%s'" % largest_src)
+                print(" ------> Adding watermark")
                 self.apply_watermark(largest_src, watermark_im)
 
         ## Faces
@@ -101,7 +109,7 @@ class SiteGenerator:
         for person in faces:
             self.add_photo_to_person(person, data)
 
-        return faces, data
+        return data
 
 
 
@@ -294,8 +302,11 @@ class SiteGenerator:
         for album_file in files:
             photo_file = os.path.join(album_dir, album_file)
             print(" --> Processing %s... " % photo_file)
-            faces, photo_data = self.process_photo(external_path, photo_file, album_folder)
-            album_photos.append(photo_data)
+            try:
+                photo_data = self.process_photo(external_path, photo_file, album_folder)
+                album_photos.append(photo_data)
+            except PhotoProcessingFailure as e:
+                print(f'Skipping processing of image file {photo_file}. Reason: {str(e)}')
 
         if len(album_data['photos']) > 0:
             album_data['src'] = self.pick_album_thumbnail(album_data['photos'])
@@ -351,3 +362,7 @@ class SiteGenerator:
             outfile.write(output_str)
 
 
+class PhotoProcessingFailure(Exception):
+    def __init__(self, message="Failed to process photo"):
+        self.message = message
+        super().__init__(self.message)
