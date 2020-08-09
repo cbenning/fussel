@@ -30,7 +30,7 @@ Features and Properties:
 ## Install dependencies
 
 ### Site Generator
- - `pip install -r requirements`
+ - `pip install -r requirements.txt`
  
 ### Node Frontend
  - `cd web`
