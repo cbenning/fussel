@@ -10,9 +10,11 @@ RUN apk add --no-cache \
 	sed \
 	bash
 
-WORKDIR /fussel
 
 COPY requirements.txt /fussel/
+
+WORKDIR /fussel
+
 RUN pip3 install -r requirements.txt
 
 COPY docker/start.sh /
