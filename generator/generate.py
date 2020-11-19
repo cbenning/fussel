@@ -295,7 +295,7 @@ class SiteGenerator:
         #external_path = external_root + "static/_gallery/albums/" + album_name
         os.makedirs(album_folder, exist_ok=True)
 
-        entries = list(map(lambda e: os.path.join(album_dir, e), os.listdir(album_dir)))
+        entries = list(map(lambda e: os.path.join(album_dir, e), sorted(os.listdir(album_dir))))
         dirs = list(filter(lambda e: self.is_supported_album(e), entries))
         files = list(filter(lambda e: self.is_supported_photo(e), entries))
 
