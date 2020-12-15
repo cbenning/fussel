@@ -29,6 +29,16 @@ class SiteGenerator:
 
     def process_photo(self, external_path, photo, output_dir):
         new_original_photo = os.path.join(output_dir, "original_%s" % os.path.basename(photo))
+        
+        # Verify original first to avoid PIL errors later when generating thumbnails etc
+        try:
+            with Image.open(photo) as im:
+                im.verify()
+            # Unfortunately verify only catches a few defective images, this transpose catches more. Verify requires subsequent reopen according to Pillow docs.
+            with Image.open(photo) as im2:
+                im2.transpose(Image.FLIP_TOP_BOTTOM)
+        except Exception as e:
+            raise PhotoProcessingFailure(message="Image Verification: " + str(e))
 
         # Only copy if overwrite explicitly asked for or if doesn't exist
         if self.overwrite or not os.path.exists(new_original_photo):
