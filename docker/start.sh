@@ -61,7 +61,7 @@ if (( DO_CHOWN > 0 )); then
   chown -R ${_PUID}:${_PGID} ${OUTPUT_PATH}
 fi
 
-echo "\nExtra docker instructions:"
+echo "Extra docker instructions:"
 echo " To validate build run:"
 echo "   python -m http.server --directory <your-output-mapping>"
 
