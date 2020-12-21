@@ -37,7 +37,7 @@ export default class Navbar extends React.Component {
 
   render() {
     return (
-      <nav className="navbar is-light has-shadow" role="navigation" aria-label="main navigation">
+      <nav className="navbar has-shadow" role="navigation" aria-label="main navigation">
         <div className="navbar-brand" onClick={(e) => this.props.changeCollectionType("albums")}>
           <a className="navbar-item">
             <img src={logo} alt="logo" width="36" height="36" />
