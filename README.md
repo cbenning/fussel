@@ -1,11 +1,5 @@
 # Fussel
 
-### Current Status
-Fussel is under active development! Recently the project hit a snag when the main caroussel library that fussel is based on was abandoned (https://github.com/jossmac/react-images). I am in the process of attempting to replace it (possibly with: https://github.com/akiran/react-slick), hence the lack of more minor updates recently. I have no timelines as this is a side project for me and I have had limited free time lately but rest assured fussel is still being actively improved.
-
----
-
-
 ![License Badge](https://img.shields.io/github/license/cbenning/fussel)
 ![Version Badge](https://img.shields.io/github/v/release/cbenning/fussel)
 

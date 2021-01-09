@@ -5,3 +5,8 @@ Keep an eye on the ticket and maybe one day I can remove this */
 .react-photo-gallery--gallery > div > img {
     align-self: flex-start;
 }
+
+.footer {
+    padding: 3rem 1.5rem 6rem;
+    margin-top: 3rem;
+}
