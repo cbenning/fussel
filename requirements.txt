@@ -1,4 +1,4 @@
-Pillow
-bs4
-python-dotenv
-massedit
+Pillow==7.0.0
+bs4==0.0.1
+python-dotenv==0.15.0
+massedit==0.69.1
