@@ -3,6 +3,7 @@
 import os
 import shutil
 import json
+import urllib
 from PIL import Image, UnidentifiedImageError
 from bs4 import BeautifulSoup
 
@@ -82,13 +83,12 @@ class SiteGenerator:
                 with Image.open(new_original_photo) as im:
                     im.thumbnail(new_size)
                     im.save(new_sub_photo)
-            data['srcSet'] += ["%s/%s %sw" % (external_path, os.path.basename(new_sub_photo), new_size[0])]
+            data['srcSet'] += ["%s/%s %sw" % (urllib.parse.quote(external_path), urllib.parse.quote(os.path.basename(new_sub_photo)), new_size[0])]
 
         print(' ')
 
-        data['src'] = "%s/%s" % (external_path, os.path.basename(largest_src))
-        data['_thumb'] = "%s/%s" % (external_path, os.path.basename(smallest_src))
-
+        data['src'] = "%s/%s" % (urllib.parse.quote(external_path), urllib.parse.quote(os.path.basename(largest_src)))
+        data['_thumb'] = "%s/%s" % (urllib.parse.quote(external_path), urllib.parse.quote(os.path.basename(smallest_src)))
 
         # Only copy if overwrite explicitly asked for or if doesn't exist
         if self.watermark_enabled and (self.overwrite or not os.path.exists(new_original_photo)):
