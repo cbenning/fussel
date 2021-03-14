@@ -84,7 +84,7 @@ After running `generate_site.sh`
  
 ## Docker
 
-If you don't want to fuss with anything and would like to use docker instead fo generate your site...
+If you don't want to fuss with anything and would like to use docker instead to generate your site...
 
 ### Usage
 
