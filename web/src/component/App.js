@@ -18,7 +18,7 @@ class App extends Component {
     this.state = {
       collectionType: this.findCollectionType(),
       collection: this.findCollection(),
-      photo: this.findPhoto(),
+      // photo: this.findPhoto(),
       component: this.findComponent()
     };
   }
@@ -30,7 +30,7 @@ class App extends Component {
       this.setState({
         collectionType: params.get('collectionType'),
         collection: params.get('collection'),
-        photo: params.get('photo'),
+        // photo: params.get('photo'),
         component: this.findComponent()
       })
     });
@@ -58,9 +58,9 @@ class App extends Component {
     return "albums"
   }
 
-  findPhoto = () => {
-    return this.urlParams().get('photo');
-  }
+  // findPhoto = () => {
+  //   return this.urlParams().get('photo');
+  // }
 
   findComponent = (collectionType, collection, photo) => {
     if (collectionType === "people") {

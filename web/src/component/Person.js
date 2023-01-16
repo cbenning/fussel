@@ -1,6 +1,14 @@
 import React, { Component } from "react";
 import Gallery from "react-photo-gallery";
-import Carousel, { Modal, ModalGateway } from "react-images";
+import { Swiper, SwiperSlide } from 'swiper/react';
+
+import { Keyboard, History, Pagination, HashNavigation, Navigation } from "swiper";
+import 'swiper/swiper.min.css';
+import 'swiper/modules/navigation/navigation.min.css'
+import 'swiper/modules/pagination/pagination.min.css'
+
+
+import Modal from 'react-modal';
 import "./Gallery.css";
 
 export default class Person extends Component {
@@ -17,7 +25,7 @@ export default class Person extends Component {
           currentImage: index,
           viewerIsOpen: true
         };
-        this.openLightbox(null,
+        this.closeModal(null,
             {
               index,
               photo: props.person["photos"][index],
@@ -84,10 +92,11 @@ export default class Person extends Component {
           </div>
         </section>
         <Gallery photos={this.props.person["photos"]} onClick={this.openLightbox} />
-        <ModalGateway>
+        {/* <ModalGateway>
           {this.state.viewerIsOpen ? (
             <Modal onClose={this.closeLightbox}>
               <Carousel
+                frameProps={{autoSize:true}}
                 currentIndex={this.state.currentImage}
                 trackProps={{onViewChange:(index) => this.viewChange(index)}}
                 views={this.props.person["photos"].map(x => ({
@@ -98,7 +107,35 @@ export default class Person extends Component {
               />
             </Modal>
           ) : null}
-        </ModalGateway>
+        </ModalGateway> */}
+        <Modal
+          isOpen={this.state.viewerIsOpen}
+          // onAfterOpen={afterOpenModal}
+          onRequestClose={this.closeModal}
+          contentLabel="Example Modal"
+        >
+        <Swiper 
+          slidesPerView={1}
+          preloadImages={false}
+          navigation={{ enabled:true, }}  
+          keyboard={{ enabled: true, }}
+          pagination={{ clickable: true, }} 
+          hashNavigation= {{ 
+            replaceState: true, 
+            watchState: true, 
+          }}
+          modules={[History, Keyboard, HashNavigation, Pagination]}
+          className="swiper">
+          {
+            this.props.person["photos"].map(x => 
+              <SwiperSlide data-hash={x.name}>
+                <img title={x.name} src={x.src} />
+              </SwiperSlide>
+            )
+          }
+
+      </Swiper>
+      </Modal>
       </div>
     );
   }
