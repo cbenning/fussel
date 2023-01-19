@@ -75,10 +75,10 @@ class Collection extends Component {
               <ul>
                 <li>
                   <i className="fas fa-book fa-lg"></i>
-                  <Link className="title is-4" to={"/collections/" + this.props.params.collectionType}>&nbsp;&nbsp;{this.title(this.props.params.collectionType)}</Link>
+                  <Link className="title is-5" to={"/collections/" + this.props.params.collectionType}>&nbsp;&nbsp;{this.title(this.props.params.collectionType)}</Link>
                 </li>
                 <li className="is-active">
-                  <a className="title is-4">{collection_data["name"]}</a>
+                  <a className="title is-5">{collection_data["name"]}</a>
                 </li>
               </ul>
             </nav>

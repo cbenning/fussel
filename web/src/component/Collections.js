@@ -81,7 +81,7 @@ class Collections extends Component {
               <ul>
                 <li key="1" className="is-active">
                   <i className="fas fa-book fa-lg"></i>
-                  <a className="title is-5">&nbsp;&nbsp; {this.title(this.props.params.collectionType)}</a>
+                  <a className="title is-5">&nbsp;&nbsp;{this.title(this.props.params.collectionType)}</a>
                 </li>
               </ul>
             </nav>
