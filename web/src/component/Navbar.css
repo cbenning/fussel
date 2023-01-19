@@ -1,4 +1,9 @@
 
 .navbar {
-    z-index: 1;
+    z-index: 0;
+}
+
+.navbar-text {
+    font-weight: bold;
+    font-size: 13pt;
 }

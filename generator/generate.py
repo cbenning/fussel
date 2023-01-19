@@ -6,6 +6,7 @@ import json
 import urllib
 from PIL import Image, UnidentifiedImageError
 from bs4 import BeautifulSoup
+from slugify import slugify
 
 SUPPORTED_EXTENSIONS = ('.jpg', '.jpeg', '.gif', '.png')
 
@@ -25,8 +26,11 @@ class SiteGenerator:
         self.people_data = {}
         self.albums_data = {}
         self.site_data = {
-            'site_name': site_name
+            'site_name': site_name,
+            'people_enabled': people_enabled,
         }
+        self.unique_album_slugs = {}
+        self.unique_person_slugs = {}
 
     def process_photo(self, external_path, photo, output_dir):
         new_original_photo = os.path.join(output_dir, "original_%s" % os.path.basename(photo))
@@ -56,11 +60,12 @@ class SiteGenerator:
 
         # TODO expose to config
         sizes = [(500, 500), (800, 800), (1024, 1024), (1600, 1600)]
+        filename = os.path.basename(os.path.basename(photo))
 
         data = {
             'width': x,
             'height': y,
-            'name': os.path.basename(os.path.basename(photo)),
+            'name': filename,
             'srcSet': [],
             '_thumb': None,
             'sizes': ["(min-width: 480px) 50vw,(min-width: 1024px) 33.3vw,100vw"]
@@ -262,8 +267,12 @@ class SiteGenerator:
 
     def init_person(self, person):
         if not person in self.people_data.keys():
+
+            unique_person_slug = self.find_unique_slug(self.unique_person_slugs, person)
+            self.unique_person_slugs[unique_person_slug] = unique_person_slug
             self.people_data[person] = {
                 'name': person,
+                'slug': unique_person_slug,
                 'photos': [],
                 'src': None
             }
@@ -292,10 +301,17 @@ class SiteGenerator:
         print(" > Importing album %s as '%s'" % (album_dir, album_name))
 
         album_photos = []
+
+        unique_album_slug = self.find_unique_slug(self.unique_album_slugs, album_name)
+        self.unique_album_slugs[unique_album_slug] = unique_album_slug
+
         album_data = {
             'name': album_name,
+            'slug': unique_album_slug,
             'photos': album_photos
         }
+
+        unique_slugs = {}
 
         album_name_folder = os.path.basename(album_dir)
         album_folder = os.path.join(output_albums_photos_path, album_name_folder)
@@ -316,13 +332,19 @@ class SiteGenerator:
             print(" --> Processing %s... " % photo_file)
             try:
                 photo_data = self.process_photo(external_path, photo_file, album_folder)
+
+                ## Ensure slug is unique
+                unique_slug = self.find_unique_slug(unique_slugs, photo_data['name'])
+                photo_data['slug'] = unique_slug
+                unique_slugs[unique_slug] = unique_slug
+
                 album_photos.append(photo_data)
             except PhotoProcessingFailure as e:
                 print(f'Skipping processing of image file {photo_file}. Reason: {str(e)}')
 
         if len(album_data['photos']) > 0:
             album_data['src'] = self.pick_album_thumbnail(album_data['photos'])
-            self.albums_data[album_data['name']] = album_data
+            self.albums_data[album_data['slug']] = album_data
 
         # Recursively process sub-dirs
         if self.recursive_albums:
@@ -334,6 +356,19 @@ class SiteGenerator:
                 sub_album_name = sub_album_name.replace("{album}", os.path.basename(sub_album_dir))
                 self.process_album(sub_album_dir, sub_album_name, output_albums_photos_path, external_root)
 
+
+    def find_unique_slug(self, unique_slugs, name):
+
+        slug = slugify(name, allow_unicode=False, max_length=30, word_boundary=True, separator="-", save_order=True)
+        if slug not in unique_slugs:
+            return slug
+        count = 1
+        while True:
+            new_slug = slug + "-" + str(count)
+            if new_slug not in unique_slugs:
+                return new_slug
+            count += 1
+        
 
     def generate_site(self, output_photos_path, output_data_path, external_root):
 
@@ -359,6 +394,10 @@ class SiteGenerator:
                 continue
             self.process_album(album_dir, album_name, output_albums_photos_path, external_root)
 
+        people_data_slugs = {}
+        for person in self.people_data.values():
+            people_data_slugs[person['slug']] = person
+
         with open(output_albums_data_file, 'w') as outfile:
             output_str = 'export const albums_data = '
             output_str += json.dumps(self.albums_data, sort_keys=True, indent=4)
@@ -367,7 +406,7 @@ class SiteGenerator:
 
         with open(output_people_data_file, 'w') as outfile:
             output_str = 'export const people_data = '
-            output_str += json.dumps(self.people_data, sort_keys=True, indent=4)
+            output_str += json.dumps(people_data_slugs, sort_keys=True, indent=4)
             output_str += ';'
             outfile.write(output_str)
 
