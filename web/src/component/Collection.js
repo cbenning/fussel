@@ -1,5 +1,5 @@
 import React, { Component } from "react";
-import Gallery from "react-photo-gallery";
+import Masonry, {ResponsiveMasonry} from "react-responsive-masonry"
 import withRouter from './withRouter';
 import { albums_data } from "../_gallery/albums_data.js"
 import { people_data } from "../_gallery/people_data.js"
@@ -26,10 +26,13 @@ class Collection extends Component {
   }
 
   openModal = (event, obj) => {
+    console.log(event)
+    // console.log(obj)
     this.setState({
       viewerIsOpen: true
     })
-    history.pushState(null, null, "#" + obj.photo.slug)
+    // history.pushState(null, null, "#" + obj.photo.slug)
+    history.pushState(null, null, "#" + event.target.attributes.slug.value)
   };
 
   closeModal = () => {
@@ -84,7 +87,25 @@ class Collection extends Component {
             </nav>
           </div>
         </section>
-        <Gallery photos={collection_data["photos"]} onClick={this.openModal} />
+        <ResponsiveMasonry
+                columnsCountBreakPoints={{300: 1, 600: 2, 900: 3, 1200: 4, 1500: 5}}
+            >
+                <Masonry
+                  gutter="10px"
+                  >
+                    {collection_data["photos"].map((image, i) => (
+                        <img
+                          className="gallery-image"
+                            key={i}
+                            src={image.srcSet["(500, 500)w"]}
+                            alt={image.name}
+                            slug={image.slug}
+                            loading="lazy"
+                            onClick={this.openModal}
+                        />
+                    ))}
+                </Masonry>
+            </ResponsiveMasonry>
         <Modal
           isOpen={this.state.viewerIsOpen}
           onRequestClose={this.closeModal}

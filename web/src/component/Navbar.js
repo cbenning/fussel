@@ -1,7 +1,7 @@
 import React from "react";
 import { Outlet, NavLink } from "react-router-dom";
 import "./Navbar.css";
-import logo from '../images/animal-track-transparent.png';
+import logo from '../images/animal-track-transparent-2.png';
 
 export default class Navbar extends React.Component {
 
@@ -42,7 +42,7 @@ export default class Navbar extends React.Component {
         <nav className="navbar has-shadow" role="navigation" aria-label="main navigation">
           <div className="navbar-brand">
             <div className="navbar-item">
-              <img src={logo} alt="logo" width="36" height="36" />
+              <img src={logo} alt="logo" width="32" height="32" />
             </div>
           </div>
           <div className="navbar-menu is-active">

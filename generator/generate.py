@@ -66,7 +66,7 @@ class SiteGenerator:
             'width': x,
             'height': y,
             'name': filename,
-            'srcSet': [],
+            'srcSet': {},
             '_thumb': None,
             'sizes': ["(min-width: 480px) 50vw,(min-width: 1024px) 33.3vw,100vw"]
         }
@@ -88,7 +88,7 @@ class SiteGenerator:
                 with Image.open(new_original_photo) as im:
                     im.thumbnail(new_size)
                     im.save(new_sub_photo)
-            data['srcSet'] += ["%s/%s %sw" % (urllib.parse.quote(external_path), urllib.parse.quote(os.path.basename(new_sub_photo)), new_size[0])]
+            data['srcSet'][str(size)+"w"] = ["%s/%s" % (urllib.parse.quote(external_path), urllib.parse.quote(os.path.basename(new_sub_photo)))]
 
         print(' ')
 

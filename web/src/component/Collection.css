@@ -5,6 +5,12 @@ Keep an eye on the ticket and maybe one day I can remove this */
   align-self: flex-start;
 }
 
+.gallery-image{
+  width: "100%";
+  display: "block";
+  cursor: pointer;
+}
+
 .footer {
   padding: 3rem 1.5rem 6rem;
   margin-top: 3rem;
