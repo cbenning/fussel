@@ -24,6 +24,7 @@ export default class App extends Component {
             <Route index element={<Collections collectionType="albums" />} />
             <Route path="collections/:collectionType" element={<Collections />} />
             <Route path="collections/:collectionType/:collection" element={<Collection />} />
+            <Route path="collections/:collectionType/:collection/:image" element={<Collection />} />
 
             {/* Using path="*"" means "match anything", so this route
                   acts like a catch-all for URLs that we don't have explicit

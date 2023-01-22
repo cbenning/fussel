@@ -5,6 +5,13 @@ Keep an eye on the ticket and maybe one day I can remove this */
   align-self: flex-start;
 }
 
+.modal-close-button {
+  position: absolute;
+  z-index: 100;
+  right: 15px;
+  top: 15px;
+}
+
 .gallery-image{
   width: "100%";
   display: "block";

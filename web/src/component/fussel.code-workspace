@@ -1,0 +1,16 @@
+{
+	"folders": [
+		{
+			"path": "../../.."
+		},
+		{
+			"path": "../../../../nhl-notifier-telegram-bot"
+		},
+		{
+			"path": "../../../../nhl-score-bot"
+		},
+		{
+			"path": "../../../../bubblzbot"
+		}
+	]
+}

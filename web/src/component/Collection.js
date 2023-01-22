@@ -16,31 +16,76 @@ import "./Collection.css";
 SwiperCore.use([Navigation]); // Not sure why but need this for slide navigation buttons to be clickable
 Modal.setAppElement('#app');
 
+
 class Collection extends Component {
 
   constructor(props) {
     super(props);
     this.state = {
-      viewerIsOpen: true ? location.hash != "" : false
+      viewerIsOpen: true ? this.props.params.image != undefined : false
     };
   }
 
-  openModal = (event, obj) => {
-    console.log(event)
-    // console.log(obj)
+  modalStateTracker = (event) => {
+    var newPath = event.newURL.split("#", 2)
+    if (newPath.length < 2) {
+      return
+    }
+    var oldPath = event.oldURL.split("#", 2)
+    if (oldPath.length < 2) {
+      return
+    }
+
+    var closedModalUrl = "/collections/" + this.props.params.collectionType + "/" + this.props.params.collection
+
+    if (this.state.viewerIsOpen) {
+      if (
+        oldPath[1] != closedModalUrl &&
+        newPath[1] == closedModalUrl
+      ) {
+        this.setState({
+          viewerIsOpen: false
+        })
+        // var page = document.getElementsByTagName('body')[0];
+        // page.classList.remove('noscroll');
+      }
+    }
+
+    if (!this.state.viewerIsOpen) {
+      if (
+        oldPath[1] == closedModalUrl &&
+        newPath[1] != closedModalUrl
+      ) {
+        this.setState({
+          viewerIsOpen: true
+        })
+        // this.props.navigate("/collections/" + this.props.params.collectionType + "/" + this.props.params.collection + "/" + event.target.attributes.slug.value);
+        // var page = document.getElementsByTagName('body')[0];
+        // page.classList.add('noscroll');
+      }
+    }
+  }
+
+  openModal = (event) => {
+
+    this.props.navigate("/collections/" + this.props.params.collectionType + "/" + this.props.params.collection + "/" + event.target.attributes.slug.value);
     this.setState({
       viewerIsOpen: true
     })
-    // history.pushState(null, null, "#" + obj.photo.slug)
-    history.pushState(null, null, "#" + event.target.attributes.slug.value)
+    // Add listener to detect if the back button was pressed and the modal should be closed
+    window.addEventListener('hashchange', this.modalStateTracker, false);
+    // var page = document.getElementsByTagName('body')[0];
+    // page.classList.add('noscroll');
   };
 
   closeModal = () => {
+
+    this.props.navigate("/collections/" + this.props.params.collectionType + "/" + this.props.params.collection);
     this.setState({
       viewerIsOpen: false
     })
-    var scrollV, scrollH, loc = window.location;
-    history.pushState("", document.title, loc.pathname + loc.search);
+    // var page = document.getElementsByTagName('body')[0];
+    // page.classList.remove('noscroll');
   };
 
   title = (collectionType) => {
@@ -117,6 +162,11 @@ class Collection extends Component {
             }
           }}
         >
+          <button className="button is-text modal-close-button" onClick={this.closeModal} >
+            <span className="icon is-small">
+              <i className="fas fa-times"></i>
+            </span>
+          </button>
           <Swiper
             slidesPerView={1}
             preloadImages={false}
@@ -126,7 +176,6 @@ class Collection extends Component {
             keyboard={{ enabled: true, }}
             pagination={{ clickable: true, }}
             hashNavigation={{
-              replaceState: true,
               watchState: true,
             }}
             modules={[Keyboard, HashNavigation, Pagination]}
@@ -134,7 +183,7 @@ class Collection extends Component {
           >
             {
               collection_data["photos"].map(x =>
-                <SwiperSlide data-hash={x.slug}>
+                <SwiperSlide slug={x.slug} data-hash={"/collections/" + this.props.params.collectionType + "/" + this.props.params.collection + "/" + x.slug}>
                   <img title={x.name} src={x.src} />
                 </SwiperSlide>
               )
