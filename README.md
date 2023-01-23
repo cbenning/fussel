@@ -6,7 +6,7 @@
 Fussel is a static photo gallery generator. It can build a simple static photo gallery site
 with nothing but a directory full of photos. 
 
-![Demo Site](https://benninger.ca/fussel-demo/)
+**[Demo Site](https://benninger.ca/fussel-demo/)**
 
 Features and Properties:
  - Absolutely no server-side code to worry about once deployed
