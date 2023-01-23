@@ -6,6 +6,8 @@
 Fussel is a static photo gallery generator. It can build a simple static photo gallery site
 with nothing but a directory full of photos. 
 
+**V1 soon to be deprecated in favour of V2**
+
 Features and Properties:
  - Absolutely no server-side code to worry about once deployed
  - Builds special "Person" gallery for people found in XMP face tags.
