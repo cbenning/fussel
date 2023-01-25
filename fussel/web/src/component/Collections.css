@@ -1,0 +1,5 @@
+
+.subject-photo {
+    overflow: hidden;
+    object-fit: cover;
+}

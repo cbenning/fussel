@@ -5,18 +5,18 @@ __pycache__/
 *.swp
 .env
 
-web/src/_gallery
-web/build/
-web/public/static/_gallery
-web/node_modules
+fussel/web/src/_gallery
+fussel/web/build/
+fussel/web/public/static/_gallery
+fussel/web/node_modules
 
 # Logs
-web/logs
-web/*.log
-web/npm-debug.log*
-web/yarn-debug.log*
-web/yarn-error.log*
-web/lerna-debug.log*
+fussel/web/logs
+fussel/web/*.log
+fussel/web/npm-debug.log*
+fussel/web/yarn-debug.log*
+fussel/web/yarn-error.log*
+fussel/web/lerna-debug.log*
 
 # Diagnostic reports (https://nodejs.org/api/report.html)
 report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
@@ -50,8 +50,8 @@ bower_components
 build/Release
 
 # Dependency directories
-web/node_modules/
-web/jspm_packages/
+fussel/web/node_modules/
+fussel/web/jspm_packages/
 
 # TypeScript v1 declaration files
 typings/
