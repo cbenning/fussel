@@ -48,6 +48,7 @@ def main():
     os.chdir('web')
     if os.system('yarn build') != 0:
         print("Failed")
+        exit(-1)
     os.chdir('..')
 
     site_location = os.path.normpath(os.path.join(os.path.dirname(os.path.realpath(__file__)), "web", "build"))

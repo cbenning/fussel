@@ -6,7 +6,10 @@ SCRIPT_PATH="${BASH_SOURCE[0]}"
 CURRENT_PATH=$(dirname $SCRIPT_PATH)
 cd $CURRENT_PATH/fussel
 
+/usr/bin/env python -m venv .venv
 source .venv/bin/activate
-# Generate site
-./fussel.py
+pip install -r requirements.txt
+
+cd web
+yarn install
 
