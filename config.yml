@@ -1,0 +1,72 @@
+
+
+general:
+  input_path: "my/input/folder"
+
+  # Setting to true will force a full rebuild of the gallery photos.
+  # Setting to false will only generate files which are missing or added
+  force_overwrite: "false"
+
+
+site:
+  # Set http_root to the root url you intend to host the site.
+  # If you host this service at http://<site>/  set to http://<site>/'.
+  # If you host this service at http://<site>/my/photo/album/ set to 'http://<site>/my/photo/album/'
+  # Include trailing slash
+  # http_root: "/"    
+
+
+
+# Setting to true will force a full rebuild of the gallery photos.
+# Setting to false will only generate files which are missing or added
+OVERWRITE="false"
+
+# Enable face tag detection.
+# Adds a faces button and virtual albums for detected people
+PEOPLE_ENABLE="true"
+
+# Enable placement of watermark in bottom right corner of photos.
+WATERMARK_ENABLE="true"
+
+# Recommend a transparent PNG
+WATERMARK_PATH="web/src/images/fussel-watermark.png"
+
+# Watermark size ratio (0.0 -> 1.0)
+WATERMARK_RATIO=0.3
+
+# Title shown at the top of the browser tab
+SITE_NAME="Fussel Gallery"
+
+# Recursively process sub-folders as albums
+# Name
+RECURSIVE_ALBUMS="true"
+
+# Pattern for album name creation of sub albums
+# Following substitutions are available:
+# - {parent_album} will be replaced with the parent album
+# - {album} will be replaced with the album name
+RECURSIVE_ALBUMS_NAME_PATTERN="{parent_album} > {album}"
+
+
+
+
+
+---
+ doe: "a deer, a female deer"
+ ray: "a drop of golden sun"
+ pi: 3.14159
+ xmas: true
+ french-hens: 3
+ calling-birds:
+   - huey
+   - dewey
+   - louie
+   - fred
+ xmas-fifth-day:
+   calling-birds: four
+   french-hens: 3
+   golden-rings: 5
+   partridges:
+     count: 1
+     location: "a pear tree"
+   turtle-doves: two
