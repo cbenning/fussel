@@ -29,8 +29,6 @@ class SiteGenerator:
         self.overwrite = cfg.getKey('gallery.overwrite', False)
         self.output_photos_path = cfg.getKey('gallery.output_path', DEFAULT_OUTPUT_PHOTOS_PATH)
         self.http_root = cfg.getKey('site.http_root', '/')
-        # self.output_data_path
-        # self.external_root
         self.site_name = cfg.getKey('site.title', DEFAULT_SITE_TITLE)
 
         self.people_data = {}
