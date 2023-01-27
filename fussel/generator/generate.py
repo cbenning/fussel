@@ -10,24 +10,34 @@ from slugify import slugify
 
 SUPPORTED_EXTENSIONS = ('.jpg', '.jpeg', '.gif', '.png')
 
+DEFAULT_WATERMARK_PATH='web/src/images/fussel-watermark.png'
+DEFAULT_WATERMARK_SIZE_RATIO=0.3
+DEFAULT_RECURSIVE_ALBUMS_NAME_PATTERN='{parent_album} > {album}'
+DEFAULT_OUTPUT_PHOTOS_PATH='site/'
+DEFAULT_SITE_TITLE='Fussel Gallery'
 
 class SiteGenerator:
     
-    def __init__(self, site_name, input_photos_dir, people_enabled, watermark_enabled, watermark_path, watermark_ratio,
-                 recursive_albums, recursive_albums_name_pattern, overwrite):
-        self.input_photos_dir = input_photos_dir
-        self.people_enabled = people_enabled
-        self.watermark_enabled = watermark_enabled
-        self.watermark_path = watermark_path
-        self.watermark_ratio = watermark_ratio
-        self.recursive_albums = recursive_albums
-        self.recursive_albums_name_pattern = recursive_albums_name_pattern
-        self.overwrite = overwrite
+    def __init__(self, cfg):
+        self.input_photos_dir = cfg.getKey('gallery.input_path')
+        self.people_enabled = cfg.getKey('gallery.people.enable', True)
+        self.watermark_enabled = cfg.getKey('gallery.watermark.enable', True)
+        self.watermark_path = cfg.getKey('gallery.watermark.path', DEFAULT_WATERMARK_PATH)
+        self.watermark_ratio = cfg.getKey('gallery.watermark.size_ratio', DEFAULT_WATERMARK_SIZE_RATIO)
+        self.recursive_albums = cfg.getKey('gallery.albums.recursive', True)
+        self.recursive_albums_name_pattern = cfg.getKey('gallery.albums.recursive_name_pattern',DEFAULT_RECURSIVE_ALBUMS_NAME_PATTERN)
+        self.overwrite = cfg.getKey('gallery.overwrite', False)
+        self.output_photos_path = cfg.getKey('gallery.output_path', DEFAULT_OUTPUT_PHOTOS_PATH)
+        self.http_root = cfg.getKey('site.http_root', '/')
+        # self.output_data_path
+        # self.external_root
+        self.site_name = cfg.getKey('site.title', DEFAULT_SITE_TITLE)
+
         self.people_data = {}
         self.albums_data = {}
         self.site_data = {
-            'site_name': site_name,
-            'people_enabled': people_enabled,
+            'site_name': self.site_name,
+            'people_enabled': self.people_enabled,
         }
         self.unique_album_slugs = {}
         self.unique_person_slugs = {}
@@ -315,10 +325,10 @@ class SiteGenerator:
 
         album_name_folder = os.path.basename(album_dir)
         album_folder = os.path.join(output_albums_photos_path, album_name_folder)
-        #album_folder = os.path.join(output_albums_photos_path, album_name)
+        # album_folder = os.path.join(output_albums_photos_path, album_name)
         # TODO externalize this?
-        external_path = external_root + "static/_gallery/albums/" + album_name_folder
-        #external_path = external_root + "static/_gallery/albums/" + album_name
+        external_path = os.path.join(external_root, album_name_folder)
+        # external_path = external_root + "static/_gallery/albums/" + album_name_folder
         os.makedirs(album_folder, exist_ok=True)
 
         entries = list(map(lambda e: os.path.join(album_dir, e), sorted(os.listdir(album_dir))))
@@ -370,7 +380,11 @@ class SiteGenerator:
             count += 1
         
 
-    def generate_site(self, output_photos_path, output_data_path, external_root):
+    def generate(self):
+
+        output_photos_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "web", "public", "static", "_gallery")
+        output_data_path = os.path.join(os.path.dirname(os.path.realpath(__file__)),"..", "web", "src", "_gallery")
+        external_root = os.path.join(self.http_root, "..", "static", "_gallery", "albums")
 
         # Paths
         output_albums_data_file = os.path.join(output_data_path, "albums_data.js")
