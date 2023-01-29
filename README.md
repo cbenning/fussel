@@ -42,7 +42,7 @@ Features and Properties:
 
 ### Configure
 
- - Copy `.env.example` to `.env`
+ - Copy `.env.sample` to `.env`
  - Edit `.env` to your needs (minimal change is to set INPUT_PATH)
 
 ### Curate photos
