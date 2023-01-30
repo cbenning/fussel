@@ -93,7 +93,7 @@ export default class Album extends Component {
                 views={this.props.album["photos"].map(x => ({
                   ...x,
                   srcset: x.srcSet,
-                  caption: x.title
+                  caption: x.name
                 }))}
               />
             </Modal>
