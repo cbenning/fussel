@@ -261,13 +261,10 @@ class Face:
 
 class People:
 
-    people: dict = {}
-    slugs: dict = set()
-     
-
     def __init__(self, config):
         self.config = config
-
+        self.people: dict = {}
+        self.slugs: dict = set()
 
     def detect_faces(self, photo, original_src, largest_src, output_path, external_path):
 
@@ -309,35 +306,13 @@ class People:
         return faces
 
 
+    # implemented to allow this class to be iterated on
     def __getitem__(self, item):
-        return list(self.people.values())[item] # delegate to li.__getitem__
-
-
-            
-
-
-    
-
-    # def init_person(self, person):
-    #     if not person in self.people_data.keys():
-
-            
-
-    # def add_photo_to_person(self, person, photo):
-    #     self.init_person(person)
-    #     self.people_data[person]['photos'].append(photo)
-
-    # def person_has_thumbnail(self, person):
-    #     self.init_person(person)
-    #     return self.people_data[person]['src'] is not None
-
-    # def pick_person_thumbnail(self, person, uri):
-    #     self.init_person(person)
-    #     self.people_data[person]['src'] = uri
-
+        return list(self.people.values())[item] 
 
 
 class Person:
+
     def __init__(self, name, slug):
 
         self.name = name
@@ -353,10 +328,6 @@ class Person:
 
 class Photo:
 
-
-    faces: list = []
-    slug: str
-
     def __init__(self, name, width, height, src, thumb, srcSet):
 
         self.width = width
@@ -365,9 +336,35 @@ class Photo:
         self.src = src
         self.thumb = thumb
         self.srcSet = srcSet
+        self.faces: list = []
+        self.slug: str
         # 'sizes': ["(min-width: 480px) 50vw,(min-width: 1024px) 33.3vw,100vw"]
         
 
+class Albums:
+
+    def __init__(self, config):
+        self.config = config
+        self.slugs: dict = set()
+        self.albums: dict = {}
+
+    def add_album(self, album):
+        self.albums[album.slug] = album
+
+    def __getitem__(self, item):
+        return list(self.albums.values())[item] 
+
+
+class Album:
+
+    def __init__(self, name, slug):
+        self.name = name
+        self.slug = slug
+        self.photos:list = []
+        self.src: str = None
+
+    def add_photo(self, photo):
+        self.photos.append(photo)
 
 class SiteGenerator:
 
@@ -378,8 +375,9 @@ class SiteGenerator:
         self.site = Site(self.config)
 
         self.people = People(self.config)
-        self.people_data = {}
-        self.albums_data = {}
+        self.albums = Albums(self.config)
+        # self.people_data = {}
+        # self.albums_data = {}
 
         # self.site_data = {
         #     'site_name': self.site_name,
@@ -431,7 +429,8 @@ class SiteGenerator:
             output_str = 'export const albums_data = '
             # output_str += json.dumps(self.albums_data,
                                     #  sort_keys=True, indent=3)
-            output_str += json.dumps(self.albums_data, sort_keys=True,
+
+            output_str += json.dumps(self.albums.albums, sort_keys=True,
                                      indent=3, cls=SimpleEncoder)
             output_str += ';'
             outfile.write(output_str)
@@ -608,17 +607,17 @@ class SiteGenerator:
 
         print(" > Importing album %s as '%s'" % (album_dir, album_name))
 
-        album_photos = []
+        # album_photos = []
 
-        unique_album_slug = find_unique_slug(
-            self.unique_album_slugs, album_name)
+        unique_album_slug = find_unique_slug(self.unique_album_slugs, album_name)
         self.unique_album_slugs[unique_album_slug] = unique_album_slug
 
-        album_data = {
-            'name': album_name,
-            'slug': unique_album_slug,
-            'photos': album_photos
-        }
+        album_obj = Album(album_name, unique_album_slug)
+        # album_data = {
+        #     'name': album_name,
+        #     'slug': unique_album_slug,
+        #     'photos': album_photos
+        # }
 
         unique_slugs = {}
 
@@ -631,8 +630,7 @@ class SiteGenerator:
         # external_path = external_root + "static/_gallery/albums/" + album_name_folder
         os.makedirs(album_folder, exist_ok=True)
 
-        entries = list(map(lambda e: os.path.join(
-            album_dir, e), sorted(os.listdir(album_dir))))
+        entries = list(map(lambda e: os.path.join(album_dir, e), sorted(os.listdir(album_dir))))
         dirs = list(filter(lambda e: is_supported_album(e), entries))
         files = list(filter(lambda e: is_supported_photo(e), entries))
 
@@ -651,14 +649,14 @@ class SiteGenerator:
                 photo_obj.slug = unique_slug
                 unique_slugs[unique_slug] = unique_slug
 
-                album_photos.append(photo_obj)
+                album_obj.add_photo(photo_obj)
             except PhotoProcessingFailure as e:
                 print(
                     f'Skipping processing of image file {photo_file}. Reason: {str(e)}')
 
-        if len(album_data['photos']) > 0:
-            album_data['src'] = pick_album_thumbnail(album_data['photos'])
-            self.albums_data[album_data['slug']] = album_data
+        if len(album_obj.photos) > 0:
+            album_obj.src = pick_album_thumbnail(album_obj.photos) ## TODO internalize
+            self.albums.add_album(album_obj)
 
         # Recursively process sub-dirs
         if self.config.recursive_albums:
