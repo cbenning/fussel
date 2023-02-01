@@ -7,7 +7,7 @@ import yaml
 import shutil
 
 
-class Config:
+class YamlConfig:
     def __init__(self, config_file='../config.yml'):
 
         self.cfg = {}
@@ -36,7 +36,7 @@ class Config:
         return cursor.get(k, default)
 
 def main():
-    cfg = Config()
+    cfg = YamlConfig()
     generator = SiteGenerator(cfg)
     generator.generate()
 
@@ -44,6 +44,8 @@ def main():
     # http_root = cfg.getKey('site.http_root', '/')
     # filenames = [os.path.join(os.path.dirname(os.path.realpath(__file__)), "web", "package.json")]
     # massedit.edit_files(filenames, ["re.sub(r'^.*\"homepage\":.*$', '  \"homepage\": \""+http_root+"\",', line)"], dry_run=False)
+
+    # exit(0)
 
     os.chdir('web')
     if os.system('yarn build') != 0:

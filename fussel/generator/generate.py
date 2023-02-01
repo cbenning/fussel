@@ -27,27 +27,36 @@ DEFAULT_OUTPUT_PHOTOS_PATH = 'site/'
 DEFAULT_SITE_TITLE = 'Fussel Gallery'
 
 
-class SiteConfig:
+class Config:
 
-    def __init__(self, yamlConfig):
+    _instance = None
 
-        self.input_photos_dir = yamlConfig.getKey('gallery.input_path')
-        self.people_enabled = yamlConfig.getKey('gallery.people.enable', True)
-        self.watermark_enabled = yamlConfig.getKey(
-            'gallery.watermark.enable', True)
-        self.watermark_path = yamlConfig.getKey(
-            'gallery.watermark.path', DEFAULT_WATERMARK_PATH)
-        self.watermark_ratio = yamlConfig.getKey(
-            'gallery.watermark.size_ratio', DEFAULT_WATERMARK_SIZE_RATIO)
-        self.recursive_albums = yamlConfig.getKey(
-            'gallery.albums.recursive', True)
-        self.recursive_albums_name_pattern = yamlConfig.getKey(
-            'gallery.albums.recursive_name_pattern', DEFAULT_RECURSIVE_ALBUMS_NAME_PATTERN)
-        self.overwrite = yamlConfig.getKey('gallery.overwrite', False)
-        self.output_photos_path = yamlConfig.getKey(
-            'gallery.output_path', DEFAULT_OUTPUT_PHOTOS_PATH)
-        self.http_root = yamlConfig.getKey('site.http_root', '/')
-        self.site_name = yamlConfig.getKey('site.title', DEFAULT_SITE_TITLE)
+    def __init__(self):
+        raise RuntimeError('Call instance() instead')
+
+    @classmethod
+    def instance(cls):
+        if cls._instance is None:
+            print('Creating new instance')
+            cls._instance = cls.__new__(cls)
+            # Put any initialization here.
+        return cls._instance
+        
+    @classmethod
+    def init(cls, yaml_config):
+        cls._instance = cls.__new__(cls)
+        cls._instance.input_photos_dir = yaml_config.getKey('gallery.input_path')
+        cls._instance.people_enabled = yaml_config.getKey('gallery.people.enable', True)
+        cls._instance.watermark_enabled = yaml_config.getKey('gallery.watermark.enable', True)
+        cls._instance.watermark_path = yaml_config.getKey('gallery.watermark.path', DEFAULT_WATERMARK_PATH)
+        cls._instance.watermark_ratio = yaml_config.getKey('gallery.watermark.size_ratio', DEFAULT_WATERMARK_SIZE_RATIO)
+        cls._instance.recursive_albums = yaml_config.getKey('gallery.albums.recursive', True)
+        cls._instance.recursive_albums_name_pattern = yaml_config.getKey('gallery.albums.recursive_name_pattern', DEFAULT_RECURSIVE_ALBUMS_NAME_PATTERN)
+        cls._instance.overwrite = yaml_config.getKey('gallery.overwrite', False)
+        cls._instance.output_photos_path = yaml_config.getKey('gallery.output_path', DEFAULT_OUTPUT_PHOTOS_PATH)
+        cls._instance.http_root = yaml_config.getKey('site.http_root', '/')
+        cls._instance.site_name = yaml_config.getKey('site.title', DEFAULT_SITE_TITLE)
+
 
 
 def is_supported_album(path):
@@ -240,9 +249,24 @@ class SimpleEncoder(json.JSONEncoder):
 
 
 class Site:
-    def __init__(self, config):
-        self.site_name = config.site_name
-        self.people_enabled = config.people_enabled
+
+    _instance = None
+
+    def __init__(self):
+        raise RuntimeError('Call instance() instead')
+
+    @classmethod
+    def instance(cls):
+        if cls._instance is None:
+            print('Creating new instance')
+            cls._instance = cls.__new__(cls)
+            cls._instance.__init()
+        return cls._instance
+
+    def __init(self):
+        self.site_name = Config.instance().site_name
+        self.people_enabled = Config.instance().people_enabled
+
 
 
 @dataclass
@@ -261,8 +285,21 @@ class Face:
 
 class People:
 
-    def __init__(self, config):
-        self.config = config
+    _instance = None
+
+    def __init__(self):
+        raise RuntimeError('Call instance() instead')
+
+    @classmethod
+    def instance(cls):
+        if cls._instance is None:
+            print('Creating new instance')
+            cls._instance = cls.__new__(cls)
+            cls._instance.__init()
+        return cls._instance
+
+
+    def __init(self):
         self.people: dict = {}
         self.slugs: dict = set()
 
@@ -311,6 +348,9 @@ class People:
         return list(self.people.values())[item] 
 
 
+
+
+
 class Person:
 
     def __init__(self, name, slug):
@@ -340,121 +380,9 @@ class Photo:
         self.slug: str
         # 'sizes': ["(min-width: 480px) 50vw,(min-width: 1024px) 33.3vw,100vw"]
         
-
-class Albums:
-
-    def __init__(self, config):
-        self.config = config
-        self.slugs: dict = set()
-        self.albums: dict = {}
-
-    def add_album(self, album):
-        self.albums[album.slug] = album
-
-    def __getitem__(self, item):
-        return list(self.albums.values())[item] 
-
-
-class Album:
-
-    def __init__(self, name, slug):
-        self.name = name
-        self.slug = slug
-        self.photos:list = []
-        self.src: str = None
-
-    def add_photo(self, photo):
-        self.photos.append(photo)
-
-class SiteGenerator:
-
-    def __init__(self, yamlConfig):
-
-        self.config = SiteConfig(yamlConfig)
-
-        self.site = Site(self.config)
-
-        self.people = People(self.config)
-        self.albums = Albums(self.config)
-        # self.people_data = {}
-        # self.albums_data = {}
-
-        # self.site_data = {
-        #     'site_name': self.site_name,
-        #     'people_enabled': self.people_enabled,
-        # }
-        self.unique_album_slugs = {}
-        self.unique_person_slugs = {}
-
-    def generate(self):
-
-        output_photos_path = os.path.normpath(os.path.join(os.path.dirname(
-            os.path.realpath(__file__)), "..", "web", "public", "static", "_gallery"))
-        output_data_path = os.path.normpath(os.path.join(os.path.dirname(
-            os.path.realpath(__file__)), "..", "web", "src", "_gallery"))
-        external_root = os.path.normpath(os.path.join(
-            self.config.http_root, "..", "static", "_gallery", "albums"))
-
-        # Paths
-        output_albums_data_file = os.path.join(
-            output_data_path, "albums_data.js")
-        output_people_data_file = os.path.join(
-            output_data_path, "people_data.js")
-        output_site_data_file = os.path.join(output_data_path, "site_data.js")
-        output_albums_photos_path = os.path.join(output_photos_path, "albums")
-
-        # Cleanup and prep of deploy space
-        if self.config.overwrite:
-            shutil.rmtree(output_photos_path, ignore_errors=True)
-        os.makedirs(output_photos_path, exist_ok=True)
-        shutil.rmtree(output_data_path, ignore_errors=True)
-        os.makedirs(output_data_path, exist_ok=True)
-
-        entries = list(map(lambda e: os.path.join(
-            self.config.input_photos_dir, e), os.listdir(self.config.input_photos_dir)))
-        dirs = list(filter(lambda e: is_supported_album(e), entries))
-
-        for album_dir in dirs:
-            album_name = os.path.basename(album_dir)
-            if album_name.startswith('.'):  # skip dotfiles
-                continue
-            self.process_album(album_dir, album_name,
-                               output_albums_photos_path, external_root)
-
-        people_data_slugs = {}
-        for person in self.people:
-            people_data_slugs[person.slug] = person
-
-        with open(output_albums_data_file, 'w') as outfile:
-            output_str = 'export const albums_data = '
-            # output_str += json.dumps(self.albums_data,
-                                    #  sort_keys=True, indent=3)
-
-            output_str += json.dumps(self.albums.albums, sort_keys=True,
-                                     indent=3, cls=SimpleEncoder)
-            output_str += ';'
-            outfile.write(output_str)
-
-        with open(output_people_data_file, 'w') as outfile:
-            output_str = 'export const people_data = '
-            # output_str += json.dumps(people_data_slugs,
-            #                          sort_keys=True, indent=3)
-            output_str += json.dumps(people_data_slugs, sort_keys=True,
-                            indent=3, cls=SimpleEncoder)
-            output_str += ';'
-            outfile.write(output_str)
-
-        with open(output_site_data_file, 'w') as outfile:
-            output_str = 'export const site_data = '
-            # output_str += json.dumps(self.site_data, sort_keys=True, indent=3)
-            output_str += json.dumps(self.site, sort_keys=True,
-                                     indent=3, cls=SimpleEncoder)
-            output_str += ';'
-            outfile.write(output_str)
-
-    def process_photo(self, external_path, photo, output_path):
-        new_original_photo = os.path.join(
-            output_path, "original_%s" % os.path.basename(photo))
+    @classmethod
+    def process_photo(cls, external_path, photo, output_path):
+        new_original_photo = os.path.join(output_path, "original_%s" % os.path.basename(photo))
 
         # Verify original first to avoid PIL errors later when generating thumbnails etc
         try:
@@ -468,7 +396,7 @@ class SiteGenerator:
                 message="Image Verification: " + str(e))
 
         # Only copy if overwrite explicitly asked for or if doesn't exist
-        if self.config.overwrite or not os.path.exists(new_original_photo):
+        if Config.instance().overwrite or not os.path.exists(new_original_photo):
             print(" ----> Copying to '%s'" % new_original_photo)
             shutil.copyfile(photo, new_original_photo)
 
@@ -483,16 +411,6 @@ class SiteGenerator:
         # TODO expose to config
         sizes = [(500, 500), (800, 800), (1024, 1024), (1600, 1600)]
         filename = os.path.basename(os.path.basename(photo))
-
-        # data = {
-        #     'width': x,
-        #     'height': y,
-        #     'name': filename,
-        #     'srcSet': {},
-        #     '_thumb': None,
-        #     'sizes': ["(min-width: 480px) 50vw,(min-width: 1024px) 33.3vw,100vw"]
-        # }
-
         largest_src = None
         smallest_src = None
 
@@ -501,41 +419,26 @@ class SiteGenerator:
         print(" ------> Generating photo sizes: ", end="")
         for i, size in enumerate(sizes):
             new_size = calculate_new_size(original_size, size)
-            new_sub_photo = os.path.join(output_path, "%sx%s_%s" % (
-                new_size[0], new_size[1], os.path.basename(photo)))
+            new_sub_photo = os.path.join(output_path, "%sx%s_%s" % (new_size[0], new_size[1], os.path.basename(photo)))
             largest_src = new_sub_photo
             if smallest_src is None:
                 smallest_src = new_sub_photo
 
             # Only generate if overwrite explicitly asked for or if doesn't exist
             print(f'{new_size[0]}x{new_size[1]} ', end="")
-            if self.config.overwrite or not os.path.exists(new_sub_photo):
+            if Config.instance().overwrite or not os.path.exists(new_sub_photo):
                 with Image.open(new_original_photo) as im:
                     im.thumbnail(new_size)
                     im.save(new_sub_photo)
-            # data['srcSet'][str(size)+"w"] = ["%s/%s" % (urllib.parse.quote(
-                # external_path), urllib.parse.quote(os.path.basename(new_sub_photo)))]
-            srcSet[str(size)+"w"] = ["%s/%s" % (urllib.parse.quote(
-                external_path), urllib.parse.quote(os.path.basename(new_sub_photo)))]
+            srcSet[str(size)+"w"] = ["%s/%s" % (urllib.parse.quote(external_path), urllib.parse.quote(os.path.basename(new_sub_photo)))]
 
         print(' ')
 
-        # data['src'] = "%s/%s" % (urllib.parse.quote(external_path),
-        #                          urllib.parse.quote(os.path.basename(largest_src)))
-        # data['_thumb'] = "%s/%s" % (urllib.parse.quote(external_path),
-        #                             urllib.parse.quote(os.path.basename(smallest_src)))
-
-     
-
         # Only copy if overwrite explicitly asked for or if doesn't exist
-        if self.config.watermark_enabled and (self.config.overwrite or not os.path.exists(new_original_photo)):
-            with Image.open(self.watermark_path) as watermark_im:
+        if Config.instance().watermark_enabled and (Config.instance().overwrite or not os.path.exists(new_original_photo)):
+            with Image.open(Config.instance().watermark_path) as watermark_im:
                 print(" ------> Adding watermark")
-                apply_watermark(largest_src, watermark_im,
-                                self.watermark_ratio)
-
-
-
+                apply_watermark(largest_src, watermark_im, Config.instance().watermark_ratio)
 
         photo_obj = Photo(
             filename,
@@ -549,81 +452,61 @@ class SiteGenerator:
         ) 
 
         # Faces
-        if self.config.people_enabled:
-            photo_obj.faces = self.people.detect_faces(photo_obj, new_original_photo, largest_src, output_path, external_path)
-            # faces = extract_faces(new_original_photo)
-            # for face in faces.keys():
-            #     print(" ------> Detected face '%s'" % face)
-
-            #     if not self.person_has_thumbnail(face):
-            #         with Image.open(largest_src) as im:
-            #             face_size = faces[face]['geometry']['w'], faces[face]['geometry']['h']
-            #             face_position = faces[face]['geometry']['x'], faces[face]['geometry']['y']
-            #             new_face_photo = os.path.join(
-            #                 output_path, "%s_%s" % (face, os.path.basename(photo)))
-            #             box = calculate_face_crop_dimensions(
-            #                 im.size, face_size, face_position)
-            #             im_cropped = im.crop(box)
-            #             im_cropped.save(new_face_photo)
-            #             uri = "%s/%s" % (external_path,
-            #                              os.path.basename(new_face_photo))
-            #             self.pick_person_thumbnail(face, uri)
-
-
-
-        # data['faces'] = faces
-
-        # for person in faces:
-        #     self.add_photo_to_person(person, data)
-
+        if Config.instance().people_enabled:
+            photo_obj.faces = People.instance().detect_faces(photo_obj, new_original_photo, largest_src, output_path, external_path)
+            
         return photo_obj
 
-    # def init_person(self, person):
-    #     if not person in self.people_data.keys():
+class Albums:
 
-    #         unique_person_slug = find_unique_slug(
-    #             self.unique_person_slugs, person)
-    #         self.unique_person_slugs[unique_person_slug] = unique_person_slug
-    #         self.people_data[person] = {
-    #             'name': person,
-    #             'slug': unique_person_slug,
-    #             'photos': [],
-    #             'src': None
-    #         }
+    _instance = None
 
-    # def add_photo_to_person(self, person, photo):
-    #     self.init_person(person)
-    #     self.people_data[person]['photos'].append(photo)
+    def __init__(self):
+        raise RuntimeError('Call instance() instead')
 
-    # def person_has_thumbnail(self, person):
-    #     self.init_person(person)
-    #     return self.people_data[person]['src'] is not None
+    @classmethod
+    def instance(cls):
+        if cls._instance is None:
+            print('Creating new instance')
+            cls._instance = cls.__new__(cls)
+            cls._instance.__init()
+        return cls._instance
 
-    # def pick_person_thumbnail(self, person, uri):
-    #     self.init_person(person)
-    #     self.people_data[person]['src'] = uri
 
-    def process_album(self, album_dir, album_name, output_albums_photos_path, external_root):
+    def __init(self):
+        self.slugs: dict = set()
+        self.albums: dict = {}
+
+        self.unique_album_slugs = {}
+
+    def add_album(self, album):
+        self.albums[album.slug] = album
+
+    def __getitem__(self, item):
+        return list(self.albums.values())[item] 
+
+    def process_path(self, root_path, output_albums_photos_path, external_root):
+
+        entries = list(map(lambda e: os.path.join(root_path, e), os.listdir(root_path)))
+        paths = list(filter(lambda e: is_supported_album(e), entries))
+
+        for album_path in paths:
+            album_name = os.path.basename(album_path)
+            if not album_name.startswith('.'):  # skip dotfiles
+                self.process_album_path(album_path, album_name, output_albums_photos_path, external_root)
+            
+    def process_album_path(self, album_dir, album_name, output_albums_photos_path, external_root):
 
         print(" > Importing album %s as '%s'" % (album_dir, album_name))
 
-        # album_photos = []
-
         unique_album_slug = find_unique_slug(self.unique_album_slugs, album_name)
         self.unique_album_slugs[unique_album_slug] = unique_album_slug
-
         album_obj = Album(album_name, unique_album_slug)
-        # album_data = {
-        #     'name': album_name,
-        #     'slug': unique_album_slug,
-        #     'photos': album_photos
-        # }
 
         unique_slugs = {}
 
         album_name_folder = os.path.basename(album_dir)
-        album_folder = os.path.join(
-            output_albums_photos_path, album_name_folder)
+        album_folder = os.path.join(output_albums_photos_path, album_name_folder)
         # album_folder = os.path.join(output_albums_photos_path, album_name)
         # TODO externalize this?
         external_path = os.path.join(external_root, album_name_folder)
@@ -640,12 +523,10 @@ class SiteGenerator:
             photo_file = os.path.join(album_dir, album_file)
             print(" --> Processing %s... " % photo_file)
             try:
-                photo_obj = self.process_photo(
-                    external_path, photo_file, album_folder)
+                photo_obj = Photo.process_photo(external_path, photo_file, album_folder)
 
                 # Ensure slug is unique
-                unique_slug = find_unique_slug(
-                    unique_slugs, photo_obj.name)
+                unique_slug = find_unique_slug(unique_slugs, photo_obj.name)
                 photo_obj.slug = unique_slug
                 unique_slugs[unique_slug] = unique_slug
 
@@ -656,21 +537,83 @@ class SiteGenerator:
 
         if len(album_obj.photos) > 0:
             album_obj.src = pick_album_thumbnail(album_obj.photos) ## TODO internalize
-            self.albums.add_album(album_obj)
+            self.add_album(album_obj)
 
         # Recursively process sub-dirs
-        if self.config.recursive_albums:
+        if Config.instance().recursive_albums:
             for sub_album_dir in dirs:
                 if os.path.basename(sub_album_dir).startswith('.'):  # skip dotfiles
                     continue
-                sub_album_name = "%s" % self.recursive_albums_name_pattern
-                sub_album_name = sub_album_name.replace(
-                    "{parent_album}", album_name)
-                sub_album_name = sub_album_name.replace(
-                    "{album}", os.path.basename(sub_album_dir))
-                self.process_album(sub_album_dir, sub_album_name,
-                                   output_albums_photos_path, external_root)
+                sub_album_name = "%s" % Config.instance().recursive_albums_name_pattern
+                sub_album_name = sub_album_name.replace("{parent_album}", album_name)
+                sub_album_name = sub_album_name.replace("{album}", os.path.basename(sub_album_dir))
+                self.process_album_path(sub_album_dir, sub_album_name, output_albums_photos_path, external_root)
 
+
+class Album:
+
+    def __init__(self, name, slug):
+        self.name = name
+        self.slug = slug
+        self.photos:list = []
+        self.src: str = None
+
+    def add_photo(self, photo):
+        self.photos.append(photo)
+
+
+
+
+class SiteGenerator:
+
+    def __init__(self, yaml_config):
+
+        Config.init(yaml_config)
+
+        self.unique_person_slugs = {}
+
+    def generate(self):
+
+        output_photos_path = os.path.normpath(os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "web", "public", "static", "_gallery"))
+        output_data_path = os.path.normpath(os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "web", "src", "_gallery"))
+        external_root = os.path.normpath(os.path.join(Config.instance().http_root, "..", "static", "_gallery", "albums"))
+
+        # Paths
+        output_albums_data_file = os.path.join(output_data_path, "albums_data.js")
+        output_people_data_file = os.path.join(output_data_path, "people_data.js")
+        output_site_data_file = os.path.join(output_data_path, "site_data.js")
+        output_albums_photos_path = os.path.join(output_photos_path, "albums")
+
+        # Cleanup and prep of deploy space
+        if Config.instance().overwrite:
+            shutil.rmtree(output_photos_path, ignore_errors=True)
+        os.makedirs(output_photos_path, exist_ok=True)
+        shutil.rmtree(output_data_path, ignore_errors=True)
+        os.makedirs(output_data_path, exist_ok=True)
+
+
+        Albums.instance().process_path(Config.instance().input_photos_dir, output_albums_photos_path, external_root)
+        people_data_slugs = {}
+        for person in People.instance():
+            people_data_slugs[person.slug] = person
+
+        with open(output_albums_data_file, 'w') as outfile:
+            output_str = 'export const albums_data = '
+            output_str += json.dumps(Albums.instance().albums, sort_keys=True, indent=3, cls=SimpleEncoder)
+            output_str += ';'
+            outfile.write(output_str)
+
+        with open(output_people_data_file, 'w') as outfile:
+            output_str = 'export const people_data = '
+            output_str += json.dumps(people_data_slugs, sort_keys=True, indent=3, cls=SimpleEncoder)
+            output_str += ';'
+            outfile.write(output_str)
+
+        with open(output_site_data_file, 'w') as outfile:
+            output_str = 'export const site_data = '
+            output_str += json.dumps(Site.instance(), sort_keys=True, indent=3, cls=SimpleEncoder)
+            output_str += ';'
+            outfile.write(output_str)
 
 class PhotoProcessingFailure(Exception):
     def __init__(self, message="Failed to process photo"):
