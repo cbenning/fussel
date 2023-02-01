@@ -7,14 +7,8 @@ import urllib
 from PIL import Image, UnidentifiedImageError
 from bs4 import BeautifulSoup
 from slugify import slugify
+from dataclasses import dataclass
 
-SUPPORTED_EXTENSIONS = ('.jpg', '.jpeg', '.gif', '.png')
-
-DEFAULT_WATERMARK_PATH = 'web/src/images/fussel-watermark.png'
-DEFAULT_WATERMARK_SIZE_RATIO = 0.3
-DEFAULT_RECURSIVE_ALBUMS_NAME_PATTERN = '{parent_album} > {album}'
-DEFAULT_OUTPUT_PHOTOS_PATH = 'site/'
-DEFAULT_SITE_TITLE = 'Fussel Gallery'
 
 # 1. input dir
 #    2. for each dir
@@ -24,6 +18,36 @@ DEFAULT_SITE_TITLE = 'Fussel Gallery'
 #                 add as person
 #             for each dir:
 #                 goto #3
+
+SUPPORTED_EXTENSIONS = ('.jpg', '.jpeg', '.gif', '.png')
+DEFAULT_WATERMARK_PATH = 'web/src/images/fussel-watermark.png'
+DEFAULT_WATERMARK_SIZE_RATIO = 0.3
+DEFAULT_RECURSIVE_ALBUMS_NAME_PATTERN = '{parent_album} > {album}'
+DEFAULT_OUTPUT_PHOTOS_PATH = 'site/'
+DEFAULT_SITE_TITLE = 'Fussel Gallery'
+
+
+class SiteConfig:
+
+    def __init__(self, yamlConfig):
+
+        self.input_photos_dir = yamlConfig.getKey('gallery.input_path')
+        self.people_enabled = yamlConfig.getKey('gallery.people.enable', True)
+        self.watermark_enabled = yamlConfig.getKey(
+            'gallery.watermark.enable', True)
+        self.watermark_path = yamlConfig.getKey(
+            'gallery.watermark.path', DEFAULT_WATERMARK_PATH)
+        self.watermark_ratio = yamlConfig.getKey(
+            'gallery.watermark.size_ratio', DEFAULT_WATERMARK_SIZE_RATIO)
+        self.recursive_albums = yamlConfig.getKey(
+            'gallery.albums.recursive', True)
+        self.recursive_albums_name_pattern = yamlConfig.getKey(
+            'gallery.albums.recursive_name_pattern', DEFAULT_RECURSIVE_ALBUMS_NAME_PATTERN)
+        self.overwrite = yamlConfig.getKey('gallery.overwrite', False)
+        self.output_photos_path = yamlConfig.getKey(
+            'gallery.output_path', DEFAULT_OUTPUT_PHOTOS_PATH)
+        self.http_root = yamlConfig.getKey('site.http_root', '/')
+        self.site_name = yamlConfig.getKey('site.title', DEFAULT_SITE_TITLE)
 
 
 def is_supported_album(path):
@@ -166,7 +190,7 @@ def apply_watermark(base_image_path, watermark_image, watermark_ratio):
 
 
 def extract_faces(photo_path):
-    faces = {}
+    faces =[] 
     with Image.open(photo_path) as im:
         for segment, content in im.applist:
             marker, body = content.split(bytes('\x00', 'utf-8'), 1)
@@ -183,49 +207,184 @@ def extract_faces(photo_path):
                                 areas = description.findChildren(
                                     "mwg-rs:area", recursive=False)
                                 for area in areas:
-                                    faces[name] = {
-                                        'name': name,
-                                        'geometry': {
-                                            'w': area['starea:w'],
-                                            'h': area['starea:h'],
-                                            'x': area['starea:x'],
-                                            'y': area['starea:y']
-                                        }
-                                    }
+                                    faces.append(Face(
+                                        name=name,
+                                        geometry=FaceGeometry(
+                                            w= area['starea:w'],
+                                            h= area['starea:h'],
+                                            x= area['starea:x'],
+                                            y= area['starea:y']
+                                        )
+                                    ))
+                                    # faces[name] = {
+                                    #     'name': name,
+                                    #     'geometry': {
+                                    #         'w': area['starea:w'],
+                                    #         'h': area['starea:h'],
+                                    #         'x': area['starea:x'],
+                                    #         'y': area['starea:y']
+                                    #     }
+                                    # }
     return faces
 
 
 def pick_album_thumbnail(album_photos):
     if len(album_photos) > 0:
-        return album_photos[0]['_thumb']
+        return album_photos[0].thumb
     return ''
+
+
+class SimpleEncoder(json.JSONEncoder):
+    def default(self, o):
+        return o.__dict__
+
+
+class Site:
+    def __init__(self, config):
+        self.site_name = config.site_name
+        self.people_enabled = config.people_enabled
+
+
+@dataclass
+class FaceGeometry:
+    w: str
+    h: str
+    x: str
+    y: str
+
+
+@dataclass
+class Face:
+    name: str
+    geometry: FaceGeometry
+
+
+class People:
+
+    people: dict = {}
+    slugs: dict = set()
+     
+
+    def __init__(self, config):
+        self.config = config
+
+
+    def detect_faces(self, photo, original_src, largest_src, output_path, external_path):
+
+        faces = extract_faces(original_src)
+        for face in faces:
+            print(" ------> Detected face '%s'" % face)
+
+            if face.name not in self.people.keys():
+
+                unique_person_slug = find_unique_slug(self.slugs, face.name)
+                self.slugs.add(unique_person_slug)
+                    # self.people_data[person] = {
+                    #     'name': person,
+                    #     'slug': unique_person_slug,
+                    #     'photos': [],
+                    #     'src': None
+                    # }
+                self.people[face.name] = Person(face.name, unique_person_slug)
+
+            person = self.people[face.name]
+            person.photos.append(photo)
+            # photo_people.append(person)
+
+            if not person.hasThumbnail():
+                with Image.open(largest_src) as im:
+                    
+                    face_size = face.geometry.w, face.geometry.h
+                    face_position = face.geometry.x, face.geometry.y
+                    new_face_photo = os.path.join(
+                        output_path, "%s_%s" % (person.slug, os.path.basename(original_src)))
+                    box = calculate_face_crop_dimensions(
+                        im.size, face_size, face_position)
+                    im_cropped = im.crop(box)
+                    im_cropped.save(new_face_photo)
+                    person.src = "%s/%s" % (external_path,
+                                        os.path.basename(new_face_photo))
+                    # self.pick_person_thumbnail(face, uri)
+            
+        return faces
+
+
+    def __getitem__(self, item):
+        return list(self.people.values())[item] # delegate to li.__getitem__
+
+
+            
+
+
+    
+
+    # def init_person(self, person):
+    #     if not person in self.people_data.keys():
+
+            
+
+    # def add_photo_to_person(self, person, photo):
+    #     self.init_person(person)
+    #     self.people_data[person]['photos'].append(photo)
+
+    # def person_has_thumbnail(self, person):
+    #     self.init_person(person)
+    #     return self.people_data[person]['src'] is not None
+
+    # def pick_person_thumbnail(self, person, uri):
+    #     self.init_person(person)
+    #     self.people_data[person]['src'] = uri
+
+
+
+class Person:
+    def __init__(self, name, slug):
+
+        self.name = name
+        self.slug = slug
+        self.src = None
+        self.photos: list = []
+
+
+    def hasThumbnail(self):
+        return self.src is not None
+
+
+
+class Photo:
+
+
+    faces: list = []
+    slug: str
+
+    def __init__(self, name, width, height, src, thumb, srcSet):
+
+        self.width = width
+        self.height = height
+        self.name = name
+        self.src = src
+        self.thumb = thumb
+        self.srcSet = srcSet
+        # 'sizes': ["(min-width: 480px) 50vw,(min-width: 1024px) 33.3vw,100vw"]
+        
 
 
 class SiteGenerator:
 
-    def __init__(self, cfg):
-        self.input_photos_dir = cfg.getKey('gallery.input_path')
-        self.people_enabled = cfg.getKey('gallery.people.enable', True)
-        self.watermark_enabled = cfg.getKey('gallery.watermark.enable', True)
-        self.watermark_path = cfg.getKey(
-            'gallery.watermark.path', DEFAULT_WATERMARK_PATH)
-        self.watermark_ratio = cfg.getKey(
-            'gallery.watermark.size_ratio', DEFAULT_WATERMARK_SIZE_RATIO)
-        self.recursive_albums = cfg.getKey('gallery.albums.recursive', True)
-        self.recursive_albums_name_pattern = cfg.getKey(
-            'gallery.albums.recursive_name_pattern', DEFAULT_RECURSIVE_ALBUMS_NAME_PATTERN)
-        self.overwrite = cfg.getKey('gallery.overwrite', False)
-        self.output_photos_path = cfg.getKey(
-            'gallery.output_path', DEFAULT_OUTPUT_PHOTOS_PATH)
-        self.http_root = cfg.getKey('site.http_root', '/')
-        self.site_name = cfg.getKey('site.title', DEFAULT_SITE_TITLE)
+    def __init__(self, yamlConfig):
 
+        self.config = SiteConfig(yamlConfig)
+
+        self.site = Site(self.config)
+
+        self.people = People(self.config)
         self.people_data = {}
         self.albums_data = {}
-        self.site_data = {
-            'site_name': self.site_name,
-            'people_enabled': self.people_enabled,
-        }
+
+        # self.site_data = {
+        #     'site_name': self.site_name,
+        #     'people_enabled': self.people_enabled,
+        # }
         self.unique_album_slugs = {}
         self.unique_person_slugs = {}
 
@@ -236,7 +395,7 @@ class SiteGenerator:
         output_data_path = os.path.normpath(os.path.join(os.path.dirname(
             os.path.realpath(__file__)), "..", "web", "src", "_gallery"))
         external_root = os.path.normpath(os.path.join(
-            self.http_root, "..", "static", "_gallery", "albums"))
+            self.config.http_root, "..", "static", "_gallery", "albums"))
 
         # Paths
         output_albums_data_file = os.path.join(
@@ -247,14 +406,14 @@ class SiteGenerator:
         output_albums_photos_path = os.path.join(output_photos_path, "albums")
 
         # Cleanup and prep of deploy space
-        if self.overwrite:
+        if self.config.overwrite:
             shutil.rmtree(output_photos_path, ignore_errors=True)
         os.makedirs(output_photos_path, exist_ok=True)
         shutil.rmtree(output_data_path, ignore_errors=True)
         os.makedirs(output_data_path, exist_ok=True)
 
         entries = list(map(lambda e: os.path.join(
-            self.input_photos_dir, e), os.listdir(self.input_photos_dir)))
+            self.config.input_photos_dir, e), os.listdir(self.config.input_photos_dir)))
         dirs = list(filter(lambda e: is_supported_album(e), entries))
 
         for album_dir in dirs:
@@ -265,26 +424,32 @@ class SiteGenerator:
                                output_albums_photos_path, external_root)
 
         people_data_slugs = {}
-        for person in self.people_data.values():
-            people_data_slugs[person['slug']] = person
+        for person in self.people:
+            people_data_slugs[person.slug] = person
 
         with open(output_albums_data_file, 'w') as outfile:
             output_str = 'export const albums_data = '
-            output_str += json.dumps(self.albums_data,
-                                     sort_keys=True, indent=3)
+            # output_str += json.dumps(self.albums_data,
+                                    #  sort_keys=True, indent=3)
+            output_str += json.dumps(self.albums_data, sort_keys=True,
+                                     indent=3, cls=SimpleEncoder)
             output_str += ';'
             outfile.write(output_str)
 
         with open(output_people_data_file, 'w') as outfile:
             output_str = 'export const people_data = '
-            output_str += json.dumps(people_data_slugs,
-                                     sort_keys=True, indent=3)
+            # output_str += json.dumps(people_data_slugs,
+            #                          sort_keys=True, indent=3)
+            output_str += json.dumps(people_data_slugs, sort_keys=True,
+                            indent=3, cls=SimpleEncoder)
             output_str += ';'
             outfile.write(output_str)
 
         with open(output_site_data_file, 'w') as outfile:
             output_str = 'export const site_data = '
-            output_str += json.dumps(self.site_data, sort_keys=True, indent=3)
+            # output_str += json.dumps(self.site_data, sort_keys=True, indent=3)
+            output_str += json.dumps(self.site, sort_keys=True,
+                                     indent=3, cls=SimpleEncoder)
             output_str += ';'
             outfile.write(output_str)
 
@@ -304,14 +469,14 @@ class SiteGenerator:
                 message="Image Verification: " + str(e))
 
         # Only copy if overwrite explicitly asked for or if doesn't exist
-        if self.overwrite or not os.path.exists(new_original_photo):
+        if self.config.overwrite or not os.path.exists(new_original_photo):
             print(" ----> Copying to '%s'" % new_original_photo)
             shutil.copyfile(photo, new_original_photo)
 
         try:
             with Image.open(new_original_photo) as im:
                 original_size = im.size
-                x, y = im.size
+                width, height = im.size
         except UnidentifiedImageError as e:
             shutil.rmtree(new_original_photo, ignore_errors=True)
             raise PhotoProcessingFailure(message=str(e))
@@ -320,17 +485,19 @@ class SiteGenerator:
         sizes = [(500, 500), (800, 800), (1024, 1024), (1600, 1600)]
         filename = os.path.basename(os.path.basename(photo))
 
-        data = {
-            'width': x,
-            'height': y,
-            'name': filename,
-            'srcSet': {},
-            '_thumb': None,
-            'sizes': ["(min-width: 480px) 50vw,(min-width: 1024px) 33.3vw,100vw"]
-        }
+        # data = {
+        #     'width': x,
+        #     'height': y,
+        #     'name': filename,
+        #     'srcSet': {},
+        #     '_thumb': None,
+        #     'sizes': ["(min-width: 480px) 50vw,(min-width: 1024px) 33.3vw,100vw"]
+        # }
 
         largest_src = None
         smallest_src = None
+
+        srcSet = {}
 
         print(" ------> Generating photo sizes: ", end="")
         for i, size in enumerate(sizes):
@@ -343,79 +510,99 @@ class SiteGenerator:
 
             # Only generate if overwrite explicitly asked for or if doesn't exist
             print(f'{new_size[0]}x{new_size[1]} ', end="")
-            if self.overwrite or not os.path.exists(new_sub_photo):
+            if self.config.overwrite or not os.path.exists(new_sub_photo):
                 with Image.open(new_original_photo) as im:
                     im.thumbnail(new_size)
                     im.save(new_sub_photo)
-            data['srcSet'][str(size)+"w"] = ["%s/%s" % (urllib.parse.quote(
+            # data['srcSet'][str(size)+"w"] = ["%s/%s" % (urllib.parse.quote(
+                # external_path), urllib.parse.quote(os.path.basename(new_sub_photo)))]
+            srcSet[str(size)+"w"] = ["%s/%s" % (urllib.parse.quote(
                 external_path), urllib.parse.quote(os.path.basename(new_sub_photo)))]
 
         print(' ')
 
-        data['src'] = "%s/%s" % (urllib.parse.quote(external_path),
-                                 urllib.parse.quote(os.path.basename(largest_src)))
-        data['_thumb'] = "%s/%s" % (urllib.parse.quote(external_path),
-                                    urllib.parse.quote(os.path.basename(smallest_src)))
+        # data['src'] = "%s/%s" % (urllib.parse.quote(external_path),
+        #                          urllib.parse.quote(os.path.basename(largest_src)))
+        # data['_thumb'] = "%s/%s" % (urllib.parse.quote(external_path),
+        #                             urllib.parse.quote(os.path.basename(smallest_src)))
+
+     
 
         # Only copy if overwrite explicitly asked for or if doesn't exist
-        if self.watermark_enabled and (self.overwrite or not os.path.exists(new_original_photo)):
+        if self.config.watermark_enabled and (self.config.overwrite or not os.path.exists(new_original_photo)):
             with Image.open(self.watermark_path) as watermark_im:
                 print(" ------> Adding watermark")
                 apply_watermark(largest_src, watermark_im,
                                 self.watermark_ratio)
 
+
+
+
+        photo_obj = Photo(
+            filename,
+            width,
+            height,
+            "%s/%s" % (urllib.parse.quote(external_path),
+                        urllib.parse.quote(os.path.basename(largest_src))),
+            "%s/%s" % (urllib.parse.quote(external_path),
+                        urllib.parse.quote(os.path.basename(smallest_src))),
+            srcSet
+        ) 
+
         # Faces
-        faces = {}
-        if self.people_enabled:
-            faces = extract_faces(new_original_photo)
-            for face in faces.keys():
-                print(" ------> Detected face '%s'" % face)
+        if self.config.people_enabled:
+            photo_obj.faces = self.people.detect_faces(photo_obj, new_original_photo, largest_src, output_path, external_path)
+            # faces = extract_faces(new_original_photo)
+            # for face in faces.keys():
+            #     print(" ------> Detected face '%s'" % face)
 
-                if not self.person_has_thumbnail(face):
-                    with Image.open(largest_src) as im:
-                        face_size = faces[face]['geometry']['w'], faces[face]['geometry']['h']
-                        face_position = faces[face]['geometry']['x'], faces[face]['geometry']['y']
-                        new_face_photo = os.path.join(
-                            output_path, "%s_%s" % (face, os.path.basename(photo)))
-                        box = calculate_face_crop_dimensions(
-                            im.size, face_size, face_position)
-                        im_cropped = im.crop(box)
-                        im_cropped.save(new_face_photo)
-                        uri = "%s/%s" % (external_path,
-                                         os.path.basename(new_face_photo))
-                        self.pick_person_thumbnail(face, uri)
+            #     if not self.person_has_thumbnail(face):
+            #         with Image.open(largest_src) as im:
+            #             face_size = faces[face]['geometry']['w'], faces[face]['geometry']['h']
+            #             face_position = faces[face]['geometry']['x'], faces[face]['geometry']['y']
+            #             new_face_photo = os.path.join(
+            #                 output_path, "%s_%s" % (face, os.path.basename(photo)))
+            #             box = calculate_face_crop_dimensions(
+            #                 im.size, face_size, face_position)
+            #             im_cropped = im.crop(box)
+            #             im_cropped.save(new_face_photo)
+            #             uri = "%s/%s" % (external_path,
+            #                              os.path.basename(new_face_photo))
+            #             self.pick_person_thumbnail(face, uri)
 
-        data['faces'] = faces
 
-        for person in faces:
-            self.add_photo_to_person(person, data)
 
-        return data
+        # data['faces'] = faces
 
-    def init_person(self, person):
-        if not person in self.people_data.keys():
+        # for person in faces:
+        #     self.add_photo_to_person(person, data)
 
-            unique_person_slug = find_unique_slug(
-                self.unique_person_slugs, person)
-            self.unique_person_slugs[unique_person_slug] = unique_person_slug
-            self.people_data[person] = {
-                'name': person,
-                'slug': unique_person_slug,
-                'photos': [],
-                'src': None
-            }
+        return photo_obj
 
-    def add_photo_to_person(self, person, photo):
-        self.init_person(person)
-        self.people_data[person]['photos'].append(photo)
+    # def init_person(self, person):
+    #     if not person in self.people_data.keys():
 
-    def person_has_thumbnail(self, person):
-        self.init_person(person)
-        return self.people_data[person]['src'] is not None
+    #         unique_person_slug = find_unique_slug(
+    #             self.unique_person_slugs, person)
+    #         self.unique_person_slugs[unique_person_slug] = unique_person_slug
+    #         self.people_data[person] = {
+    #             'name': person,
+    #             'slug': unique_person_slug,
+    #             'photos': [],
+    #             'src': None
+    #         }
 
-    def pick_person_thumbnail(self, person, uri):
-        self.init_person(person)
-        self.people_data[person]['src'] = uri
+    # def add_photo_to_person(self, person, photo):
+    #     self.init_person(person)
+    #     self.people_data[person]['photos'].append(photo)
+
+    # def person_has_thumbnail(self, person):
+    #     self.init_person(person)
+    #     return self.people_data[person]['src'] is not None
+
+    # def pick_person_thumbnail(self, person, uri):
+    #     self.init_person(person)
+    #     self.people_data[person]['src'] = uri
 
     def process_album(self, album_dir, album_name, output_albums_photos_path, external_root):
 
@@ -455,16 +642,16 @@ class SiteGenerator:
             photo_file = os.path.join(album_dir, album_file)
             print(" --> Processing %s... " % photo_file)
             try:
-                photo_data = self.process_photo(
+                photo_obj = self.process_photo(
                     external_path, photo_file, album_folder)
 
                 # Ensure slug is unique
                 unique_slug = find_unique_slug(
-                    unique_slugs, photo_data['name'])
-                photo_data['slug'] = unique_slug
+                    unique_slugs, photo_obj.name)
+                photo_obj.slug = unique_slug
                 unique_slugs[unique_slug] = unique_slug
 
-                album_photos.append(photo_data)
+                album_photos.append(photo_obj)
             except PhotoProcessingFailure as e:
                 print(
                     f'Skipping processing of image file {photo_file}. Reason: {str(e)}')
@@ -474,7 +661,7 @@ class SiteGenerator:
             self.albums_data[album_data['slug']] = album_data
 
         # Recursively process sub-dirs
-        if self.recursive_albums:
+        if self.config.recursive_albums:
             for sub_album_dir in dirs:
                 if os.path.basename(sub_album_dir).startswith('.'):  # skip dotfiles
                     continue
