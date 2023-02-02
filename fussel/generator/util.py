@@ -11,8 +11,11 @@ def is_supported_album(path):
     return not folder_name.startswith(".") and os.path.isdir(path)
 
 
+def extract_extension(path):
+    return os.path.splitext(path)[1].lower()
+
 def is_supported_photo(path):
-    ext = os.path.splitext(path)[1].lower()
+    ext = extract_extension(path)
     return ext in Config.instance().supported_extensions
 
 

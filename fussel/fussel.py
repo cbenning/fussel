@@ -37,6 +37,7 @@ class YamlConfig:
 
 def main():
     cfg = YamlConfig()
+
     generator = SiteGenerator(cfg)
     generator.generate()
 

@@ -11,16 +11,6 @@ from .config import *
 from .util import *
 
 
-# 1. input dir
-#    2. for each dir
-#         3. create album
-#             for each file:
-#                 add as file
-#                 add as person
-#             for each dir:
-#                 goto #3
-
-
 class SimpleEncoder(json.JSONEncoder):
     def default(self, o):
         return o.__dict__
@@ -159,7 +149,7 @@ class Person:
 
 class Photo:
 
-    def __init__(self, name, width, height, src, thumb, srcSet):
+    def __init__(self, name, width, height, src, thumb, slug, srcSet):
 
         self.width = width
         self.height = height
@@ -168,12 +158,12 @@ class Photo:
         self.thumb = thumb
         self.srcSet = srcSet
         self.faces: list = []
-        self.slug: str
+        self.slug = slug
 
     @classmethod
-    def process_photo(cls, external_path, photo, output_path):
+    def process_photo(cls, external_path, photo, filename, slug, output_path):
         new_original_photo = os.path.join(
-            output_path, "original_%s" % os.path.basename(photo))
+            output_path, "original_%s%s" % (os.path.basename(slug), extract_extension(photo)))
 
         # Verify original first to avoid PIL errors later when generating thumbnails etc
         try:
@@ -201,7 +191,6 @@ class Photo:
 
         # TODO expose to config
         sizes = [(500, 500), (800, 800), (1024, 1024), (1600, 1600)]
-        filename = os.path.basename(os.path.basename(photo))
         largest_src = None
         smallest_src = None
 
@@ -210,8 +199,8 @@ class Photo:
         print(" ------> Generating photo sizes: ", end="")
         for i, size in enumerate(sizes):
             new_size = calculate_new_size(original_size, size)
-            new_sub_photo = os.path.join(output_path, "%sx%s_%s" % (
-                new_size[0], new_size[1], os.path.basename(photo)))
+            new_sub_photo = os.path.join(output_path, "%sx%s_%s%s" % (
+                new_size[0], new_size[1], os.path.basename(slug), extract_extension(photo)))
             largest_src = new_sub_photo
             if smallest_src is None:
                 smallest_src = new_sub_photo
@@ -242,6 +231,7 @@ class Photo:
                        urllib.parse.quote(os.path.basename(largest_src))),
             "%s/%s" % (urllib.parse.quote(external_path),
                        urllib.parse.quote(os.path.basename(smallest_src))),
+            slug,
             srcSet
         )
 
@@ -303,7 +293,7 @@ class Albums:
 
         unique_slugs = {}
 
-        album_name_folder = os.path.basename(album_dir)
+        album_name_folder = os.path.basename(unique_album_slug)
         album_folder = os.path.join(
             output_albums_photos_path, album_name_folder)
         # TODO externalize this?
@@ -321,13 +311,15 @@ class Albums:
             photo_file = os.path.join(album_dir, album_file)
             print(" --> Processing %s... " % photo_file)
             try:
-                photo_obj = Photo.process_photo(
-                    external_path, photo_file, album_folder)
 
-                # Ensure slug is unique
-                unique_slug = find_unique_slug(unique_slugs, photo_obj.name)
-                photo_obj.slug = unique_slug
+                filename = os.path.basename(os.path.basename(photo_file))
+
+                # Get a unique slug
+                unique_slug = find_unique_slug(unique_slugs, filename)
                 unique_slugs[unique_slug] = unique_slug
+
+                photo_obj = Photo.process_photo(
+                    external_path, photo_file, filename, unique_slug, album_folder)
 
                 album_obj.add_photo(photo_obj)
             except PhotoProcessingFailure as e:
@@ -346,7 +338,7 @@ class Albums:
                     continue
                 sub_album_name = "%s" % Config.instance().recursive_albums_name_pattern
                 sub_album_name = sub_album_name.replace(
-                    "{parent_album}", album_name)
+                    "{parent_album}", unique_album_slug)
                 sub_album_name = sub_album_name.replace(
                     "{album}", os.path.basename(sub_album_dir))
                 self.process_album_path(
@@ -381,6 +373,8 @@ class SiteGenerator:
             os.path.realpath(__file__)), "..", "web", "src", "_gallery"))
         external_root = os.path.normpath(os.path.join(
             Config.instance().http_root, "static", "_gallery", "albums"))
+        generated_site_path = os.path.normpath(os.path.join(
+            os.path.dirname(os.path.realpath(__file__)), "..", "web", "build"))
 
         # Paths
         output_albums_data_file = os.path.join(
@@ -393,6 +387,8 @@ class SiteGenerator:
         # Cleanup and prep of deploy space
         if Config.instance().overwrite:
             shutil.rmtree(output_photos_path, ignore_errors=True)
+            shutil.rmtree(generated_site_path, ignore_errors=True)
+
         os.makedirs(output_photos_path, exist_ok=True)
         shutil.rmtree(output_data_path, ignore_errors=True)
         os.makedirs(output_data_path, exist_ok=True)
