@@ -1,5 +1,5 @@
 Pillow==8.2.0
 beautifulsoup4==4.9.3
-# massedit==0.69.1
+massedit==0.69.1
 python-slugify==7.0.0
 pyyaml==6.0.0

@@ -2,7 +2,7 @@
 
 import os
 from generator import SiteGenerator
-# import massedit
+import massedit
 import yaml
 import shutil
 
@@ -41,9 +41,9 @@ def main():
     generator.generate()
 
     # Is this still needed?
-    # http_root = cfg.getKey('site.http_root', '/')
-    # filenames = [os.path.join(os.path.dirname(os.path.realpath(__file__)), "web", "package.json")]
-    # massedit.edit_files(filenames, ["re.sub(r'^.*\"homepage\":.*$', '  \"homepage\": \""+http_root+"\",', line)"], dry_run=False)
+    http_root = cfg.getKey('site.http_root', '/')
+    filenames = [os.path.join(os.path.dirname(os.path.realpath(__file__)), "web", "package.json")]
+    massedit.edit_files(filenames, ["re.sub(r'^.*\"homepage\":.*$', '  \"homepage\": \""+http_root+"\",', line)"], dry_run=False)
 
     # exit(0)
 

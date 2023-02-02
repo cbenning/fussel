@@ -306,10 +306,8 @@ class Albums:
         album_name_folder = os.path.basename(album_dir)
         album_folder = os.path.join(
             output_albums_photos_path, album_name_folder)
-        # album_folder = os.path.join(output_albums_photos_path, album_name)
         # TODO externalize this?
         external_path = os.path.join(external_root, album_name_folder)
-        # external_path = external_root + "static/_gallery/albums/" + album_name_folder
         os.makedirs(album_folder, exist_ok=True)
 
         entries = list(map(lambda e: os.path.join(
@@ -382,7 +380,7 @@ class SiteGenerator:
         output_data_path = os.path.normpath(os.path.join(os.path.dirname(
             os.path.realpath(__file__)), "..", "web", "src", "_gallery"))
         external_root = os.path.normpath(os.path.join(
-            Config.instance().http_root, "..", "static", "_gallery", "albums"))
+            Config.instance().http_root, "static", "_gallery", "albums"))
 
         # Paths
         output_albums_data_file = os.path.join(
