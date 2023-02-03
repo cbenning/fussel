@@ -28,17 +28,13 @@ Features and Properties:
 ### Requirements
 
  - Python 3
- - Node + Yarn
+ - node v18.14.0 LTS
+ - npm v9.3.1
+ - yarn 1.22
 
 ## Install dependencies
 
-### Site Generator
- - `pip install -r requirements.txt`
- 
-### Node Frontend
- - `cd web`
- - `yarn install`
- - `cd ../`
+ - `./setup.sh`
  
 ## Setup Site
 
