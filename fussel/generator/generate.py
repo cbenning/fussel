@@ -9,11 +9,15 @@ from bs4 import BeautifulSoup
 from dataclasses import dataclass
 from .config import *
 from .util import *
+from threading import RLock
+from multiprocessing import Pool
 
 
 class SimpleEncoder(json.JSONEncoder):
-    def default(self, o):
-        return o.__dict__
+    def default(self, obj):
+        if hasattr(obj, "json_dump_obj"):
+            return obj.json_dump_obj()
+        return obj.__dict__
 
 
 class Site:
@@ -26,7 +30,6 @@ class Site:
     @classmethod
     def instance(cls):
         if cls._instance is None:
-            print('Creating new instance')
             cls._instance = cls.__new__(cls)
             cls._instance.__init()
         return cls._instance
@@ -60,14 +63,22 @@ class People:
     @classmethod
     def instance(cls):
         if cls._instance is None:
-            print('Creating new instance')
             cls._instance = cls.__new__(cls)
             cls._instance.__init()
         return cls._instance
 
     def __init(self):
         self.people: dict = {}
-        self.slugs: dict = set()
+        self.people_lock = RLock()
+        self.slugs = set()
+        self.slugs_lock = RLock()
+
+    def json_dump_obj(self):
+        r = {}
+        print(len(self.people.keys()))
+        for k, v in self.people:
+            r[v.slug] = v
+        return r
 
     def detect_faces(self, photo, original_src, largest_src, output_path, external_path):
 
@@ -75,16 +86,23 @@ class People:
         for face in faces:
             print(" ------> Detected face '%s'" % face)
 
+            self.people_lock.acquire()
             if face.name not in self.people.keys():
 
-                unique_person_slug = find_unique_slug(self.slugs, face.name)
-                self.slugs.add(unique_person_slug)
+                unique_person_slug = find_unique_slug(
+                    self.slugs, self.slugs_lock, face.name)
+                # self.slugs.add(unique_person_slug)
+
                 self.people[face.name] = Person(face.name, unique_person_slug)
+                print("*********************************************************")
+                print(self.people[face.name].slug)
+                print(len(self.people.keys()))
+                print("*********************************************************")
 
             person = self.people[face.name]
             person.photos.append(photo)
 
-            if not person.hasThumbnail():
+            if not person.has_thumbnail():
                 with Image.open(largest_src) as im:
 
                     face_size = face.geometry.w, face.geometry.h
@@ -97,6 +115,8 @@ class People:
                     im_cropped.save(new_face_photo)
                     person.src = "%s/%s" % (external_path,
                                             os.path.basename(new_face_photo))
+
+            self.people_lock.release()
 
         return faces
 
@@ -130,8 +150,8 @@ class People:
         return faces
 
     # implemented to allow this class to be iterated on
-    def __getitem__(self, item):
-        return list(self.people.values())[item]
+    # def __getitem__(self, item):
+    #     return list(self.people.values())[item]
 
 
 class Person:
@@ -143,7 +163,7 @@ class Person:
         self.src = None
         self.photos: list = []
 
-    def hasThumbnail(self):
+    def has_thumbnail(self):
         return self.src is not None
 
 
@@ -161,7 +181,7 @@ class Photo:
         self.slug = slug
 
     @classmethod
-    def process_photo(cls, external_path, photo, filename, slug, output_path):
+    def process_photo(cls, external_path, photo, filename, slug, output_path, people: None):
         new_original_photo = os.path.join(
             output_path, "original_%s%s" % (os.path.basename(slug), extract_extension(photo)))
 
@@ -237,10 +257,23 @@ class Photo:
 
         # Faces
         if Config.instance().people_enabled:
-            photo_obj.faces = People.instance().detect_faces(photo_obj, new_original_photo,
+            if people is None:
+                people = People.instance()
+            photo_obj.faces = people.detect_faces(photo_obj, new_original_photo,
                                                              largest_src, output_path, external_path)
 
         return photo_obj
+
+
+def _process_photo(t):
+    (external_path, photo_file, filename, unique_slug, album_folder, people) = t
+    print(" --> Processing %s... " % photo_file)
+    try:
+        return Photo.process_photo(external_path, photo_file, filename, unique_slug, album_folder)
+    except PhotoProcessingFailure as e:
+        print(
+            f'Skipping processing of image file {photo_file}. Reason: {str(e)}')
+        return None
 
 
 class Albums:
@@ -253,16 +286,18 @@ class Albums:
     @classmethod
     def instance(cls):
         if cls._instance is None:
-            print('Creating new instance')
             cls._instance = cls.__new__(cls)
             cls._instance.__init()
         return cls._instance
 
     def __init(self):
-        self.slugs: dict = set()
         self.albums: dict = {}
 
-        self.unique_album_slugs = {}
+        self.slugs = set()
+        self.slugs_lock = RLock()
+
+    def json_dump_obj(self):
+        return self.albums
 
     def add_album(self, album):
         self.albums[album.slug] = album
@@ -287,11 +322,9 @@ class Albums:
         print(" > Importing album %s as '%s'" % (album_dir, album_name))
 
         unique_album_slug = find_unique_slug(
-            self.unique_album_slugs, album_name)
-        self.unique_album_slugs[unique_album_slug] = unique_album_slug
+            self.slugs, self.slugs_lock, album_name)
+        # self.unique_album_slugs[unique_album_slug] = unique_album_slug
         album_obj = Album(album_name, unique_album_slug)
-
-        unique_slugs = {}
 
         album_name_folder = os.path.basename(unique_album_slug)
         album_folder = os.path.join(
@@ -305,26 +338,40 @@ class Albums:
         dirs = list(filter(lambda e: is_supported_album(e), entries))
         files = list(filter(lambda e: is_supported_photo(e), entries))
 
+        unique_slugs_lock = RLock()
+        unique_slugs = set()
+
+        jobs = []
+
         for album_file in files:
             if album_file.startswith('.'):  # skip dotfiles
                 continue
             photo_file = os.path.join(album_dir, album_file)
-            print(" --> Processing %s... " % photo_file)
-            try:
+            # print(" --> Processing %s... " % photo_file)
+            # try:
 
-                filename = os.path.basename(os.path.basename(photo_file))
+            filename = os.path.basename(os.path.basename(photo_file))
 
-                # Get a unique slug
-                unique_slug = find_unique_slug(unique_slugs, filename)
-                unique_slugs[unique_slug] = unique_slug
+            # Get a unique slug
+            unique_slug = find_unique_slug(
+                unique_slugs, unique_slugs_lock, filename)
 
-                photo_obj = Photo.process_photo(
-                    external_path, photo_file, filename, unique_slug, album_folder)
+            jobs.append((external_path, photo_file,
+                        filename, unique_slug, album_folder, People.instance()))
 
-                album_obj.add_photo(photo_obj)
-            except PhotoProcessingFailure as e:
-                print(
-                    f'Skipping processing of image file {photo_file}. Reason: {str(e)}')
+            # photo_obj = Photo.process_photo(
+            #     external_path, photo_file, filename, unique_slug, album_folder)
+
+        results = []
+        with Pool(processes=1) as P:
+            results = P.map(_process_photo, jobs)
+
+        for result in results:
+            if result is not None:
+                album_obj.add_photo(result)
+            # except PhotoProcessingFailure as e:
+            #     print(
+            #         f'Skipping processing of image file {photo_file}. Reason: {str(e)}')
 
         if len(album_obj.photos) > 0:
             album_obj.src = pick_album_thumbnail(
@@ -395,20 +442,21 @@ class SiteGenerator:
 
         Albums.instance().process_path(Config.instance().input_photos_dir,
                                        output_albums_photos_path, external_root)
-        people_data_slugs = {}
-        for person in People.instance():
-            people_data_slugs[person.slug] = person
+        # people_data_slugs = {}
+        # for person in People.people_by_slug():
+        #     print(person)
+        #     people_data_slugs[person.slug] = person
 
         with open(output_albums_data_file, 'w') as outfile:
             output_str = 'export const albums_data = '
-            output_str += json.dumps(Albums.instance().albums,
+            output_str += json.dumps(Albums.instance(),
                                      sort_keys=True, indent=3, cls=SimpleEncoder)
             output_str += ';'
             outfile.write(output_str)
 
         with open(output_people_data_file, 'w') as outfile:
             output_str = 'export const people_data = '
-            output_str += json.dumps(people_data_slugs,
+            output_str += json.dumps(People.instance(),
                                      sort_keys=True, indent=3, cls=SimpleEncoder)
             output_str += ';'
             outfile.write(output_str)

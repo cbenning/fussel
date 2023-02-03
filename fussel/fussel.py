@@ -41,6 +41,9 @@ def main():
     generator = SiteGenerator(cfg)
     generator.generate()
 
+
+    exit(0)
+
     # Is this still needed?
     http_root = cfg.getKey('site.http_root', '/')
     filenames = [os.path.join(os.path.dirname(os.path.realpath(__file__)), "web", "package.json")]

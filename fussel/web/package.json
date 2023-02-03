@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "Fussel Gallery",
   "keywords": [],
-  "homepage": "/fussel-demo/",
+  "homepage": "/",
   "license": "MIT",
   "dependencies": {
     "bulma": "^0.9.3",

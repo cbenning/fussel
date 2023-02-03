@@ -19,18 +19,25 @@ def is_supported_photo(path):
     return ext in Config.instance().supported_extensions
 
 
-def find_unique_slug(unique_slugs, name):
+def find_unique_slug(slugs, lock, name):
 
     slug = slugify(name, allow_unicode=False, max_length=30,
                    word_boundary=True, separator="-", save_order=True)
-    if slug not in unique_slugs:
+    lock.acquire()
+    if slug not in slugs:
         return slug
     count = 1
     while True:
         new_slug = slug + "-" + str(count)
-        if new_slug not in unique_slugs:
-            return new_slug
+        if new_slug not in slugs:
+            slug = new_slug
+            break
         count += 1
+
+    slugs.add(slug)
+    lock.release()
+
+    return slug
 
 
 def calculate_new_size(input_size, desired_size):
