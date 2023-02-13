@@ -155,10 +155,15 @@ class Collection extends Component {
           isOpen={this.state.viewerIsOpen}
           onRequestClose={this.closeModal}
           preventScroll={true}
+          
           style={{
+            overlay: {
+              backgroundColor: 'rgba(0, 0, 0, 0.3)'
+            },
             content: {
               inset: '10px',
               padding: '10px',
+              backgroundColor: 'rgba(0, 0, 0, 1)',
             }
           }}
         >
