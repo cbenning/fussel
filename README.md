@@ -27,7 +27,7 @@ Features and Properties:
 
 ### Requirements
 
- - Python 3
+ - Python 3.7+
  - node v18.14.0 LTS
  - npm v9.3.1
  - yarn 1.22

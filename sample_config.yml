@@ -12,6 +12,10 @@ gallery:
   # Default: False
   overwrite: False
 
+  # The number of parallel processing tasks that will be used
+  # Default: <number_of_cores> / 2
+  # parallel_tasks: 1
+
   albums:
     # Recursively process sub-folders as albums
     # Default: recursive: True
