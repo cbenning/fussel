@@ -229,29 +229,30 @@ class SiteGenerator:
     def extract_faces(self, photo_path):
         faces = {}
         with Image.open(photo_path) as im:
-            for segment, content in im.applist:
-                marker, body = content.split(bytes('\x00', 'utf-8'), 1)
-                if segment == 'APP1' and marker.decode("utf-8") == 'http://ns.adobe.com/xap/1.0/':
-                    body_str = body.decode("utf-8")
-                    soup = BeautifulSoup(body_str, 'html.parser')
+            if hasattr(im, 'applist'):
+                for segment, content in im.applist:
+                    marker, body = content.split(bytes('\x00', 'utf-8'), 1)
+                    if segment == 'APP1' and marker.decode("utf-8") == 'http://ns.adobe.com/xap/1.0/':
+                        body_str = body.decode("utf-8")
+                        soup = BeautifulSoup(body_str, 'html.parser')
 
-                    for regions in soup.find_all("mwg-rs:regions"):
+                        for regions in soup.find_all("mwg-rs:regions"):
 
-                        for regionlist in regions.find_all("mwg-rs:regionlist"):
-                            for description in regionlist.find_all("rdf:description"):
-                                if description['mwg-rs:type'] == 'Face':
-                                    name = description['mwg-rs:name'].strip()
-                                    areas = description.findChildren("mwg-rs:area", recursive=False)
-                                    for area in areas:
-                                        faces[name] = {
-                                            'name': name,
-                                            'geometry': {
-                                                'w': area['starea:w'],
-                                                'h': area['starea:h'],
-                                                'x': area['starea:x'],
-                                                'y': area['starea:y']
+                            for regionlist in regions.find_all("mwg-rs:regionlist"):
+                                for description in regionlist.find_all("rdf:description"):
+                                    if description['mwg-rs:type'] == 'Face':
+                                        name = description['mwg-rs:name'].strip()
+                                        areas = description.findChildren("mwg-rs:area", recursive=False)
+                                        for area in areas:
+                                            faces[name] = {
+                                                'name': name,
+                                                'geometry': {
+                                                    'w': area['starea:w'],
+                                                    'h': area['starea:h'],
+                                                    'x': area['starea:x'],
+                                                    'y': area['starea:y']
+                                                }
                                             }
-                                        }
 
         return faces
 
