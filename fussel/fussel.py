@@ -25,6 +25,8 @@ class YamlConfig:
             exit(-1)
 
     def getKey(self, path: str, default=None):
+        if path in self.cfg:
+            self.cfg.get(path)
         keys = path.split(".")
         cursor = self.cfg
         for i, k in enumerate(keys):
@@ -35,6 +37,7 @@ class YamlConfig:
 
 
 def main():
+
     cfg = YamlConfig()
 
     generator = SiteGenerator(cfg)
@@ -71,7 +74,7 @@ def main():
         ignore_dangling_symlinks=False,
         dirs_exist_ok=True)
 
-    print(f'site generated at: {new_site_location}/fussel/web/build')
+    print(f'site generated at: {new_site_location}')
     print(
         f'\n\n to validate build run: \n   python -m http.server --directory {new_site_location}')
 

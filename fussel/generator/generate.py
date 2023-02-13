@@ -354,7 +354,6 @@ class Albums:
 
         results = []
         people_q = Queue()
-        print(Config.instance().parallel_tasks)
         with Pool(processes=Config.instance().parallel_tasks, initializer=_proces_photo_init, initargs=[people_q]) as P:
             results = P.map(_process_photo, jobs)
 

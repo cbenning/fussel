@@ -94,31 +94,31 @@ Note:
  The two -e env variables PGID and PUID tells the container what to set the output folder permissions to
  once done. Otherwise it is set to root permissions
 
-```
-docker run \
-    -e PGID=$(id -g) \
-    -e PUID=$(id -u) \
-    -v /my-input-folder:/input:ro \
-    -v /my-output-folder:/fussel/web/build \
-	cbenning/fussel:latest
-```
-
 Optional:
- You can provide any value found in the .env.sample file in a docker env variable using `-e MYVAR=THING`
+ You can provide any value found in the config.yml file in a docker label variable using `--label item=value`
 
 ```
 docker run \
-    -e PGID=$(id -g) \
-    -e PUID=$(id -u) \
-    -v /my-input-folder:/input:ro \
-    -v /my-output-folder:/fussel/web/build \
-    -e HTTP_ROOT=/my/alternate/path \
-    -e WATERMARK_ENABLE=false \
-    cbenning/fussel:latest
+-e PGID=$(id -g) \
+-e PUID=$(id -u) \
+-v <input_dir>:/input:ro \
+-v <output_dir>:/output \
+--label gallery.input_path="/input" \
+--label gallery.output_path="/output" \
+--label gallery.overwrite=False \
+--label albums.recursive=True \
+--label albums.recursive_name_pattern="{parent_album} > {album}" \
+--label people.enable=True \
+--label watermark.enable=True \
+--label watermark.path="web/src/images/fussel-watermark.png" \
+--label watermark.size_ratio=0.3 \
+--label site.http_root="/" \
+--label site.title="Fussel Gallery" \
+-v /var/run/docker.sock:/var/run/docker.sock fussel
 ```
 
 Once complete you can upload the output folder to your webserver, or see what it looks like with
-`python -m http.server --directory /my-output-folder`
+`python -m http.server --directory <output_dir>`
 
 
 ## FAQ
