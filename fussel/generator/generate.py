@@ -4,7 +4,7 @@ import os
 import shutil
 import json
 import urllib
-from PIL import Image, ImageFile, UnidentifiedImageError
+from PIL import Image, ImageOps, ImageFile, UnidentifiedImageError
 from bs4 import BeautifulSoup
 from dataclasses import dataclass
 from .config import *
@@ -222,6 +222,8 @@ class Photo:
             if Config.instance().overwrite or not os.path.exists(new_sub_photo):
                 with Image.open(new_original_photo) as im:
                     im.thumbnail(new_size)
+                    if Config.instance().exif_transpose:
+                        im = ImageOps.exif_transpose(im)
                     im.save(new_sub_photo)
             srcSet[str(size)+"w"] = ["%s/%s" % (urllib.parse.quote(external_path),
                                                 urllib.parse.quote(os.path.basename(new_sub_photo)))]

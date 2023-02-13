@@ -16,6 +16,10 @@ gallery:
   # Default: <number_of_cores> / 2
   # parallel_tasks: 1
 
+  # Attempt to orient the photo based on embedded EXIF data
+  # Default: exif_transpose: False
+  exif_transpose: False
+
   albums:
     # Recursively process sub-folders as albums
     # Default: recursive: True
