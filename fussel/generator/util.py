@@ -21,7 +21,7 @@ def is_supported_photo(path):
 
 def find_unique_slug(slugs, lock, name):
 
-    slug = slugify(name, allow_unicode=False, max_length=30,
+    slug = slugify(name, allow_unicode=False, max_length=0,
                    word_boundary=True, separator="-", save_order=True)
     lock.acquire()
     if slug not in slugs:

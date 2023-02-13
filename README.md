@@ -27,8 +27,9 @@ Features and Properties:
 
 ### Requirements
 
- - Python 3
- - Node + Yarn
+ - Python 3.7+
+ - NPM (8.19.2 tested)
+ + Yarn (1.22.19)
 
 ## Install dependencies
 

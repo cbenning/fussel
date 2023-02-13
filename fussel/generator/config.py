@@ -1,4 +1,4 @@
-
+import os
 
 DEFAULT_WATERMARK_PATH = 'web/src/images/fussel-watermark.png'
 DEFAULT_WATERMARK_SIZE_RATIO = 0.3
@@ -47,3 +47,8 @@ class Config:
         cls._instance.site_name = yaml_config.getKey(
             'site.title', DEFAULT_SITE_TITLE)
         cls._instance.supported_extensions = ('.jpg', '.jpeg', '.gif', '.png')
+
+        _parallel_tasks = os.cpu_count()/2
+        if _parallel_tasks <1:
+            _parallel_tasks = 1
+        cls._instance.parallel_tasks = int(yaml_config.getKey('gallery.parallel_tasks', _parallel_tasks))

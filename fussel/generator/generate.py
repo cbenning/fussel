@@ -4,13 +4,16 @@ import os
 import shutil
 import json
 import urllib
-from PIL import Image, UnidentifiedImageError
+from PIL import Image, ImageFile, UnidentifiedImageError
 from bs4 import BeautifulSoup
 from dataclasses import dataclass
 from .config import *
 from .util import *
 from threading import RLock
-from multiprocessing import Pool
+from multiprocessing import Pool, Queue
+from rich import print
+
+ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 
 class SimpleEncoder(json.JSONEncoder):
@@ -75,29 +78,24 @@ class People:
 
     def json_dump_obj(self):
         r = {}
-        print(len(self.people.keys()))
-        for k, v in self.people:
+        for v in self.people.values():
             r[v.slug] = v
         return r
 
     def detect_faces(self, photo, original_src, largest_src, output_path, external_path):
 
+        print(f'Searching in [magenta]{original_src}[/magenta]...')
         faces = self.extract_faces(original_src)
-        for face in faces:
-            print(" ------> Detected face '%s'" % face)
 
-            self.people_lock.acquire()
+        for face in faces:
+            print(f' ------> Found: [cyan]{face.name}[/cyan]')
+
             if face.name not in self.people.keys():
 
                 unique_person_slug = find_unique_slug(
                     self.slugs, self.slugs_lock, face.name)
-                # self.slugs.add(unique_person_slug)
 
                 self.people[face.name] = Person(face.name, unique_person_slug)
-                print("*********************************************************")
-                print(self.people[face.name].slug)
-                print(len(self.people.keys()))
-                print("*********************************************************")
 
             person = self.people[face.name]
             person.photos.append(photo)
@@ -115,8 +113,6 @@ class People:
                     im_cropped.save(new_face_photo)
                     person.src = "%s/%s" % (external_path,
                                             os.path.basename(new_face_photo))
-
-            self.people_lock.release()
 
         return faces
 
@@ -149,10 +145,6 @@ class People:
                                         ))
         return faces
 
-    # implemented to allow this class to be iterated on
-    # def __getitem__(self, item):
-    #     return list(self.people.values())[item]
-
 
 class Person:
 
@@ -181,7 +173,7 @@ class Photo:
         self.slug = slug
 
     @classmethod
-    def process_photo(cls, external_path, photo, filename, slug, output_path, people: None):
+    def process_photo(cls, external_path, photo, filename, slug, output_path, people_q: Queue):
         new_original_photo = os.path.join(
             output_path, "original_%s%s" % (os.path.basename(slug), extract_extension(photo)))
 
@@ -198,7 +190,7 @@ class Photo:
 
         # Only copy if overwrite explicitly asked for or if doesn't exist
         if Config.instance().overwrite or not os.path.exists(new_original_photo):
-            print(" ----> Copying to '%s'" % new_original_photo)
+            print(f' ----> Copying to [magenta]{new_original_photo}[/magenta]')
             shutil.copyfile(photo, new_original_photo)
 
         try:
@@ -216,7 +208,7 @@ class Photo:
 
         srcSet = {}
 
-        print(" ------> Generating photo sizes: ", end="")
+        msg = " ------> Generating photo sizes: "
         for i, size in enumerate(sizes):
             new_size = calculate_new_size(original_size, size)
             new_sub_photo = os.path.join(output_path, "%sx%s_%s%s" % (
@@ -226,7 +218,7 @@ class Photo:
                 smallest_src = new_sub_photo
 
             # Only generate if overwrite explicitly asked for or if doesn't exist
-            print(f'{new_size[0]}x{new_size[1]} ', end="")
+            msg += f'[cyan]{new_size[0]}x{new_size[1]}[/cyan] '
             if Config.instance().overwrite or not os.path.exists(new_sub_photo):
                 with Image.open(new_original_photo) as im:
                     im.thumbnail(new_size)
@@ -234,7 +226,7 @@ class Photo:
             srcSet[str(size)+"w"] = ["%s/%s" % (urllib.parse.quote(external_path),
                                                 urllib.parse.quote(os.path.basename(new_sub_photo)))]
 
-        print(' ')
+        print(msg)
 
         # Only copy if overwrite explicitly asked for or if doesn't exist
         if Config.instance().watermark_enabled and (Config.instance().overwrite or not os.path.exists(new_original_photo)):
@@ -257,23 +249,25 @@ class Photo:
 
         # Faces
         if Config.instance().people_enabled:
-            if people is None:
-                people = People.instance()
-            photo_obj.faces = people.detect_faces(photo_obj, new_original_photo,
-                                                             largest_src, output_path, external_path)
+            people_q.put((photo_obj, new_original_photo,
+                         largest_src, output_path, external_path))
 
         return photo_obj
 
 
 def _process_photo(t):
-    (external_path, photo_file, filename, unique_slug, album_folder, people) = t
-    print(" --> Processing %s... " % photo_file)
+    (external_path, photo_file, filename, unique_slug, album_folder) = t
+    print(f' --> Processing [magenta]{photo_file}[/magenta]...')
     try:
-        return Photo.process_photo(external_path, photo_file, filename, unique_slug, album_folder)
+        return (photo_file, Photo.process_photo(external_path, photo_file, filename, unique_slug, album_folder, _process_photo.people_q))
     except PhotoProcessingFailure as e:
         print(
-            f'Skipping processing of image file {photo_file}. Reason: {str(e)}')
-        return None
+            f'[yellow]Skipping processing of image file[/yellow] [magenta]{photo_file}[/magenta] Reason: [red]{str(e)}[/red]')
+        return (photo_file, None)
+
+
+def _proces_photo_init(people_q):
+    _process_photo.people_q = people_q
 
 
 class Albums:
@@ -292,7 +286,6 @@ class Albums:
 
     def __init(self):
         self.albums: dict = {}
-
         self.slugs = set()
         self.slugs_lock = RLock()
 
@@ -319,11 +312,11 @@ class Albums:
 
     def process_album_path(self, album_dir, album_name, output_albums_photos_path, external_root):
 
-        print(" > Importing album %s as '%s'" % (album_dir, album_name))
-
         unique_album_slug = find_unique_slug(
             self.slugs, self.slugs_lock, album_name)
-        # self.unique_album_slugs[unique_album_slug] = unique_album_slug
+        print(
+            f'Importing [magenta]{album_dir}[/magenta] as [green]{album_name}[/green] ([yellow]{unique_album_slug}[/yellow])')
+
         album_obj = Album(album_name, unique_album_slug)
 
         album_name_folder = os.path.basename(unique_album_slug)
@@ -347,9 +340,6 @@ class Albums:
             if album_file.startswith('.'):  # skip dotfiles
                 continue
             photo_file = os.path.join(album_dir, album_file)
-            # print(" --> Processing %s... " % photo_file)
-            # try:
-
             filename = os.path.basename(os.path.basename(photo_file))
 
             # Get a unique slug
@@ -357,21 +347,25 @@ class Albums:
                 unique_slugs, unique_slugs_lock, filename)
 
             jobs.append((external_path, photo_file,
-                        filename, unique_slug, album_folder, People.instance()))
-
-            # photo_obj = Photo.process_photo(
-            #     external_path, photo_file, filename, unique_slug, album_folder)
+                        filename, unique_slug, album_folder))
 
         results = []
-        with Pool(processes=1) as P:
+        people_q = Queue()
+        print(Config.instance().parallel_tasks)
+        with Pool(processes=Config.instance().parallel_tasks, initializer=_proces_photo_init, initargs=[people_q]) as P:
             results = P.map(_process_photo, jobs)
 
-        for result in results:
+        people = People.instance()
+        print(f'Detecting Faces...')
+        while not people_q.empty():
+            (photo_obj, new_original_photo, largest_src,
+             output_path, external_path) = people_q.get()
+            people.detect_faces(photo_obj, new_original_photo,
+                                largest_src, output_path, external_path)
+
+        for photo_file, result in results:
             if result is not None:
                 album_obj.add_photo(result)
-            # except PhotoProcessingFailure as e:
-            #     print(
-            #         f'Skipping processing of image file {photo_file}. Reason: {str(e)}')
 
         if len(album_obj.photos) > 0:
             album_obj.src = pick_album_thumbnail(
@@ -414,6 +408,8 @@ class SiteGenerator:
 
     def generate(self):
 
+        print(
+            f'[bold]Generating site from [magenta]{Config.instance().input_photos_dir}[magenta][/bold]')
         output_photos_path = os.path.normpath(os.path.join(os.path.dirname(
             os.path.realpath(__file__)), "..", "web", "public", "static", "_gallery"))
         output_data_path = os.path.normpath(os.path.join(os.path.dirname(
@@ -442,10 +438,6 @@ class SiteGenerator:
 
         Albums.instance().process_path(Config.instance().input_photos_dir,
                                        output_albums_photos_path, external_root)
-        # people_data_slugs = {}
-        # for person in People.people_by_slug():
-        #     print(person)
-        #     people_data_slugs[person.slug] = person
 
         with open(output_albums_data_file, 'w') as outfile:
             output_str = 'export const albums_data = '
