@@ -121,3 +121,10 @@ Once complete you can upload the output folder to your webserver, or see what it
 `python -m http.server --directory /my-output-folder`
 
 
+## FAQ
+
+### I get an error 'JavaScript heap out of memory'
+
+Try increasing your Node memory allocation: `NODE_OPTIONS="--max-old-space-size=2048" yarn build` 
+
+Reference: https://github.com/cbenning/fussel/issues/25
