@@ -6,8 +6,8 @@ import { people_data } from "../_gallery/people_data.js"
 import SwiperCore, { Keyboard, Pagination, HashNavigation, Navigation } from "swiper";
 import { Swiper, SwiperSlide } from 'swiper/react';
 import 'swiper/swiper.min.css';
-import 'swiper/modules/navigation/navigation.min.css'
-import 'swiper/modules/pagination/pagination.min.css'
+import 'swiper/css/navigation'
+import 'swiper/css/pagination'
 import Modal from 'react-modal';
 
 import { Link } from "react-router-dom";
