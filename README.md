@@ -40,44 +40,48 @@ Features and Properties:
 
 ### Configure
 
- - Copy `.env.example` to `.env`
- - Edit `.env` to your needs (minimal change is to set INPUT_PATH)
+ - Copy `sample_config.yml` to `config.yml`
+ - Edit `config.yml` to your needs (minimal change is to set INPUT_PATH)
 
 ### Curate photos
-The folder you point INPUT_PATH at, must have albums in subfolders inside it with the folder names as the name of the albums you want in the gallery. Any further-nested folders will be ignored.
+The folder you point `gallery.input_path` at must have subfolders inside it with the folder names as the name of the albums you want in the gallery. 
 
 #### Example
 
 If you have your .env setup with:
-`INPUT_PATH = /home/user/Photos/gallery`
+```
+gallery:
+  input_path: "/home/user/Photos/gallery"
+```
 
 Then that path should look like this:
 ```
 /home/user/Photos/gallery:
   - Album 1
   - Album 2
+    - Sub Album 1
   - Album 3
+    - Sub Album 2
   - ...
 ```
 
-
 ### Generate your site
-Run the following script to generate your site into `web/build` folder.
+Run the following script to generate your site into the path you set in `gallery.output_path` folder.
  - `./generate_site.sh`
  
 ### Host your site
 
-Point your web server at `web/build` or copy/upload the `web/build` folder to your web host HTTP root.
+Point your web server at `gallery.output_path` folder or copy/upload the `gallery.output_path` folder to your web host HTTP root.
 
 #### Quick setup
 
 After running `generate_site.sh`
 
- - `python -m http.server --directory web/build` (go to localhost:8000 in browser)
+ - `python -m http.server --directory <output_path>` (go to localhost:8000 in browser)
 
 #### Development setup
 
- - `cd web`
+ - `cd fussel/web`
  - `yarn start`
  
 ## Docker
@@ -87,12 +91,13 @@ If you don't want to fuss with anything and would like to use docker instead to 
 ### Usage
 
 Required:
- * `/my-input-folder` is the absolute path to top-level photo folder
- * `/my-output-folder` is the absolute path to where you want the generated site written to
+ * `<input_dir>` is the absolute path to top-level photo folder
+ * `<output_dir>` is the absolute path to where you want the generated site written to
 
 Note: 
- The two -e env variables PGID and PUID tells the container what to set the output folder permissions to
+ * The two -e env variables PGID and PUID tells the container what to set the output folder permissions to
  once done. Otherwise it is set to root permissions
+ * For the label-based config to work you must mount `/var/run/docker.sock` into the container, eg: `-v /var/run/docker.sock:/var/run/docker.sock fussel`
 
 Optional:
  You can provide any value found in the config.yml file in a docker label variable using `--label item=value`
