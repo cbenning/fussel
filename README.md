@@ -9,11 +9,19 @@ with nothing but a directory full of photos.
 **[Demo Site](https://benninger.ca/fussel-demo/)**
 
 Features and Properties:
- - Absolutely no server-side code to worry about once deployed
+ - Zero no server-side code to worry about once generated
  - Builds special "Person" gallery for people found in XMP face tags.
  - Adds watermarks
  - Mobile friendly
  - Automatic dark-mode
+ - Uses EXIF hints to rotate photos
+ - Predictable slug-basted urls
+
+Common Use-cases:
+ - Image Portfolios
+ - Family Photos
+ - Sharing Photo Archives
+ - etc
 
 ## Screenshots
 | ![Albums Screenshot](https://user-images.githubusercontent.com/153700/81897761-1e904780-956c-11ea-9450-fbdb286b95fc.png?raw=true "Albums Screenshot") | ![Album Screenshot](https://user-images.githubusercontent.com/153700/81897716-120bef00-956c-11ea-9204-b8e90ffb24f8.png?raw=true "Album Screenshot") |  
