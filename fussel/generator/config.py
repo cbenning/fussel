@@ -33,8 +33,8 @@ class Config:
             'gallery.watermark.enable', True))
         cls._instance.watermark_path = str(yaml_config.getKey(
             'gallery.watermark.path', DEFAULT_WATERMARK_PATH))
-        cls._instance.watermark_ratio = yaml_config.getKey(
-            'gallery.watermark.size_ratio', DEFAULT_WATERMARK_SIZE_RATIO)
+        cls._instance.watermark_ratio = float(yaml_config.getKey(
+            'gallery.watermark.size_ratio', DEFAULT_WATERMARK_SIZE_RATIO))
         cls._instance.recursive_albums = bool(yaml_config.getKey(
             'gallery.albums.recursive', True))
         cls._instance.recursive_albums_name_pattern = str(yaml_config.getKey(

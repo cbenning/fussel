@@ -3,7 +3,7 @@
 pushd fussel
 
 echo "Generating yaml config..."
-curl --silent -XGET --unix-socket /run/docker.sock http://localhost/containers/${HOSTNAME}/json | jq '.Config.Labels' > flat_config.json
+curl --silent -XGET --unix-socket /var/run/docker.sock http://localhost/containers/${HOSTNAME}/json | jq '.Config.Labels' > flat_config.json
 utils/./flat_json_to_nested_json.py flat_config.json > config.json
 yq -P config.json > config.yml
 cat config.yml

@@ -1,4 +1,4 @@
-# Fussel
+ Fussel
 
 ![License Badge](https://img.shields.io/github/license/cbenning/fussel)
 ![Version Badge](https://img.shields.io/github/v/release/cbenning/fussel)
@@ -9,7 +9,7 @@ with nothing but a directory full of photos.
 **[Demo Site](https://benninger.ca/fussel-demo/)**
 
 Features and Properties:
- - Zero no server-side code to worry about once generated
+ - No server-side code to worry about once generated
  - Builds special "Person" gallery for people found in XMP face tags.
  - Adds watermarks
  - Mobile friendly
@@ -112,26 +112,28 @@ Optional:
 
 ```
 docker run \
--e PGID=$(id -g) \
--e PUID=$(id -u) \
--v <input_dir>:/input:ro \
--v <output_dir>:/output \
---label gallery.input_path="/input" \
---label gallery.output_path="/output" \
---label gallery.overwrite=False \
---label albums.recursive=True \
---label albums.recursive_name_pattern="{parent_album} > {album}" \
---label people.enable=True \
---label watermark.enable=True \
---label watermark.path="web/src/images/fussel-watermark.png" \
---label watermark.size_ratio=0.3 \
---label site.http_root="/" \
---label site.title="Fussel Gallery" \
--v /var/run/docker.sock:/var/run/docker.sock fussel
+  -e PGID=$(id -g) \
+  -e PUID=$(id -u) \
+  -v /var/run/docker.sock:/var/run/docker.sock \
+  -v <input_path>:/input:ro \
+  -v <output_path>:/output \
+  --label gallery.input_path="/input" \
+  --label gallery.output_path="/output" \
+  --label gallery.overwrite=False \
+  --label gallery.parallel_tasks=4 \
+  --label gallery.albums.recursive=True \
+  --label gallery.albums.recursive_name_pattern="{parent_album} > {album}" \
+  --label gallery.people.enable=True \
+  --label gallery.watermark.enable=True \
+  --label gallery.watermark.path="web/src/images/fussel-watermark.png" \
+  --label gallery.watermark.size_ratio=0.3 \
+  --label site.http_root="/" \
+  --label site.title="Fussel Gallery" \
+  ghcr.io/cbenning/fussel:latest 
 ```
 
 Once complete you can upload the output folder to your webserver, or see what it looks like with
-`python -m http.server --directory <output_dir>`
+`python -m http.server --directory <output_path>`
 
 
 ## FAQ
