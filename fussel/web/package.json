@@ -7,19 +7,14 @@
   "license": "MIT",
   "dependencies": {
     "bulma": "^0.9.4",
-    "prop-types": "^15.8.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-helmet": "^6.1.0",
     "react-modal": "^3.16.1",
     "react-responsive-masonry": "^2.1.7",
-    "react-router-dom": "^6.8.1",
+    "react-router-dom": "^6.8.2",
     "react-scripts": "^5.0.1",
-    "serialize-javascript": "^5.0.1",
-    "swiper": "^9.0.5",
-    "tsutils": "^3.21.0",
-    "typescript": "^4.9.5",
-    "websocket-extensions": "^0.1.4"
+    "swiper": "^9.1.0"
   },
   "scripts": {
     "start": "react-scripts --openssl-legacy-provider start",
