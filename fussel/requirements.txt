@@ -1,6 +1,6 @@
-Pillow==10.3.0
-beautifulsoup4==4.9.3
-massedit==0.69.1
-python-slugify==7.0.0
-pyyaml==6.0.0
-rich==13.3.1
+Pillow==10.4.0
+beautifulsoup4==4.12.3
+massedit==0.70.0
+python-slugify==8.0.4
+pyyaml==6.0.2
+rich==13.9.4
