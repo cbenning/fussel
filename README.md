@@ -109,8 +109,8 @@ Note:
 
 ```
 docker run \
-  -v ./fussel-input:/input:ro \
-  -v ./fussel-output:/output \
+  -v <input-dir>:/input:ro \
+  -v <output-dir>:/output \
   -e PGID=$(id -g) \
   -e PUID=$(id -u) \
   -e INPUT_PATH="/input" \
