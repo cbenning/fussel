@@ -18,5 +18,6 @@ RUN apk add --no-cache curl jq yq python3 python3-dev py3-pip nodejs yarn sed ba
 WORKDIR /
 
 COPY docker/start.sh /
+COPY docker/template_config.yml /
 
 CMD ["/start.sh"]

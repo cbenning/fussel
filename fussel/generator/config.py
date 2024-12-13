@@ -1,5 +1,6 @@
 import os
 
+
 DEFAULT_WATERMARK_PATH = 'web/src/images/fussel-watermark.png'
 DEFAULT_WATERMARK_SIZE_RATIO = 0.3
 DEFAULT_RECURSIVE_ALBUMS_NAME_PATTERN = '{parent_album} > {album}'
@@ -17,7 +18,6 @@ class Config:
     @classmethod
     def instance(cls):
         if cls._instance is None:
-            print('Creating new instance')
             cls._instance = cls.__new__(cls)
             # Put any initialization here.
         return cls._instance
@@ -57,3 +57,4 @@ class Config:
 
         cls._instance.exif_transpose = bool(
             yaml_config.getKey('gallery.exif_transpose', False))
+        

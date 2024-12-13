@@ -2,13 +2,31 @@
 
 pushd fussel
 
+set -e 
+
+source fussel/.venv/bin/activate
+
 echo "Generating yaml config..."
-curl --silent -XGET --unix-socket /var/run/docker.sock http://localhost/containers/${HOSTNAME}/json | jq '.Config.Labels' > flat_config.json
-utils/./flat_json_to_nested_json.py flat_config.json > config.json
-yq -P config.json > config.yml
+
+jinja2 \
+    -D INPUT_PATH="\"${INPUT_PATH}\"" \
+    -D OUTPUT_PATH="\"${OUTPUT_PATH}\"" \
+    -D OVERWRITE="${OVERWRITE}" \
+    -D EXIF_TRANSPOSE="${EXIF_TRANSPOSE}" \
+    -D RECURSIVE="${RECURSIVE}" \
+    -D RECURSIVE_NAME_PATTERN="\"${RECURSIVE_NAME_PATTERN}\"" \
+    -D FACE_TAG_ENABLE="${FACE_TAG_ENABLE}" \
+    -D WATERMARK_ENABLE="${WATERMARK_ENABLE}" \
+    -D WATERMARK_PATH="\"${WATERMARK_PATH}\"" \
+    -D WATERMARK_SIZE_RATIO="${WATERMARK_SIZE_RATIO}" \
+    -D SITE_ROOT="\"${SITE_ROOT}\"" \
+    -D SITE_TITLE="\"${SITE_TITLE}\"" \
+    ../template_config.yml > config.yml
+
 cat config.yml
 
 ./generate.sh
+
 
 _PUID=$(id -u)
 _PGID=$(id -g)
@@ -22,7 +40,6 @@ if [[ ! -z "${PGID}" ]]; then
  DO_CHOWN=1
 fi
 if (( DO_CHOWN > 0 )); then
- echo "Fixing permissions..."
- OUTPUT_PATH=$(cat config.yml | yq '.gallery.output_path')
+ echo "Fixing output directory permissions..."
  chown -R ${_PUID}:${_PGID} ${OUTPUT_PATH}
 fi

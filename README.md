@@ -105,30 +105,26 @@ Required:
 Note: 
  * The two -e env variables PGID and PUID tells the container what to set the output folder permissions to
  once done. Otherwise it is set to root permissions
- * For the label-based config to work you must mount `/var/run/docker.sock` into the container, eg: `-v /var/run/docker.sock:/var/run/docker.sock fussel`
-
-Optional:
- You can provide any value found in the config.yml file in a docker label variable using `--label item=value`
+ * Look at docker/template_config.yml To see what ENV vars map to which config values
 
 ```
 docker run \
+  -v ./fussel-input:/input:ro \
+  -v ./fussel-output:/output \
   -e PGID=$(id -g) \
   -e PUID=$(id -u) \
-  -v /var/run/docker.sock:/var/run/docker.sock \
-  -v <input_path>:/input:ro \
-  -v <output_path>:/output \
-  --label gallery.input_path="/input" \
-  --label gallery.output_path="/output" \
-  --label gallery.overwrite=False \
-  --label gallery.parallel_tasks=4 \
-  --label gallery.albums.recursive=True \
-  --label gallery.albums.recursive_name_pattern="{parent_album} > {album}" \
-  --label gallery.people.enable=True \
-  --label gallery.watermark.enable=True \
-  --label gallery.watermark.path="web/src/images/fussel-watermark.png" \
-  --label gallery.watermark.size_ratio=0.3 \
-  --label site.http_root="/" \
-  --label site.title="Fussel Gallery" \
+  -e INPUT_PATH="/input" \
+  -e OUTPUT_PATH="/output" \
+  -e OVERWRITE="False" \
+  -e EXIF_TRANSPOSE="False" \
+  -e RECURSIVE="True" \
+  -e RECURSIVE_NAME_PATTERN="{parent_album} > {album}" \
+  -e FACE_TAG_ENABLE="True" \
+  -e WATERMARK_ENABLE="True" \
+  -e WATERMARK_PATH="web/src/images/fussel-watermark.png" \
+  -e WATERMARK_SIZE_RATIO="0.3" \
+  -e SITE_ROOT="/" \
+  -e SITE_TITLE="Fussel Gallery" \
   ghcr.io/cbenning/fussel:latest 
 ```
 

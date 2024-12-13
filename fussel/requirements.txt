@@ -4,3 +4,4 @@ massedit==0.70.0
 python-slugify==8.0.4
 pyyaml==6.0.2
 rich==13.9.4
+jinja2-cli

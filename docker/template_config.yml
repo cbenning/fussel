@@ -1,0 +1,66 @@
+
+gallery:
+  # Path to the root of your photo files
+  input_path: {{ INPUT_PATH }}
+
+  # Path to output the site to
+  # Default: "site/"
+  output_path: {{ OUTPUT_PATH | default('site/') }}
+
+  # Setting to True will force a full rebuild of the gallery photos.
+  # Setting to False will only generate files which are missing or added
+  # Default: False
+  overwrite: {{ OVERWRITE | default('False') }}
+
+  # The number of parallel processing tasks that will be used
+  # Default: <number_of_cores> / 2
+  # parallel_tasks: {{ PARALLEL_TASKS | default(1) }}
+
+  # Attempt to orient the photo based on embedded EXIF data
+  # Default: exif_transpose: False
+  exif_transpose: {{ EXIF_TRANSPOSE | default('False') }}
+
+  albums:
+    # Recursively process sub-folders as albums
+    # Default: recursive: True
+    recursive: {{ RECURSIVE | default('True') }}
+
+    # Pattern for album name creation of sub albums
+    # Following substitutions are available:
+    # - {parent_album} will be replaced with the parent album
+    # - {album} will be replaced with the album name
+    # Default: "{parent_album} > {album}"
+    recursive_name_pattern: {{ RECURSIVE_NAME_PATTERN | default('{parent_album} > {album}') }}
+
+  people:
+    # Face Tag detection.
+    # Setting to True adds a faces button and virtual albums for detected people
+    # Setting to False disables the feature
+    # Default: True
+    enable: {{ FACE_TAG_ENABLE | default('True') }}
+
+  watermark:
+    # Enable placement of watermark in bottom right corner of photos.
+    # Default: True
+    enable: {{ WATERMARK_ENABLE | default('True') }}
+
+    # Specify path to custome watermark
+    # Should be a transparent png
+    # Default: "web/src/images/fussel-watermark.png"
+    path: {{ WATERMARK_PATH | default('web/src/images/fussel-watermark.png') }}  
+
+    # Watermark size ratio (0.0 -> 1.0)
+    # Default: 0.3
+    size_ratio: {{ WATERMARK_SIZE_RATIO | default('0.3') }}  
+
+site:
+  # Set http_root to the root url you intend to host the site.
+  # If you host this service at http://<site>/  set to http://<site>/'.
+  # If you host this service at http://<site>/my/photo/album/ set to 'http://<site>/my/photo/album/'
+  # Include trailing slash
+  # Default: "/"
+  http_root: {{ SITE_ROOT | default('/') }}  
+
+  # Title shown at the top of the browser tab
+  # Default: "Fussel Gallery"
+  title: {{ SITE_TITLE | default('Fussel Gallery') }}  
