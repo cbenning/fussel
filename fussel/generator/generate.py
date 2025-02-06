@@ -3,7 +3,7 @@
 import os
 import shutil
 import json
-import urllib
+from urllib.parse import quote
 from PIL import Image, ImageOps, ImageFile, UnidentifiedImageError
 from bs4 import BeautifulSoup
 from dataclasses import dataclass
@@ -226,8 +226,8 @@ class Photo:
                     if Config.instance().exif_transpose:
                         im = ImageOps.exif_transpose(im)
                     im.save(new_sub_photo)
-            srcSet[str(size)+"w"] = ["%s/%s" % (urllib.parse.quote(external_path),
-                                                urllib.parse.quote(os.path.basename(new_sub_photo)))]
+            srcSet[str(size)+"w"] = ["%s/%s" % (quote(external_path),
+                                                quote(os.path.basename(new_sub_photo)))]
 
         print(msg)
 
@@ -242,10 +242,10 @@ class Photo:
             filename,
             width,
             height,
-            "%s/%s" % (urllib.parse.quote(external_path),
-                       urllib.parse.quote(os.path.basename(largest_src))),
-            "%s/%s" % (urllib.parse.quote(external_path),
-                       urllib.parse.quote(os.path.basename(smallest_src))),
+            "%s/%s" % (quote(external_path),
+                       quote(os.path.basename(largest_src))),
+            "%s/%s" % (quote(external_path),
+                       quote(os.path.basename(smallest_src))),
             slug,
             srcSet
         )
