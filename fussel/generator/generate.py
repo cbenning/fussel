@@ -437,7 +437,6 @@ class SiteGenerator:
             shutil.rmtree(output_photos_path, ignore_errors=True)
             shutil.rmtree(generated_site_path, ignore_errors=True)
 
-        print("create", output_photos_path)
         os.makedirs(output_photos_path, exist_ok=True)
         shutil.rmtree(output_data_path, ignore_errors=True)
         os.makedirs(output_data_path, exist_ok=True)
