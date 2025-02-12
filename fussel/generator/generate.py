@@ -199,7 +199,7 @@ class Photo:
             with Image.open(new_original_photo) as im:
                 original_size = im.size
                 width, height = im.size
-                exif = exif_to_str(im.getexif())
+                exif = extract_exif(im)
         except UnidentifiedImageError as e:
             shutil.rmtree(new_original_photo, ignore_errors=True)
             raise PhotoProcessingFailure(message=str(e))

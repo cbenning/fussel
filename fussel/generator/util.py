@@ -1,20 +1,32 @@
-
-
-from PIL import Image
-from PIL.ExifTags import TAGS
+from PIL import Image, ImageFile
+from PIL.ExifTags import TAGS, GPSTAGS, IFD
 from slugify import slugify
 from .config import *
 import os
 
 
-def exif_to_str(exif: dict) -> str:
+def extract_exif(im: ImageFile.ImageFile) -> str:
     result = ""
+    # https://stackoverflow.com/a/75357594
+    exif = im.getexif()
     if exif is not None:
         for tag, value in exif.items():
             if tag in TAGS:
                 result += f"{TAGS[tag]}: {value}\n"
             else:
                 result += f"{tag}: {value}\n"
+    for ifd_id in IFD:
+        try:
+            ifd = exif.get_ifd(ifd_id)
+            if ifd_id == IFD.GPSInfo:
+                resolve = GPSTAGS
+            else:
+                resolve = TAGS
+            for k, v in ifd.items():
+                tag = resolve.get(k, k)
+                result += f"{tag}: {v}\n"
+        except KeyError:
+            pass
     return result
 
 
