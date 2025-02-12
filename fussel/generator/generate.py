@@ -162,7 +162,7 @@ class Person:
 
 class Photo:
 
-    def __init__(self, name, width, height, src, thumb, slug, srcSet):
+    def __init__(self, name, width, height, src, thumb, slug, srcSet, exif):
 
         self.width = width
         self.height = height
@@ -172,6 +172,7 @@ class Photo:
         self.srcSet = srcSet
         self.faces: list = []
         self.slug = slug
+        self.exif = exif
 
     @classmethod
     def process_photo(cls, external_path, photo, filename, slug, output_path, people_q: Queue):
@@ -198,6 +199,7 @@ class Photo:
             with Image.open(new_original_photo) as im:
                 original_size = im.size
                 width, height = im.size
+                exif = exif_to_str(im.getexif())
         except UnidentifiedImageError as e:
             shutil.rmtree(new_original_photo, ignore_errors=True)
             raise PhotoProcessingFailure(message=str(e))
@@ -247,7 +249,8 @@ class Photo:
             "%s/%s" % (quote(external_path),
                        quote(os.path.basename(smallest_src))),
             slug,
-            srcSet
+            srcSet,
+            exif
         )
 
         # Faces
@@ -434,6 +437,7 @@ class SiteGenerator:
             shutil.rmtree(output_photos_path, ignore_errors=True)
             shutil.rmtree(generated_site_path, ignore_errors=True)
 
+        print("create", output_photos_path)
         os.makedirs(output_photos_path, exist_ok=True)
         shutil.rmtree(output_data_path, ignore_errors=True)
         os.makedirs(output_data_path, exist_ok=True)

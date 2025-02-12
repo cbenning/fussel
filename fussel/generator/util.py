@@ -1,9 +1,21 @@
 
 
 from PIL import Image
+from PIL.ExifTags import TAGS
 from slugify import slugify
 from .config import *
 import os
+
+
+def exif_to_str(exif: dict) -> str:
+    result = ""
+    if exif is not None:
+        for tag, value in exif.items():
+            if tag in TAGS:
+                result += f"{TAGS[tag]}: {value}\n"
+            else:
+                result += f"{tag}: {value}\n"
+    return result
 
 
 def is_supported_album(path):
@@ -36,7 +48,6 @@ def find_unique_slug(slugs, lock, name):
 
     slugs.add(slug)
     lock.release()
-
     return slug
 
 

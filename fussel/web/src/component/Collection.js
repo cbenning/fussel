@@ -22,7 +22,8 @@ class Collection extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      viewerIsOpen: true ? this.props.params.image != undefined : false
+      viewerIsOpen: true ? this.props.params.image != undefined : false,
+      infoModalIsOpen: false
     };
   }
 
@@ -70,7 +71,8 @@ class Collection extends Component {
 
     this.props.navigate("/collections/" + this.props.params.collectionType + "/" + this.props.params.collection + "/" + event.target.attributes.slug.value);
     this.setState({
-      viewerIsOpen: true
+      viewerIsOpen: true,
+      infoModalIsOpen: false
     })
     // Add listener to detect if the back button was pressed and the modal should be closed
     window.addEventListener('hashchange', this.modalStateTracker, false);
@@ -82,10 +84,23 @@ class Collection extends Component {
 
     this.props.navigate("/collections/" + this.props.params.collectionType + "/" + this.props.params.collection);
     this.setState({
-      viewerIsOpen: false
+      viewerIsOpen: false,
+      infoModalIsOpen: false
     })
     // var page = document.getElementsByTagName('body')[0];
     // page.classList.remove('noscroll');
+  };
+
+  openInfoModal = () => {
+    this.setState({
+      infoModalIsOpen: true
+    })
+  };
+
+  closeInfoModal = () => {
+    this.setState({
+      infoModalIsOpen: false
+    })
   };
 
   title = (collectionType) => {
@@ -155,7 +170,7 @@ class Collection extends Component {
           isOpen={this.state.viewerIsOpen}
           onRequestClose={this.closeModal}
           preventScroll={true}
-          
+
           style={{
             overlay: {
               backgroundColor: 'rgba(0, 0, 0, 0.3)'
@@ -167,11 +182,47 @@ class Collection extends Component {
             }
           }}
         >
+          <button id="infoModal" className="button is-text modal-info-button" onClick={this.openInfoModal} style={{ visibility: this.state.infoModalIsOpen ? "hidden" : "visible" }}>
+            <span className="icon is-small">
+              <i className="fas fa-info-circle"></i>
+            </span>
+          </button>
           <button className="button is-text modal-close-button" onClick={this.closeModal} >
             <span className="icon is-small">
               <i className="fas fa-times"></i>
             </span>
           </button>
+          <Modal
+            isOpen={this.state.infoModalIsOpen}
+            onRequestClose={this.closeInfoModal}
+            preventScroll={true}
+            className="info-modal"
+            overlayClassName="info-modal-overlay"
+            style={{
+              overlay: {
+                display: "inline-block",
+                backgroundColor: 'rgba(0, 0, 0, 0.3)',
+                position: "absolute",
+                right: 60,
+                top: 20,
+                padding: 0
+              },
+              content: {
+                display: "inline-block",
+                position: "relative",
+                inset: 0,
+                padding: 0,
+                border: "none",
+                borderRadius: 0,
+                margin: 0,
+                whiteSpace: "pre-wrap",
+                background: "transparent"
+              }
+            }}
+          >
+            <div onClick={this.closeInfoModal} class="info-popup">{collection_data["photos"].find(x => x.slug == this.props.params.image)?.exif}</div>
+          </Modal>
+
           <Swiper
             slidesPerView={1}
             preloadImages={false}
