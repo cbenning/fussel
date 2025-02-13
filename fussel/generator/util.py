@@ -6,15 +6,13 @@ import os
 
 
 def extract_exif(im: ImageFile.ImageFile) -> str:
-    result = ""
+    result = {}
     # https://stackoverflow.com/a/75357594
     exif = im.getexif()
-    if exif is not None:
+    if exif:
         for tag, value in exif.items():
             if tag in TAGS:
-                result += f"{TAGS[tag]}: {value}\n"
-            else:
-                result += f"{tag}: {value}\n"
+                result[TAGS[tag]] = value
     for ifd_id in IFD:
         try:
             ifd = exif.get_ifd(ifd_id)
@@ -24,10 +22,10 @@ def extract_exif(im: ImageFile.ImageFile) -> str:
                 resolve = TAGS
             for k, v in ifd.items():
                 tag = resolve.get(k, k)
-                result += f"{tag}: {v}\n"
+                result[tag] = v
         except KeyError:
             pass
-    return result
+    return "\n".join([f"{k}: {v}" for k, v in result.items()])
 
 
 def is_supported_album(path):

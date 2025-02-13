@@ -201,22 +201,13 @@ class Collection extends Component {
             style={{
               overlay: {
                 display: "inline-block",
-                backgroundColor: 'rgba(0, 0, 0, 0.3)',
                 position: "absolute",
                 right: 60,
-                top: 20,
-                padding: 0
+                top: 20
               },
               content: {
-                display: "inline-block",
                 position: "relative",
-                inset: 0,
-                padding: 0,
-                border: "none",
-                borderRadius: 0,
-                margin: 0,
-                whiteSpace: "pre-wrap",
-                background: "transparent"
+                whiteSpace: "pre-wrap"
               }
             }}
           >

@@ -13,17 +13,13 @@ Keep an eye on the ticket and maybe one day I can remove this */
 }
 
 .info-modal-overlay {
-  position: absolute !important;
-  width: auto !important;
-  height: auto !important;
-  right: 60px;
   background-color: rgba(0, 0, 0, 0.3);
+  padding: 0;
 }
 
 .info-modal {
-  position: relative;
-  display: inline-block;
-  padding: 8px;
+  margin: 0;
+  padding: 0;
 }
 
 .info-popup {
