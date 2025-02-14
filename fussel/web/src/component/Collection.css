@@ -5,28 +5,6 @@ Keep an eye on the ticket and maybe one day I can remove this */
   align-self: flex-start;
 }
 
-.modal-info-button {
-  position: absolute;
-  z-index: 100;
-  right: 60px;
-  top: 15px;
-}
-
-.info-modal-overlay {
-  background-color: rgba(0, 0, 0, 0.3);
-  padding: 0;
-}
-
-.info-modal {
-  margin: 0;
-  padding: 0;
-}
-
-.info-popup {
-  color: #fff;
-  font-size: 12px;
-}
-
 .modal-close-button {
   position: absolute;
   z-index: 100;

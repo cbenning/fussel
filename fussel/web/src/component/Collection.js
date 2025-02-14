@@ -92,15 +92,7 @@ class Collection extends Component {
   };
 
   openInfoModal = () => {
-    this.setState({
-      infoModalIsOpen: true
-    })
-  };
-
-  closeInfoModal = () => {
-    this.setState({
-      infoModalIsOpen: false
-    })
+    this.props.navigate("/collections/" + this.props.params.collectionType + "/" + this.props.params.collection + "/" + this.props.params.image + "/info");
   };
 
   title = (collectionType) => {
@@ -182,7 +174,7 @@ class Collection extends Component {
             }
           }}
         >
-          <button id="infoModal" className="button is-text modal-info-button" onClick={this.openInfoModal} style={{ visibility: this.state.infoModalIsOpen ? "hidden" : "visible" }}>
+          <button id="infoModal" className="button is-text modal-info-button" onClick={this.openInfoModal}>
             <span className="icon is-small">
               <i className="fas fa-info-circle"></i>
             </span>
@@ -192,27 +184,6 @@ class Collection extends Component {
               <i className="fas fa-times"></i>
             </span>
           </button>
-          <Modal
-            isOpen={this.state.infoModalIsOpen}
-            onRequestClose={this.closeInfoModal}
-            preventScroll={true}
-            className="info-modal"
-            overlayClassName="info-modal-overlay"
-            style={{
-              overlay: {
-                display: "inline-block",
-                position: "absolute",
-                right: 60,
-                top: 20
-              },
-              content: {
-                position: "relative",
-                whiteSpace: "pre-wrap"
-              }
-            }}
-          >
-            <div onClick={this.closeInfoModal} class="info-popup">{collection_data["photos"].find(x => x.slug == this.props.params.image)?.exif}</div>
-          </Modal>
 
           <Swiper
             slidesPerView={1}

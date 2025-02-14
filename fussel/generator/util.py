@@ -5,7 +5,7 @@ from .config import *
 import os
 
 
-def extract_exif(im: ImageFile.ImageFile) -> str:
+def extract_exif(im: ImageFile.ImageFile) -> dict:
     result = {}
     # https://stackoverflow.com/a/75357594
     exif = im.getexif()
@@ -22,10 +22,10 @@ def extract_exif(im: ImageFile.ImageFile) -> str:
                 resolve = TAGS
             for k, v in ifd.items():
                 tag = resolve.get(k, k)
-                result[tag] = v
+                result[tag] = str(v)
         except KeyError:
             pass
-    return "\n".join([f"{k}: {v}" for k, v in result.items()])
+    return result
 
 
 def is_supported_album(path):

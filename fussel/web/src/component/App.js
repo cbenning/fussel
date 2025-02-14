@@ -2,6 +2,7 @@ import React, { Component } from 'react';
 import Navbar from "./Navbar";
 import Collections from "./Collections";
 import Collection from "./Collection";
+import Info from "./Info";
 import NotFound from "./NotFound";
 import { site_data } from "../_gallery/site_data.js"
 import { Routes, Route } from "react-router-dom";
@@ -25,6 +26,7 @@ export default class App extends Component {
             <Route path="collections/:collectionType" element={<Collections />} />
             <Route path="collections/:collectionType/:collection" element={<Collection />} />
             <Route path="collections/:collectionType/:collection/:image" element={<Collection />} />
+            <Route path="collections/:collectionType/:collection/:image/info" element={<Info />} />
 
             {/* Using path="*"" means "match anything", so this route
                   acts like a catch-all for URLs that we don't have explicit
