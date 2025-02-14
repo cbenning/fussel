@@ -22,8 +22,7 @@ class Collection extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      viewerIsOpen: true ? this.props.params.image != undefined : false,
-      infoModalIsOpen: false
+      viewerIsOpen: true ? this.props.params.image != undefined : false
     };
   }
 
@@ -71,8 +70,7 @@ class Collection extends Component {
 
     this.props.navigate("/collections/" + this.props.params.collectionType + "/" + this.props.params.collection + "/" + event.target.attributes.slug.value);
     this.setState({
-      viewerIsOpen: true,
-      infoModalIsOpen: false
+      viewerIsOpen: true
     })
     // Add listener to detect if the back button was pressed and the modal should be closed
     window.addEventListener('hashchange', this.modalStateTracker, false);
@@ -84,8 +82,7 @@ class Collection extends Component {
 
     this.props.navigate("/collections/" + this.props.params.collectionType + "/" + this.props.params.collection);
     this.setState({
-      viewerIsOpen: false,
-      infoModalIsOpen: false
+      viewerIsOpen: false
     })
     // var page = document.getElementsByTagName('body')[0];
     // page.classList.remove('noscroll');
@@ -174,7 +171,12 @@ class Collection extends Component {
             }
           }}
         >
-          <button id="infoModal" className="button is-text modal-info-button" onClick={this.openInfoModal}>
+          <button id="infoModal" className="button is-text" onClick={this.openInfoModal} style={{
+            position: 'absolute',
+            right: 60,
+            top: 15,
+            zIndex: 100
+          }}>
             <span className="icon is-small">
               <i className="fas fa-info-circle"></i>
             </span>
