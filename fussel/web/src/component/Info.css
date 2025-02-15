@@ -13,10 +13,10 @@
 .camera-info {
     float: right;
     font-family: "Barlow", sans-serif;
-    font-size: 2em;
+    font-size: clamp(1rem, 3vw, 2rem);;
     display: flex;
     align-items: center;
-    gap: 1.5em;
+    gap: clamp(1rem, 2vw, 1.5rem);
 }
 
 .separator {

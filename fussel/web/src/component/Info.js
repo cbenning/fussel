@@ -77,13 +77,6 @@ class Info extends Component {
           alt={photo.name}
           loading="lazy"
         />
-        <div class="photo-properties">{
-          Object.entries(photo.exif).map((item, i) => (
-            <div key={i}>
-              <b>{item[0]}:</b> {item[1]}
-            </div>
-          ))
-        }</div>
         <div class="camera-info">
           {
             "Make" in photo.exif && <><div class="brand">{photo.exif.Make}</div><span class="separator">|</span></>
@@ -97,6 +90,13 @@ class Info extends Component {
             }
           </div>
         </div>
+        <div class="photo-properties">{
+          Object.entries(photo.exif).map((item, i) => (
+            <div key={i}>
+              <b>{item[0]}:</b> {item[1]}
+            </div>
+          ))
+        }</div>
       </div>
     );
   }
