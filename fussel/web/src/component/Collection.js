@@ -88,6 +88,10 @@ class Collection extends Component {
     // page.classList.remove('noscroll');
   };
 
+  openInfoModal = () => {
+    this.props.navigate("/collections/" + this.props.params.collectionType + "/" + this.props.params.collection + "/" + this.props.params.image + "/info");
+  };
+
   title = (collectionType) => {
     var titleStr = "Unknown"
     if (collectionType == "albums") {
@@ -155,7 +159,7 @@ class Collection extends Component {
           isOpen={this.state.viewerIsOpen}
           onRequestClose={this.closeModal}
           preventScroll={true}
-          
+
           style={{
             overlay: {
               backgroundColor: 'rgba(0, 0, 0, 0.3)'
@@ -167,11 +171,22 @@ class Collection extends Component {
             }
           }}
         >
+          <button id="infoModal" className="button is-text" onClick={this.openInfoModal} style={{
+            position: 'absolute',
+            right: 60,
+            top: 15,
+            zIndex: 100
+          }}>
+            <span className="icon is-small">
+              <i className="fas fa-info-circle"></i>
+            </span>
+          </button>
           <button className="button is-text modal-close-button" onClick={this.closeModal} >
             <span className="icon is-small">
               <i className="fas fa-times"></i>
             </span>
           </button>
+
           <Swiper
             slidesPerView={1}
             preloadImages={false}

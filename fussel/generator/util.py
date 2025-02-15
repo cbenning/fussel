@@ -1,9 +1,31 @@
-
-
-from PIL import Image
+from PIL import Image, ImageFile
+from PIL.ExifTags import TAGS, GPSTAGS, IFD
 from slugify import slugify
 from .config import *
 import os
+
+
+def extract_exif(im: ImageFile.ImageFile) -> dict:
+    result = {}
+    # https://stackoverflow.com/a/75357594
+    exif = im.getexif()
+    if exif:
+        for tag, value in exif.items():
+            if tag in TAGS:
+                result[TAGS[tag]] = value
+    for ifd_id in IFD:
+        try:
+            ifd = exif.get_ifd(ifd_id)
+            if ifd_id == IFD.GPSInfo:
+                resolve = GPSTAGS
+            else:
+                resolve = TAGS
+            for k, v in ifd.items():
+                tag = resolve.get(k, k)
+                result[tag] = str(v)
+        except KeyError:
+            pass
+    return result
 
 
 def is_supported_album(path):
@@ -36,7 +58,6 @@ def find_unique_slug(slugs, lock, name):
 
     slugs.add(slug)
     lock.release()
-
     return slug
 
 
