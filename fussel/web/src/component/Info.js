@@ -71,32 +71,36 @@ class Info extends Component {
             </nav>
           </div>
         </section>
-        <img
-          className="image"
-          src={photo.src}
-          alt={photo.name}
-          loading="lazy"
-        />
-        <div class="camera-info">
-          {
-            "Make" in photo.exif && <><div class="brand">{photo.exif.Make}</div><span class="separator">|</span></>
-          }
-          <div class="specs">
-            {
-              "Model" in photo.exif && <div class="model">{photo.exif.Model}</div>
-            }
-            {
-              "LensModel" in photo.exif && <div class="len">{photo.exif.LensModel}</div>
-            }
+        <div id="imageContainer">
+          <img
+            id="image"
+            src={photo.src}
+            alt={photo.name}
+            loading="lazy"
+          />
+          <div id="infoContainer">
+            <div id="camera-info">
+              {
+                "Make" in photo.exif && <><div id="brand">{photo.exif.Make}</div><span id="separator">|</span></>
+              }
+              <div id="specs">
+                {
+                  "Model" in photo.exif && <div id="model">{photo.exif.Model}</div>
+                }
+                {
+                  "LensModel" in photo.exif && <div id="len">{photo.exif.LensModel}</div>
+                }
+              </div>
+            </div>
+            <div id="photo-properties">{
+              Object.entries(photo.exif).map((item, i) => (
+                <div>
+                  <b>{item[0]}:</b> {item[1]}
+                </div>
+              ))
+            }</div>
           </div>
         </div>
-        <div class="photo-properties">{
-          Object.entries(photo.exif).map((item, i) => (
-            <div key={i}>
-              <b>{item[0]}:</b> {item[1]}
-            </div>
-          ))
-        }</div>
       </div>
     );
   }

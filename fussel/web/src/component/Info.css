@@ -1,16 +1,27 @@
-.image{
-    padding: 2em;
-    background: white;
+#imageContainer {
+    display: grid;
+    justify-content: center;
 }
 
-.photo-properties {
+#image{
+    width: fit-content;
+    padding: 2em;
+    background: white;
+    margin: 0 auto;
+}
+
+#infoContainer{
+    width: 100%;
+}
+
+#photo-properties {
     float: left;
     font-size: 0.9em;
     color: #666;
     line-height: 1.6;
 }
 
-.camera-info {
+#camera-info {
     float: right;
     font-family: "Barlow", sans-serif;
     font-size: clamp(1rem, 3vw, 2rem);;
@@ -19,7 +30,7 @@
     gap: clamp(1rem, 2vw, 1.5rem);
 }
 
-.separator {
+#separator {
     color: #999;
     font-weight: 300;
     font-size: 1.8em;
@@ -28,25 +39,25 @@
     align-items: center;
 }
 
-.specs {
+#specs {
     display: flex;
     flex-direction: column;
     gap: 0.4em;
     text-align: right;
 }
 
-.brand {
+#brand {
     font-weight: 900;
     line-height: 1.7;
     align-self: center;
     letter-spacing: 10px;
 }
 
-.model {
+#model {
     font-weight: 600;
 }
 
-.lens {
+#lens {
     font-weight: normal;
 }
 
