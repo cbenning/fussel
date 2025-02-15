@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import datetime
 import os
 import shutil
 import json
@@ -162,7 +163,7 @@ class Person:
 
 class Photo:
 
-    def __init__(self, name, width, height, src, thumb, slug, srcSet, exif):
+    def __init__(self, name, width, height, src, thumb, slug, srcSet, exif: dict[str, object]):
 
         self.width = width
         self.height = height
@@ -303,6 +304,36 @@ class Albums:
 
     def __getitem__(self, item):
         return list(self.albums.values())[item]
+    
+    def sort(self):
+        method = Config.instance().sort_by
+        order = Config.instance().sort_order
+        if method == 'name':
+
+            def sort_by_name(item: tuple[str, Album]) -> str:
+                return item[1].name
+            
+            self.albums = dict(sorted(self.albums.items(), key=sort_by_name, reverse=(order == 'desc')))
+        elif method == 'date':
+            time_albums: dict[str, float] = {}
+
+            def sort_by_date(item: tuple[str, Album]) -> float:
+                return time_albums[item[1].name]
+            
+            album: Album
+            for album in self.albums.values():
+                p: Photo
+                for p in album.photos:
+                    t = time_albums.get(album.name, 0)
+                    if "DateTimeOriginal" in p.exif.keys():
+                        t = max(t, datetime.datetime.strptime(p.exif["DateTimeOriginal"], "%Y:%m:%d %H:%M:%S").timestamp())
+                    # else:
+                        # # creation time or modification time may introduce significant unexpected results
+                        # t = max(t, os.path.getctime(
+                        #     os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "web", "build", p.src.removeprefix("/"))
+                        # ))
+                    time_albums[album.name] = t
+            self.albums = dict(sorted(self.albums.items(), key=sort_by_date, reverse=(order == 'desc')))
 
     def process_path(self, root_path, output_albums_photos_path, external_root):
 
@@ -315,6 +346,9 @@ class Albums:
             if not album_name.startswith('.'):  # skip dotfiles
                 self.process_album_path(
                     album_path, album_name, output_albums_photos_path, external_root)
+
+        print(f'Sort by: {Config.instance().sort_by} {Config.instance().sort_order}')
+        self.sort()
 
     def process_album_path(self, album_dir, album_name, output_albums_photos_path, external_root):
 
@@ -446,8 +480,7 @@ class SiteGenerator:
 
         with open(output_albums_data_file, 'w') as outfile:
             output_str = 'export const albums_data = '
-            output_str += json.dumps(Albums.instance(),
-                                     sort_keys=True, indent=3, cls=SimpleEncoder)
+            output_str += json.dumps(Albums.instance(), indent=3, cls=SimpleEncoder)
             output_str += ';'
             outfile.write(output_str)
 

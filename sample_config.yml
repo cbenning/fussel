@@ -32,6 +32,15 @@ gallery:
     # Default: "{parent_album} > {album}"
     recursive_name_pattern: "{parent_album} > {album}"
 
+    # Sort albums
+    # Options: name, date
+    # Default: name
+    sort-by: date
+
+    # Options: asc, desc
+    # default: asc
+    sort-order: asc
+
   people:
     # Face Tag detection.
     # Setting to True adds a faces button and virtual albums for detected people
