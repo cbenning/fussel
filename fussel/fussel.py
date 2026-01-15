@@ -1,14 +1,19 @@
 #!/usr/bin/env python3
 
 import os
-from generator import SiteGenerator
-import massedit
-import yaml
+import pathlib
 import shutil
+import yaml
+import massedit
+from .generator import SiteGenerator
 
 
 class YamlConfig:
-    def __init__(self, config_file='../config.yml'):
+    def __init__(self, config_file=None):
+        if config_file is None:
+            # When running as a module, find config.yml relative to project root
+            project_root = pathlib.Path(__file__).parent.parent
+            config_file = str(project_root / 'config.yml')
 
         self.cfg = {}
         with open(config_file, 'r') as stream:
@@ -24,9 +29,17 @@ class YamlConfig:
             print(f'Invalid output path: {output_path}')
             exit(-1)
 
+    def __getstate__(self):
+        # Make YamlConfig pickleable
+        return {'cfg': self.cfg}
+
+    def __setstate__(self, state):
+        # Restore YamlConfig from pickled state
+        self.cfg = state['cfg']
+
     def getKey(self, path: str, default=None):
         if path in self.cfg:
-            self.cfg.get(path)
+            return self.cfg.get(path)
         keys = path.split(".")
         cursor = self.cfg
         for i, k in enumerate(keys):
@@ -44,16 +57,21 @@ def main():
     generator.generate()
 
     http_root = cfg.getKey('site.http_root', '/')
-    filenames = [os.path.join(os.path.dirname(
-        os.path.realpath(__file__)), "web", "package.json")]
+    web_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), "web")
+    filenames = [os.path.join(web_dir, "package.json")]
     massedit.edit_files(filenames, [
                         "re.sub(r'^.*\"homepage\":.*$', '  \"homepage\": \""+http_root+"\",', line)"], dry_run=False)
 
-    os.chdir('web')
+    original_cwd = os.getcwd()
+    os.chdir(web_dir)
+    if not shutil.which('yarn'):
+        print("Error: yarn is required but not found. Please install yarn first.")
+        print("Visit https://yarnpkg.com/getting-started/install for installation instructions.")
+        exit(-1)
     if os.system('yarn build') != 0:
         print("Failed")
         exit(-1)
-    os.chdir('..')
+    os.chdir(original_cwd)
 
     site_location = os.path.normpath(os.path.join(
         os.path.dirname(os.path.realpath(__file__)), "web", "build"))

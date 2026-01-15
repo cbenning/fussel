@@ -21,6 +21,7 @@ jinja2 \
     -D WATERMARK_SIZE_RATIO="${WATERMARK_SIZE_RATIO}" \
     -D SITE_ROOT="\"${SITE_ROOT}\"" \
     -D SITE_TITLE="\"${SITE_TITLE}\"" \
+    -D PARALLEL_TASKS="${PARALLEL_TASKS}" \
     ../template_config.yml > config.yml
 
 cat config.yml

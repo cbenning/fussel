@@ -117,33 +117,67 @@ class People:
         return faces
 
     def extract_faces(self, photo_path):
+        """Extract face tags from image XMP metadata (MWG format).
+        Handles variations in namespace prefixes and XML structure."""
         faces = []
+        seen_faces = set()  # Track (name, x, y) to avoid duplicates
+        
         with Image.open(photo_path) as im:
-            if hasattr(im, 'applist'):
-                for segment, content in im.applist:
+            if not hasattr(im, 'applist'):
+                return faces
+                
+            for segment, content in im.applist:
+                try:
                     marker, body = content.split(bytes('\x00', 'utf-8'), 1)
-                    if segment == 'APP1' and marker.decode("utf-8") == 'http://ns.adobe.com/xap/1.0/':
-                        body_str = body.decode("utf-8")
-                        soup = BeautifulSoup(body_str, 'html.parser')
-
-                        for regions in soup.find_all("mwg-rs:regions"):
-
-                            for regionlist in regions.find_all("mwg-rs:regionlist"):
-                                for description in regionlist.find_all("rdf:description"):
-                                    if description['mwg-rs:type'] == 'Face':
-                                        name = description['mwg-rs:name'].strip()
-                                        areas = description.findChildren(
-                                            "mwg-rs:area", recursive=False)
-                                        for area in areas:
-                                            faces.append(Face(
-                                                name=name,
-                                                geometry=FaceGeometry(
-                                                    w=area['starea:w'],
-                                                    h=area['starea:h'],
-                                                    x=area['starea:x'],
-                                                    y=area['starea:y']
-                                                )
-                                            ))
+                    if segment != 'APP1' or marker.decode("utf-8") != 'http://ns.adobe.com/xap/1.0/':
+                        continue
+                        
+                    body_str = body.decode("utf-8")
+                    soup = BeautifulSoup(body_str, 'html.parser')
+                    
+                    # Find all description elements (try both with and without namespace)
+                    descriptions = soup.find_all("rdf:description")
+                    if not descriptions:
+                        descriptions = soup.find_all("description")
+                    
+                    # Process each description element
+                    for desc in descriptions:
+                        # Get type and name (try both namespace formats)
+                        desc_type = desc.get('mwg-rs:type') or desc.get('type')
+                        name = (desc.get('mwg-rs:name') or desc.get('name') or '').strip()
+                        
+                        # Find areas (try both namespace formats and recursive search)
+                        areas = desc.find_all("mwg-rs:area", recursive=False)
+                        if not areas:
+                            areas = desc.find_all("area", recursive=False)
+                        if not areas:
+                            areas = desc.find_all("mwg-rs:area")
+                            if not areas:
+                                areas = desc.find_all("area")
+                        
+                        # Process if it's a Face type OR if it has a name and areas (some formats don't set type)
+                        if (desc_type == 'Face' or (name and areas)):
+                            for area in areas:
+                                # Get area attributes (try both namespace formats)
+                                w = area.get('starea:w') or area.get('w') or ''
+                                h = area.get('starea:h') or area.get('h') or ''
+                                x = area.get('starea:x') or area.get('x') or ''
+                                y = area.get('starea:y') or area.get('y') or ''
+                                
+                                # Only add if we have valid coordinates and haven't seen this face before
+                                if w and h and x and y:
+                                    face_key = (name, x, y)
+                                    if face_key not in seen_faces:
+                                        seen_faces.add(face_key)
+                                        faces.append(Face(
+                                            name=name,
+                                            geometry=FaceGeometry(w=w, h=h, x=x, y=y)
+                                        ))
+                                        
+                except (ValueError, UnicodeDecodeError):
+                    # Skip segments that don't match expected format
+                    continue
+                    
         return faces
 
 
@@ -252,7 +286,8 @@ class Photo:
 
         # Faces
         if Config.instance().people_enabled:
-            people_q.put((photo_obj, new_original_photo,
+            # Use original photo file for face detection to preserve all metadata
+            people_q.put((photo_obj, photo,  # Use original photo instead of new_original_photo
                          largest_src, output_path, external_path))
 
         return photo_obj
@@ -269,8 +304,10 @@ def _process_photo(t):
         return (photo_file, None)
 
 
-def _proces_photo_init(people_q):
+def _proces_photo_init(people_q, yaml_config):
     _process_photo.people_q = people_q
+    # Re-initialize Config in worker process
+    Config.init(yaml_config)
 
 
 class Albums:
@@ -301,7 +338,7 @@ class Albums:
     def __getitem__(self, item):
         return list(self.albums.values())[item]
 
-    def process_path(self, root_path, output_albums_photos_path, external_root):
+    def process_path(self, root_path, output_albums_photos_path, external_root, yaml_config):
 
         entries = list(map(lambda e: os.path.join(
             root_path, e), os.listdir(root_path)))
@@ -311,9 +348,9 @@ class Albums:
             album_name = os.path.basename(album_path)
             if not album_name.startswith('.'):  # skip dotfiles
                 self.process_album_path(
-                    album_path, album_name, output_albums_photos_path, external_root)
+                    album_path, album_name, output_albums_photos_path, external_root, yaml_config)
 
-    def process_album_path(self, album_dir, album_name, output_albums_photos_path, external_root):
+    def process_album_path(self, album_dir, album_name, output_albums_photos_path, external_root, yaml_config):
 
         unique_album_slug = find_unique_slug(
             self.slugs, self.slugs_lock, album_name)
@@ -340,10 +377,10 @@ class Albums:
         jobs = []
 
         for album_file in files:
-            if album_file.startswith('.'):  # skip dotfiles
+            if os.path.basename(album_file).startswith('.'):  # skip dotfiles
                 continue
-            photo_file = os.path.join(album_dir, album_file)
-            filename = os.path.basename(os.path.basename(photo_file))
+            photo_file = album_file  # album_file is already the full path from entries
+            filename = os.path.basename(photo_file)
 
             # Get a unique slug
             unique_slug = find_unique_slug(
@@ -352,10 +389,14 @@ class Albums:
             jobs.append((external_path, photo_file,
                         filename, unique_slug, album_folder))
 
+        print(f'Found [cyan]{len(jobs)}[/cyan] photos to process')
         results = []
         people_q = Queue()
-        with Pool(processes=Config.instance().parallel_tasks, initializer=_proces_photo_init, initargs=[people_q]) as P:
-            results = P.map(_process_photo, jobs)
+        if len(jobs) > 0:
+            with Pool(processes=Config.instance().parallel_tasks, initializer=_proces_photo_init, initargs=[people_q, yaml_config]) as P:
+                results = P.map(_process_photo, jobs)
+        else:
+            print('[yellow]No photos found in this album[/yellow]')
 
         people = People.instance()
         print(f'Detecting Faces...')
@@ -385,7 +426,7 @@ class Albums:
                 sub_album_name = sub_album_name.replace(
                     "{album}", os.path.basename(sub_album_dir))
                 self.process_album_path(
-                    sub_album_dir, sub_album_name, output_albums_photos_path, external_root)
+                    sub_album_dir, sub_album_name, output_albums_photos_path, external_root, yaml_config)
 
 
 class Album:
@@ -406,6 +447,7 @@ class SiteGenerator:
 
         Config.init(yaml_config)
 
+        self.yaml_config = yaml_config
         self.unique_person_slugs = {}
 
     def generate(self):
@@ -439,7 +481,7 @@ class SiteGenerator:
         os.makedirs(output_data_path, exist_ok=True)
 
         Albums.instance().process_path(Config.instance().input_photos_dir,
-                                       output_albums_photos_path, external_root)
+                                       output_albums_photos_path, external_root, self.yaml_config)
 
         with open(output_albums_data_file, 'w') as outfile:
             output_str = 'export const albums_data = '

@@ -8,10 +8,10 @@ WORKDIR /fussel
 
 COPY . /fussel/
 
-RUN apk add --no-cache curl jq yq python3 python3-dev py3-pip nodejs yarn sed bash && \
+RUN apk add --no-cache curl jq yq python3 python3-dev py3-pip nodejs yarn sed bash make && \
     apk add --no-cache libjpeg-turbo libjpeg-turbo-dev zlib zlib-dev libc-dev gcc && \
     yarn config set disable-self-update-check true && \
-    ./setup.sh && \
+    make install && \
     apk del python3-dev py3-pip libjpeg-turbo-dev zlib-dev libc-dev gcc && \
     rm -r /usr/local/share/.cache
 

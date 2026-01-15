@@ -36,28 +36,42 @@ Common Use-cases:
 ### Requirements
 
  - Python 3.7+
- - node v18.14.0 LTS
- - npm v9.3.1
- - yarn 1.22
+ - Node.js v18+ (LTS recommended)
+ - yarn 1.22+ (required)
+ - make (optional, but recommended)
 
-## Install dependencies
+### Quick Start
 
- - `./setup.sh`
- 
-## Setup Site
+1. **Install dependencies:**
+   ```bash
+   make install
+   ```
+   Or manually:
+   ```bash
+   make install-python  # Install Python dependencies
+   make install-js      # Install JavaScript dependencies
+   ```
 
-### Configure
+2. **Configure:**
+   - Copy `sample_config.yml` to `config.yml`
+   - Edit `config.yml` to your needs (minimal change is to set `gallery.input_path`)
 
- - Copy `sample_config.yml` to `config.yml`
- - Edit `config.yml` to your needs (minimal change is to set INPUT_PATH)
+3. **Generate your site:**
+   ```bash
+   make generate
+   ```
+   Or manually:
+   ```bash
+   .venv/bin/python -m fussel.fussel
+   ```
 
 ### Curate photos
 The folder you point `gallery.input_path` at must have subfolders inside it with the folder names as the name of the albums you want in the gallery. 
 
 #### Example
 
-If you have your .env setup with:
-```
+If you have your config.yml setup with:
+```yaml
 gallery:
   input_path: "/home/user/Photos/gallery"
 ```
@@ -73,24 +87,31 @@ Then that path should look like this:
   - ...
 ```
 
-### Generate your site
-Run the following script to generate your site into the path you set in `gallery.output_path` folder.
- - `./generate_site.sh`
- 
 ### Host your site
 
 Point your web server at `gallery.output_path` folder or copy/upload the `gallery.output_path` folder to your web host HTTP root.
 
-#### Quick setup
+#### Quick preview
 
-After running `generate_site.sh`
+After running `make generate`:
 
- - `python -m http.server --directory <output_path>` (go to localhost:8000 in browser)
+```bash
+python -m http.server --directory <output_path>
+```
+Then visit `http://localhost:8000` in your browser.
 
-#### Development setup
+#### Development mode
 
- - `cd fussel/web`
- - `yarn start`
+To run the web app in development/watch mode:
+
+```bash
+make dev
+```
+
+Or manually:
+```bash
+cd fussel/web && yarn start
+```
  
 ## Docker
 
@@ -105,9 +126,10 @@ Required:
 Note: 
  * The two -e env variables PGID and PUID tells the container what to set the output folder permissions to
  once done. Otherwise it is set to root permissions
- * Look at docker/template_config.yml To see what ENV vars map to which config values
+ * Look at `docker/template_config.yml` to see what ENV vars map to which config values
+ * You can set `PARALLEL_TASKS` to control the number of parallel processing workers (defaults to 1)
 
-```
+```bash
 docker run \
   -v <input-dir>:/input:ro \
   -v <output-dir>:/output \
@@ -115,6 +137,7 @@ docker run \
   -e PUID=$(id -u) \
   -e INPUT_PATH="/input" \
   -e OUTPUT_PATH="/output" \
+  -e PARALLEL_TASKS="4" \
   -e OVERWRITE="False" \
   -e EXIF_TRANSPOSE="False" \
   -e RECURSIVE="True" \
@@ -128,8 +151,10 @@ docker run \
   ghcr.io/cbenning/fussel:latest 
 ```
 
-Once complete you can upload the output folder to your webserver, or see what it looks like with
-`python -m http.server --directory <output_path>`
+Once complete you can upload the output folder to your webserver, or see what it looks like with:
+```bash
+python -m http.server --directory <output_path>
+```
 
 
 ## FAQ

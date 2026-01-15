@@ -11,6 +11,7 @@ DEFAULT_SITE_TITLE = 'Fussel Gallery'
 class Config:
 
     _instance = None
+    _yaml_config = None
 
     def __init__(self):
         raise RuntimeError('Call instance() instead')
@@ -25,6 +26,11 @@ class Config:
     @classmethod
     def init(cls, yaml_config):
         cls._instance = cls.__new__(cls)
+        cls._yaml_config = yaml_config
+        cls._populate_instance(yaml_config)
+    
+    @classmethod
+    def _populate_instance(cls, yaml_config):
         cls._instance.input_photos_dir = str(yaml_config.getKey(
             'gallery.input_path'))
         cls._instance.people_enabled = bool(yaml_config.getKey(
