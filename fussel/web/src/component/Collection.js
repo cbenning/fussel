@@ -3,9 +3,9 @@ import Masonry, { ResponsiveMasonry } from "react-responsive-masonry"
 import withRouter from './withRouter';
 import { albums_data } from "../_gallery/albums_data.js"
 import { people_data } from "../_gallery/people_data.js"
-import SwiperCore, { Keyboard, Pagination, HashNavigation, Navigation } from "swiper";
+import { Keyboard, Pagination, HashNavigation, Navigation } from "swiper/modules";
 import { Swiper, SwiperSlide } from 'swiper/react';
-import 'swiper/swiper.min.css';
+import 'swiper/css';
 import 'swiper/css/navigation'
 import 'swiper/css/pagination'
 import Modal from 'react-modal';
@@ -13,7 +13,6 @@ import Modal from 'react-modal';
 import { Link } from "react-router-dom";
 import "./Collection.css";
 
-SwiperCore.use([Navigation]); // Not sure why but need this for slide navigation buttons to be clickable
 Modal.setAppElement('#app');
 
 
@@ -183,7 +182,7 @@ class Collection extends Component {
             hashNavigation={{
               watchState: true,
             }}
-            modules={[Keyboard, HashNavigation, Pagination]}
+            modules={[Keyboard, HashNavigation, Pagination, Navigation]}
             className="swiper"
           >
             {

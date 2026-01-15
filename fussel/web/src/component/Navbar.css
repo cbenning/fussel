@@ -7,3 +7,20 @@
     font-weight: bold;
     font-size: 13pt;
 }
+
+/* Fix for Bulma 1.0: Prevent white background on NavLink items */
+.navbar-item {
+    background-color: transparent !important;
+}
+
+.navbar-item:hover {
+    background-color: rgba(0, 0, 0, 0.05) !important;
+}
+
+.navbar-item.active,
+.navbar-item:active,
+.navbar-item.active:hover,
+.navbar-item.active:focus,
+.navbar-item:focus {
+    background-color: transparent !important;
+}
