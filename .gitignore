@@ -2,6 +2,19 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+# Python coverage files
+.coverage
+.coverage.*
+htmlcov/
+*.cover
+
+# Python package metadata
+*.egg-info/
+fussel.egg-info/
+
+# User configuration
+config.yml
+
 *.swp
 .env
 

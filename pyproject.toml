@@ -45,3 +45,11 @@ packages = ["fussel", "fussel.generator"]
 [tool.setuptools.package-data]
 "*" = ["*.txt", "*.md"]
 
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = "test_*.py"
+python_classes = "Test*"
+python_functions = "test_*"
+
+[project.optional-dependencies]
+test = ["pytest>=7.0.0", "pytest-cov>=4.0.0", "pytest-mock>=3.0.0"]

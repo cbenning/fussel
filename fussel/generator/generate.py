@@ -128,12 +128,28 @@ class People:
                 
             for segment, content in im.applist:
                 try:
-                    marker, body = content.split(bytes('\x00', 'utf-8'), 1)
-                    if segment != 'APP1' or marker.decode("utf-8") != 'http://ns.adobe.com/xap/1.0/':
+                    # XMP format: \x00http://ns.adobe.com/xap/1.0/\x00<body>
+                    # Split by first null to get marker, then split body by second null
+                    parts = content.split(bytes('\x00', 'utf-8'), 2)
+                    if len(parts) < 3:
+                        continue
+                    marker = parts[1].decode("utf-8") if len(parts) > 1 else ""
+                    body_bytes = parts[2] if len(parts) > 2 else b""
+                    
+                    if segment != 'APP1' or marker != 'http://ns.adobe.com/xap/1.0/':
                         continue
                         
-                    body_str = body.decode("utf-8")
-                    soup = BeautifulSoup(body_str, 'html.parser')
+                    body_str = body_bytes.decode("utf-8")
+                    # Use 'xml' parser for better namespace handling
+                    try:
+                        soup = BeautifulSoup(body_str, 'xml')
+                    except:
+                        # Fallback to html.parser if xml parser not available
+                        import warnings
+                        from bs4 import XMLParsedAsHTMLWarning
+                        with warnings.catch_warnings():
+                            warnings.filterwarnings("ignore", category=XMLParsedAsHTMLWarning)
+                            soup = BeautifulSoup(body_str, 'html.parser')
                     
                     # Find all description elements (try both with and without namespace)
                     descriptions = soup.find_all("rdf:description")

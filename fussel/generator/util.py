@@ -24,20 +24,22 @@ def find_unique_slug(slugs, lock, name):
     slug = slugify(name, allow_unicode=False, max_length=0,
                    word_boundary=True, separator="-", save_order=True)
     lock.acquire()
-    if slug not in slugs:
+    try:
+        if slug not in slugs:
+            slugs.add(slug)
+            return slug
+        count = 1
+        while True:
+            new_slug = slug + "-" + str(count)
+            if new_slug not in slugs:
+                slug = new_slug
+                break
+            count += 1
+
+        slugs.add(slug)
         return slug
-    count = 1
-    while True:
-        new_slug = slug + "-" + str(count)
-        if new_slug not in slugs:
-            slug = new_slug
-            break
-        count += 1
-
-    slugs.add(slug)
-    lock.release()
-
-    return slug
+    finally:
+        lock.release()
 
 
 def calculate_new_size(input_size, desired_size):
@@ -75,7 +77,7 @@ def increase_h(left, top, right, bottom, w, h, target_ratio):
     while next_step_ratio > target_ratio and f_t-1 > 0 and f_b+1 < h:
         f_t -= 1
         f_b += 1
-        f_w = f_b - f_t
+        f_h = f_b - f_t  # Recalculate height (f_w stays constant as width doesn't change)
         next_step_ratio = float((f_w+1)/f_h)
         # print("%d/%d = %f = %f" % (f_w, f_h, next_step_ratio, target_ratio))
     return (left, f_t, right, f_b)
@@ -120,16 +122,37 @@ def calculate_face_crop_dimensions(input_size, face_size, face_position):
     bottom = y + int(h/2) - 1
 
     # try to increase
-    if float(right - left + 1 / bottom - top - 1) < target_ratio:  # horizontal expansion needed
+    current_ratio = float((right - left + 1) / (bottom - top + 1))
+    if current_ratio < target_ratio:  # horizontal expansion needed
         left, top, right, bottom = increase_w(
             left, top, right, bottom, input_size[0], input_size[1], target_ratio)
-    elif float(right - left + 1 / bottom - top - 1) > target_ratio:  # vertical expansion needed
+    elif current_ratio > target_ratio:  # vertical expansion needed
         left, top, right, bottom = increase_h(
             left, top, right, bottom, input_size[0], input_size[1], target_ratio)
 
     # attempt to expand photo
     left, top, right, bottom = increase_size(
         left, top, right, bottom, input_size[0], input_size[1], target_upsize_ratio)
+
+    # Clamp to image boundaries to avoid negative values
+    if left < 0:
+        right = right - left  # Adjust right to maintain width
+        left = 0
+    if top < 0:
+        bottom = bottom - top  # Adjust bottom to maintain height
+        top = 0
+    if right >= input_size[0]:
+        left = left - (right - input_size[0] + 1)  # Adjust left to maintain width
+        right = input_size[0] - 1
+    if bottom >= input_size[1]:
+        top = top - (bottom - input_size[1] + 1)  # Adjust top to maintain height
+        bottom = input_size[1] - 1
+    
+    # Final clamp to ensure we're within bounds
+    left = max(0, min(left, input_size[0] - 1))
+    top = max(0, min(top, input_size[1] - 1))
+    right = max(left + 1, min(right, input_size[0] - 1))
+    bottom = max(top + 1, min(bottom, input_size[1] - 1))
 
     return left, top, right, bottom
 

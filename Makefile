@@ -27,7 +27,7 @@ install-python:
 	@echo "Setting up Python virtual environment..."
 	python3 -m venv .venv || python -m venv .venv
 	.venv/bin/pip install --upgrade pip setuptools wheel
-	.venv/bin/pip install -e .
+	.venv/bin/pip install -e ".[test]"
 
 # Install JavaScript dependencies
 install-js:
@@ -64,8 +64,8 @@ clean:
 	find . -type f -name "*.pyc" -delete
 	find . -type f -name "*.pyo" -delete
 
-# Run tests (placeholder for future test suite)
+# Run tests
 test:
 	@echo "Running tests..."
-	@echo "Test suite not yet implemented"
+	.venv/bin/pytest tests/ -v --cov=fussel --cov-report=html --cov-report=term
 
