@@ -34,14 +34,68 @@
 
 ## 🚀 Quick Start
 
-### Prerequisites
+### Option 1: Using Docker (Recommended - No Dependencies Required)
+
+Docker is the easiest way to run Fussel without installing any dependencies locally.
+
+#### Using Docker Compose (Easiest)
+
+1. **Set your paths** using environment variables:
+   ```bash
+   export INPUT_DIR=/absolute/path/to/your/photos
+   export OUTPUT_DIR=/absolute/path/to/output
+   docker-compose up
+   ```
+   
+   Or edit `docker-compose.yml` directly and replace the path placeholders.
+
+2. **Optional: Customize settings** via environment variables or `.env` file:
+   ```bash
+   # Example .env file (or export these before running docker-compose)
+   INPUT_DIR=/home/user/photos
+   OUTPUT_DIR=/home/user/gallery-output
+   PUID=1000              # Your user ID (run 'id -u' to find it)
+   PGID=1000              # Your group ID (run 'id -g' to find it)
+   PARALLEL_TASKS=4
+   FACE_TAG_ENABLE=True
+   WATERMARK_ENABLE=True
+   ```
+
+3. **After generation completes**, your gallery will be in the `OUTPUT_DIR` you specified. You can preview it locally or upload it to a web host.
+
+#### Using Docker Run
+
+```bash
+docker run \
+  -v <input-dir>:/input:ro \
+  -v <output-dir>:/output \
+  -e PGID=$(id -g) \
+  -e PUID=$(id -u) \
+  -e INPUT_PATH="/input" \
+  -e OUTPUT_PATH="/output" \
+  -e PARALLEL_TASKS="4" \
+  ghcr.io/cbenning/fussel:latest
+```
+
+**Notes:**
+- Replace `<input-dir>` and `<output-dir>` with absolute paths to your directories
+- The `PGID` and `PUID` environment variables set the output folder permissions to match your user, preventing root-owned files
+- After the container completes, your generated gallery will be in `<output-dir>`
+
+See [Docker Configuration](#-docker-configuration) below for all available options.
+
+### Option 2: Local Installation
+
+If you prefer not to use Docker or want to develop Fussel, you can install it locally.
+
+#### Prerequisites
 
 - **Python** 3.8+ (3.7+ supported, but 3.8+ recommended)
 - **Node.js** v18+ (LTS recommended)
 - **Yarn** 1.22+ (required)
 - **Make** (optional, but recommended for easier setup)
 
-### Installation
+#### Installation Steps
 
 1. **Clone the repository:**
    ```bash
@@ -67,27 +121,17 @@
    ```bash
    make generate
    ```
-   
-   Or run manually:
-   ```bash
-   .venv/bin/python -m fussel.fussel
-   ```
 
 5. **Preview your site:**
    ```bash
    make serve
    ```
    
-   Or manually:
-   ```bash
-   python -m http.server --directory <output_path>
-   ```
-   
    Then visit `http://localhost:8000` in your browser.
 
 ## 📁 Organizing Your Photos
 
-Your photo directory structure determines your album structure. Each subfolder becomes an album.
+Your photo directory structure determines your album structure. Each subfolder becomes an album. This section explains how to organize your photos before generating your gallery.
 
 ### Directory Structure
 
@@ -114,151 +158,9 @@ Fussel supports common image formats:
 - PNG (`.png`)
 - GIF (`.gif`)
 
-## 🌐 Hosting Your Gallery
-
-Once generated, your gallery is a static site. You can host it anywhere:
-
-1. **Upload to any web host** - Copy the contents of `gallery.output_path` to your web server's document root
-2. **Use GitHub Pages** - Push the output directory to a GitHub repository and enable Pages
-3. **Use a CDN** - Upload to services like Netlify, Vercel, or Cloudflare Pages
-4. **Local preview** - Use `make serve` or Python's built-in server:
-   ```bash
-   make serve
-   ```
-   
-   Or manually:
-   ```bash
-   python -m http.server --directory <output_path>
-   ```
-
-## 🐳 Docker Usage
-
-Docker is the easiest way to run Fussel without installing dependencies locally.
-
-### Using Docker Compose (Recommended)
-
-1. **Set your paths** using environment variables or edit `docker-compose.yml` directly:
-   
-   **Option A: Using environment variables (recommended)**
-   ```bash
-   export INPUT_DIR=/absolute/path/to/your/photos
-   export OUTPUT_DIR=/absolute/path/to/output
-   docker-compose up
-   ```
-   
-   **Option B: Edit `docker-compose.yml` directly**
-   - Replace `${INPUT_DIR:-./photos}` with your actual input path
-   - Replace `${OUTPUT_DIR:-./output}` with your actual output path
-
-2. **Run the container:**
-   ```bash
-   docker-compose up
-   ```
-
-3. **Optional: Customize environment variables** in `docker-compose.yml` or via `.env` file:
-   ```bash
-   # Example .env file
-   INPUT_DIR=/home/user/photos
-   OUTPUT_DIR=/home/user/gallery-output
-   PUID=$(id -u)          # Your user ID (prevents root-owned files)
-   PGID=$(id -g)          # Your group ID
-   PARALLEL_TASKS=4
-   OVERWRITE=False
-   FACE_TAG_ENABLE=True
-   WATERMARK_ENABLE=True
-   ```
-   
-   Or export them before running:
-   ```bash
-   export PUID=$(id -u)
-   export PGID=$(id -g)
-   export INPUT_DIR=/home/user/photos
-   export OUTPUT_DIR=/home/user/gallery-output
-   docker-compose up
-   ```
-
-### Using Docker Run
-
-```bash
-docker run \
-  -v <input-dir>:/input:ro \
-  -v <output-dir>:/output \
-  -e PGID=$(id -g) \
-  -e PUID=$(id -u) \
-  -e INPUT_PATH="/input" \
-  -e OUTPUT_PATH="/output" \
-  -e PARALLEL_TASKS="4" \
-  -e OVERWRITE="False" \
-  -e EXIF_TRANSPOSE="False" \
-  -e RECURSIVE="True" \
-  -e RECURSIVE_NAME_PATTERN="{parent_album} > {album}" \
-  -e FACE_TAG_ENABLE="True" \
-  -e WATERMARK_ENABLE="True" \
-  -e WATERMARK_PATH="web/src/images/fussel-watermark.png" \
-  -e WATERMARK_SIZE_RATIO="0.3" \
-  -e SITE_ROOT="/" \
-  -e SITE_TITLE="Fussel Gallery" \
-  ghcr.io/cbenning/fussel:latest
-```
-
-**Note:** The `PGID` and `PUID` environment variables set the output folder permissions to match your user, preventing root-owned files.
-
-### Available Environment Variables
-
-See `docker/template_config.yml` for all available configuration options. Key variables:
-
-- `INPUT_PATH` - Path to input photos (inside container)
-- `OUTPUT_PATH` - Path to output directory (inside container)
-- `PARALLEL_TASKS` - Number of parallel workers (default: 1)
-- `OVERWRITE` - Force rebuild of all photos (default: False)
-- `EXIF_TRANSPOSE` - Use EXIF data for rotation (default: False)
-- `FACE_TAG_ENABLE` - Enable face detection (default: True)
-- `WATERMARK_ENABLE` - Enable watermarks (default: True)
-- `SITE_TITLE` - Gallery title (default: "Fussel Gallery")
-- `SITE_ROOT` - HTTP root path (default: "/")
-
-## 🛠️ Development
-
-### Development Mode
-
-Run the web app in development/watch mode:
-
-```bash
-make dev
-```
-
-Or manually:
-```bash
-cd fussel/web && yarn start
-```
-
-### Running Tests
-
-```bash
-make test
-```
-
-This will:
-- Install test dependencies if needed
-- Run all tests with coverage
-- Generate coverage reports in `htmlcov/`
-
-### Project Structure
-
-```
-fussel/
-├── fussel/              # Main Python package
-│   ├── generator/       # Gallery generation logic
-│   └── web/             # React frontend
-├── tests/               # Test suite
-├── docker/              # Docker configuration
-├── config.yml           # Your configuration (not in git)
-└── sample_config.yml    # Configuration template
-```
-
 ## ⚙️ Configuration
 
-The `config.yml` file controls all aspects of gallery generation. Key settings:
+The `config.yml` file (or Docker environment variables) controls all aspects of gallery generation.
 
 ### Gallery Settings
 
@@ -304,6 +206,106 @@ gallery:
 site:
   http_root: "/"                     # URL root (include trailing slash)
   title: "Fussel Gallery"            # Browser tab title
+```
+
+## 🐳 Docker Configuration
+
+This section provides detailed information about Docker configuration options. For a quick start, see the [Docker Quick Start](#option-1-using-docker-recommended---no-dependencies-required) section above.
+
+### Available Environment Variables
+
+See `docker/template_config.yml` for all available configuration options. Key variables:
+
+- `INPUT_PATH` - Path to input photos (inside container)
+- `OUTPUT_PATH` - Path to output directory (inside container)
+- `PARALLEL_TASKS` - Number of parallel workers (default: 1)
+- `OVERWRITE` - Force rebuild of all photos (default: False)
+- `EXIF_TRANSPOSE` - Use EXIF data for rotation (default: False)
+- `FACE_TAG_ENABLE` - Enable face detection (default: True)
+- `WATERMARK_ENABLE` - Enable watermarks (default: True)
+- `SITE_TITLE` - Gallery title (default: "Fussel Gallery")
+- `SITE_ROOT` - HTTP root path (default: "/")
+
+### Complete Docker Run Example
+
+For advanced users who want to customize all options:
+
+```bash
+docker run \
+  -v <input-dir>:/input:ro \
+  -v <output-dir>:/output \
+  -e PGID=$(id -g) \
+  -e PUID=$(id -u) \
+  -e INPUT_PATH="/input" \
+  -e OUTPUT_PATH="/output" \
+  -e PARALLEL_TASKS="4" \
+  -e OVERWRITE="False" \
+  -e EXIF_TRANSPOSE="False" \
+  -e RECURSIVE="True" \
+  -e RECURSIVE_NAME_PATTERN="{parent_album} > {album}" \
+  -e FACE_TAG_ENABLE="True" \
+  -e WATERMARK_ENABLE="True" \
+  -e WATERMARK_PATH="web/src/images/fussel-watermark.png" \
+  -e WATERMARK_SIZE_RATIO="0.3" \
+  -e SITE_ROOT="/" \
+  -e SITE_TITLE="Fussel Gallery" \
+  ghcr.io/cbenning/fussel:latest
+```
+
+## 🌐 Hosting Your Gallery
+
+Once generated, your gallery is a static site. You can host it anywhere:
+
+1. **Upload to any web host** - Copy the contents of `gallery.output_path` to your web server's document root
+2. **Use GitHub Pages** - Push the output directory to a GitHub repository and enable Pages
+3. **Use a CDN** - Upload to services like Netlify, Vercel, or Cloudflare Pages
+4. **Local preview** - Use `make serve` (see [Quick Start](#-quick-start) for details) or Python's built-in server:
+   ```bash
+   make serve
+   ```
+   
+   Or manually:
+   ```bash
+   python -m http.server --directory <output_path>
+   ```
+
+## 🛠️ Development
+
+### Development Mode
+
+Run the web app in development/watch mode:
+
+```bash
+make dev
+```
+
+Or manually:
+```bash
+cd fussel/web && yarn start
+```
+
+### Running Tests
+
+```bash
+make test
+```
+
+This will:
+- Install test dependencies if needed
+- Run all tests with coverage
+- Generate coverage reports in `htmlcov/`
+
+### Project Structure
+
+```
+fussel/
+├── fussel/              # Main Python package
+│   ├── generator/       # Gallery generation logic
+│   └── web/             # React frontend
+├── tests/               # Test suite
+├── docker/              # Docker configuration
+├── config.yml           # Your configuration (not in git)
+└── sample_config.yml    # Configuration template
 ```
 
 ## ❓ FAQ
