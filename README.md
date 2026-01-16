@@ -1,133 +1,183 @@
- Fussel
+# Fussel
 
 ![License Badge](https://img.shields.io/github/license/cbenning/fussel)
 ![Version Badge](https://img.shields.io/github/v/release/cbenning/fussel)
 
-Fussel is a static photo gallery generator. It can build a simple static photo gallery site
-with nothing but a directory full of photos. 
+**Fussel** is a static photo gallery generator that builds beautiful, mobile-friendly photo galleries from a directory of photos. Once generated, your gallery is a completely static site with no server-side code required.
 
-**[Demo Site](https://benninger.ca/fussel-demo/)**
+**[View Demo Site](https://benninger.ca/fussel-demo/)**
 
-Features and Properties:
- - No server-side code to worry about once generated
- - Builds special "Person" gallery for people found in XMP face tags.
- - Adds watermarks
- - Mobile friendly
- - Automatic dark-mode
- - Uses EXIF hints to rotate photos
- - Predictable slug-basted urls
+## ✨ Features
 
-Common Use-cases:
- - Image Portfolios
- - Family Photos
- - Sharing Photo Archives
- - etc
+- 🖼️ **Static Site Generation** - No server-side code required once generated
+- 👥 **People Detection** - Automatically creates galleries for people found in XMP face tags
+- 🎨 **Watermarking** - Add watermarks to protect your photos
+- 📱 **Mobile Friendly** - Responsive design that works on all devices
+- 🌙 **Dark Mode** - Automatic dark mode support
+- 🔄 **EXIF Support** - Uses EXIF data to automatically rotate photos
+- 🔗 **Clean URLs** - Predictable slug-based URLs for easy sharing
+- ⚡ **Fast Generation** - Parallel processing for quick builds
 
-## Screenshots
-| ![Albums Screenshot](https://user-images.githubusercontent.com/153700/81897761-1e904780-956c-11ea-9450-fbdb286b95fc.png?raw=true "Albums Screenshot") | ![Album Screenshot](https://user-images.githubusercontent.com/153700/81897716-120bef00-956c-11ea-9204-b8e90ffb24f8.png?raw=true "Album Screenshot") |  
-|---|---|
-| ![People Screenshot](https://user-images.githubusercontent.com/153700/81897685-fef91f00-956b-11ea-8df6-9c23fad83bb2.png?raw=true "People Screenshot") | ![Person Screenshot](https://user-images.githubusercontent.com/153700/81897698-091b1d80-956c-11ea-9acb-6195d9673407.png?raw=true "PersonScreenshot") | 
+## 📸 Screenshots
 
-## Demo
+| Albums View | Album View |
+|-------------|------------|
+| ![Albums Screenshot](https://user-images.githubusercontent.com/153700/81897761-1e904780-956c-11ea-9450-fbdb286b95fc.png?raw=true "Albums Screenshot") | ![Album Screenshot](https://user-images.githubusercontent.com/153700/81897716-120bef00-956c-11ea-9204-b8e90ffb24f8.png?raw=true "Album Screenshot") |
+
+| People View | Person View |
+|-------------|-------------|
+| ![People Screenshot](https://user-images.githubusercontent.com/153700/81897685-fef91f00-956b-11ea-8df6-9c23fad83bb2.png?raw=true "People Screenshot") | ![Person Screenshot](https://user-images.githubusercontent.com/153700/81897698-091b1d80-956c-11ea-9acb-6195d9673407.png?raw=true "Person Screenshot") |
+
+## 🎬 Demo
+
 ![Demo Gif](https://user-images.githubusercontent.com/153700/81898094-d58cc300-956c-11ea-90eb-f8ce5561f63d.gif?raw=true "Modal Screenshot")
 
-## Setup
+## 🚀 Quick Start
 
-### Requirements
+### Prerequisites
 
- - Python 3.7+
- - Node.js v18+ (LTS recommended)
- - yarn 1.22+ (required)
- - make (optional, but recommended)
+- **Python** 3.8+ (3.7+ supported, but 3.8+ recommended)
+- **Node.js** v18+ (LTS recommended)
+- **Yarn** 1.22+ (required)
+- **Make** (optional, but recommended for easier setup)
 
-### Quick Start
+### Installation
 
-1. **Install dependencies:**
+1. **Clone the repository:**
+   ```bash
+   git clone https://github.com/cbenning/fussel.git
+   cd fussel
+   ```
+
+2. **Install dependencies:**
    ```bash
    make install
    ```
-   Or manually:
+
+3. **Configure Fussel:**
    ```bash
-   make install-python  # Install Python dependencies
-   make install-js      # Install JavaScript dependencies
+   cp sample_config.yml config.yml
    ```
+   
+   Edit `config.yml` and set at minimum:
+   - `gallery.input_path` - Path to your photos directory
+   - `gallery.output_path` - Where to generate the site (default: `site/`)
 
-2. **Configure:**
-   - Copy `sample_config.yml` to `config.yml`
-   - Edit `config.yml` to your needs (minimal change is to set `gallery.input_path`)
-
-3. **Generate your site:**
+4. **Generate your gallery:**
    ```bash
    make generate
    ```
-   Or manually:
+   
+   Or run manually:
    ```bash
    .venv/bin/python -m fussel.fussel
    ```
 
-### Curate photos
-The folder you point `gallery.input_path` at must have subfolders inside it with the folder names as the name of the albums you want in the gallery. 
+5. **Preview your site:**
+   ```bash
+   make serve
+   ```
+   
+   Or manually:
+   ```bash
+   python -m http.server --directory <output_path>
+   ```
+   
+   Then visit `http://localhost:8000` in your browser.
 
-#### Example
+## 📁 Organizing Your Photos
 
-If you have your config.yml setup with:
-```yaml
-gallery:
-  input_path: "/home/user/Photos/gallery"
+Your photo directory structure determines your album structure. Each subfolder becomes an album.
+
+### Directory Structure
+
+Point `gallery.input_path` to a directory containing subfolders, where each subfolder name becomes an album name:
+
+```
+/home/user/Photos/gallery/
+├── Album 1/
+│   ├── photo1.jpg
+│   └── photo2.jpg
+├── Album 2/
+│   ├── Sub Album 1/
+│   │   └── photo3.jpg
+│   └── photo4.jpg
+└── Album 3/
+    └── Sub Album 2/
+        └── photo5.jpg
 ```
 
-Then that path should look like this:
-```
-/home/user/Photos/gallery:
-  - Album 1
-  - Album 2
-    - Sub Album 1
-  - Album 3
-    - Sub Album 2
-  - ...
-```
+### Supported Image Formats
 
-### Host your site
+Fussel supports common image formats:
+- JPEG (`.jpg`, `.jpeg`)
+- PNG (`.png`)
+- GIF (`.gif`)
 
-Point your web server at `gallery.output_path` folder or copy/upload the `gallery.output_path` folder to your web host HTTP root.
+## 🌐 Hosting Your Gallery
 
-#### Quick preview
+Once generated, your gallery is a static site. You can host it anywhere:
 
-After running `make generate`:
+1. **Upload to any web host** - Copy the contents of `gallery.output_path` to your web server's document root
+2. **Use GitHub Pages** - Push the output directory to a GitHub repository and enable Pages
+3. **Use a CDN** - Upload to services like Netlify, Vercel, or Cloudflare Pages
+4. **Local preview** - Use `make serve` or Python's built-in server:
+   ```bash
+   make serve
+   ```
+   
+   Or manually:
+   ```bash
+   python -m http.server --directory <output_path>
+   ```
 
-```bash
-python -m http.server --directory <output_path>
-```
-Then visit `http://localhost:8000` in your browser.
+## 🐳 Docker Usage
 
-#### Development mode
+Docker is the easiest way to run Fussel without installing dependencies locally.
 
-To run the web app in development/watch mode:
+### Using Docker Compose (Recommended)
 
-```bash
-make dev
-```
+1. **Set your paths** using environment variables or edit `docker-compose.yml` directly:
+   
+   **Option A: Using environment variables (recommended)**
+   ```bash
+   export INPUT_DIR=/absolute/path/to/your/photos
+   export OUTPUT_DIR=/absolute/path/to/output
+   docker-compose up
+   ```
+   
+   **Option B: Edit `docker-compose.yml` directly**
+   - Replace `${INPUT_DIR:-./photos}` with your actual input path
+   - Replace `${OUTPUT_DIR:-./output}` with your actual output path
 
-Or manually:
-```bash
-cd fussel/web && yarn start
-```
- 
-## Docker
+2. **Run the container:**
+   ```bash
+   docker-compose up
+   ```
 
-If you don't want to fuss with anything and would like to use docker instead to generate your site...
+3. **Optional: Customize environment variables** in `docker-compose.yml` or via `.env` file:
+   ```bash
+   # Example .env file
+   INPUT_DIR=/home/user/photos
+   OUTPUT_DIR=/home/user/gallery-output
+   PUID=$(id -u)          # Your user ID (prevents root-owned files)
+   PGID=$(id -g)          # Your group ID
+   PARALLEL_TASKS=4
+   OVERWRITE=False
+   FACE_TAG_ENABLE=True
+   WATERMARK_ENABLE=True
+   ```
+   
+   Or export them before running:
+   ```bash
+   export PUID=$(id -u)
+   export PGID=$(id -g)
+   export INPUT_DIR=/home/user/photos
+   export OUTPUT_DIR=/home/user/gallery-output
+   docker-compose up
+   ```
 
-### Usage
-
-Required:
- * `<input_dir>` is the absolute path to top-level photo folder
- * `<output_dir>` is the absolute path to where you want the generated site written to
-
-Note: 
- * The two -e env variables PGID and PUID tells the container what to set the output folder permissions to
- once done. Otherwise it is set to root permissions
- * Look at `docker/template_config.yml` to see what ENV vars map to which config values
- * You can set `PARALLEL_TASKS` to control the number of parallel processing workers (defaults to 1)
+### Using Docker Run
 
 ```bash
 docker run \
@@ -148,19 +198,157 @@ docker run \
   -e WATERMARK_SIZE_RATIO="0.3" \
   -e SITE_ROOT="/" \
   -e SITE_TITLE="Fussel Gallery" \
-  ghcr.io/cbenning/fussel:latest 
+  ghcr.io/cbenning/fussel:latest
 ```
 
-Once complete you can upload the output folder to your webserver, or see what it looks like with:
+**Note:** The `PGID` and `PUID` environment variables set the output folder permissions to match your user, preventing root-owned files.
+
+### Available Environment Variables
+
+See `docker/template_config.yml` for all available configuration options. Key variables:
+
+- `INPUT_PATH` - Path to input photos (inside container)
+- `OUTPUT_PATH` - Path to output directory (inside container)
+- `PARALLEL_TASKS` - Number of parallel workers (default: 1)
+- `OVERWRITE` - Force rebuild of all photos (default: False)
+- `EXIF_TRANSPOSE` - Use EXIF data for rotation (default: False)
+- `FACE_TAG_ENABLE` - Enable face detection (default: True)
+- `WATERMARK_ENABLE` - Enable watermarks (default: True)
+- `SITE_TITLE` - Gallery title (default: "Fussel Gallery")
+- `SITE_ROOT` - HTTP root path (default: "/")
+
+## 🛠️ Development
+
+### Development Mode
+
+Run the web app in development/watch mode:
+
 ```bash
-python -m http.server --directory <output_path>
+make dev
 ```
 
+Or manually:
+```bash
+cd fussel/web && yarn start
+```
 
-## FAQ
+### Running Tests
+
+```bash
+make test
+```
+
+This will:
+- Install test dependencies if needed
+- Run all tests with coverage
+- Generate coverage reports in `htmlcov/`
+
+### Project Structure
+
+```
+fussel/
+├── fussel/              # Main Python package
+│   ├── generator/       # Gallery generation logic
+│   └── web/             # React frontend
+├── tests/               # Test suite
+├── docker/              # Docker configuration
+├── config.yml           # Your configuration (not in git)
+└── sample_config.yml    # Configuration template
+```
+
+## ⚙️ Configuration
+
+The `config.yml` file controls all aspects of gallery generation. Key settings:
+
+### Gallery Settings
+
+```yaml
+gallery:
+  input_path: "/path/to/photos"      # Required: Your photos directory
+  output_path: "site/"               # Where to generate the site
+  overwrite: False                   # Force rebuild all photos
+  parallel_tasks: 4                  # Parallel processing workers
+  exif_transpose: False              # Use EXIF rotation data
+```
+
+### Album Settings
+
+```yaml
+gallery:
+  albums:
+    recursive: True                  # Process subfolders as albums
+    recursive_name_pattern: "{parent_album} > {album}"  # Sub-album naming
+```
+
+### People/Face Detection
+
+```yaml
+gallery:
+  people:
+    enable: True                     # Enable face detection from XMP tags
+```
+
+### Watermark Settings
+
+```yaml
+gallery:
+  watermark:
+    enable: True                     # Enable watermarks
+    path: "web/src/images/fussel-watermark.png"  # Watermark image
+    size_ratio: 0.3                  # Watermark size (0.0-1.0)
+```
+
+### Site Settings
+
+```yaml
+site:
+  http_root: "/"                     # URL root (include trailing slash)
+  title: "Fussel Gallery"            # Browser tab title
+```
+
+## ❓ FAQ
 
 ### I get an error 'JavaScript heap out of memory'
 
-Try increasing your Node memory allocation: `NODE_OPTIONS="--max-old-space-size=2048" yarn build` 
+Try increasing Node.js memory allocation:
 
-Reference: https://github.com/cbenning/fussel/issues/25
+```bash
+NODE_OPTIONS="--max-old-space-size=2048" yarn build
+```
+
+Reference: [Issue #25](https://github.com/cbenning/fussel/issues/25)
+
+### How do I update Fussel?
+
+If installed via `make install`:
+```bash
+git pull
+make install
+```
+
+If using Docker:
+```bash
+docker pull ghcr.io/cbenning/fussel:latest
+```
+
+### Can I customize the gallery appearance?
+
+The gallery uses a React-based frontend. You can modify the styles in `fussel/web/src/` and rebuild.
+
+### Does Fussel modify my original photos?
+
+No. Fussel only reads from your input directory and writes to your output directory. Your original photos are never modified.
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🙏 Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+## 🔗 Links
+
+- [Demo Site](https://benninger.ca/fussel-demo/)
+- [GitHub Repository](https://github.com/cbenning/fussel)
+- [Issue Tracker](https://github.com/cbenning/fussel/issues)

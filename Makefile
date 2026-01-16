@@ -1,4 +1,4 @@
-.PHONY: help install install-python install-js dev clean generate build test
+.PHONY: help install install-python install-js dev clean generate build test serve
 
 # Default target
 help:
@@ -9,6 +9,7 @@ help:
 	@echo "  make install-python - Install Python dependencies only"
 	@echo "  make install-js     - Install JavaScript dependencies only"
 	@echo "  make generate       - Generate the gallery site"
+	@echo "  make serve          - Start HTTP server to preview generated site"
 	@echo "  make dev            - Run in development mode (watch web app)"
 	@echo "  make clean          - Clean build artifacts and dependencies"
 	@echo "  make test           - Run tests (if available)"
@@ -69,3 +70,7 @@ test:
 	@echo "Running tests..."
 	.venv/bin/pytest tests/ -v --cov=fussel --cov-report=html --cov-report=term
 
+# Serve the generated site
+serve:
+	@echo "Starting HTTP server..."
+	@.venv/bin/python serve.py

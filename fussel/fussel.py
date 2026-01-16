@@ -94,7 +94,9 @@ def main():
 
     print(f'site generated at: {new_site_location}')
     print(
-        f'\n\n to validate build run: \n   python -m http.server --directory {new_site_location}')
+        f'\n\n to preview your site, run: \n   make serve')
+    print(
+        f'\n   or manually: \n   python -m http.server --directory {new_site_location}')
 
 
 if __name__ == "__main__":

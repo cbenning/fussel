@@ -128,13 +128,22 @@ class People:
                 
             for segment, content in im.applist:
                 try:
-                    # XMP format: \x00http://ns.adobe.com/xap/1.0/\x00<body>
-                    # Split by first null to get marker, then split body by second null
+                    # XMP format can be either:
+                    # 1. \x00http://ns.adobe.com/xap/1.0/\x00<body> (starts with null)
+                    # 2. http://ns.adobe.com/xap/1.0/\x00<body> (doesn't start with null)
                     parts = content.split(bytes('\x00', 'utf-8'), 2)
-                    if len(parts) < 3:
+                    
+                    # Determine marker and body based on format
+                    if len(parts) >= 3:
+                        # Format 1: starts with null, parts[0] is empty, parts[1] is marker, parts[2] is body
+                        marker = parts[1].decode("utf-8", errors='ignore') if len(parts) > 1 else ""
+                        body_bytes = parts[2] if len(parts) > 2 else b""
+                    elif len(parts) == 2:
+                        # Format 2: doesn't start with null, parts[0] is marker, parts[1] is body
+                        marker = parts[0].decode("utf-8", errors='ignore')
+                        body_bytes = parts[1]
+                    else:
                         continue
-                    marker = parts[1].decode("utf-8") if len(parts) > 1 else ""
-                    body_bytes = parts[2] if len(parts) > 2 else b""
                     
                     if segment != 'APP1' or marker != 'http://ns.adobe.com/xap/1.0/':
                         continue
@@ -190,8 +199,13 @@ class People:
                                             geometry=FaceGeometry(w=w, h=h, x=x, y=y)
                                         ))
                                         
-                except (ValueError, UnicodeDecodeError):
+                except (ValueError, UnicodeDecodeError, AttributeError, KeyError) as e:
                     # Skip segments that don't match expected format
+                    # Silently continue to next segment
+                    continue
+                except Exception as e:
+                    # Log unexpected errors but continue processing
+                    # This prevents one bad segment from breaking entire face detection
                     continue
                     
         return faces
