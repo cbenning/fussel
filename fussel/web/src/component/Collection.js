@@ -963,7 +963,7 @@ class Collection extends Component {
                         }
                       }}
                     />
-                    {this.state.showFaceTags && x.faces && x.faces.length > 0 && x.slug === (collection_data["photos"]?.[this.state.currentPhotoIndex]?.slug) && this.imageRef && this.slideContentRef && (
+                    {this.state.showFaceTags && this.state.zoomLevel === 1.0 && x.faces && x.faces.length > 0 && x.slug === (collection_data["photos"]?.[this.state.currentPhotoIndex]?.slug) && this.imageRef && this.slideContentRef && (
                       <FaceTagOverlay 
                         key={x.slug}
                         faces={x.faces} 
