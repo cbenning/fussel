@@ -64,3 +64,6 @@ class Config:
         cls._instance.exif_transpose = bool(
             yaml_config.getKey('gallery.exif_transpose', False))
         
+        cls._instance.allow_download = bool(
+            yaml_config.getKey('gallery.allow_download', True))
+        

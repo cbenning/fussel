@@ -1,20 +1,49 @@
 
 .navbar {
     z-index: 0;
+    border-bottom: 1px solid rgba(50, 115, 220, 0.2);
+    box-shadow: none;
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+    .navbar {
+        border-bottom: 1px solid rgba(90, 156, 248, 0.3);
+    }
 }
 
 .navbar-text {
-    font-weight: bold;
+    font-weight: 500;
     font-size: 13pt;
+    transition: color 0.2s ease;
 }
 
 /* Fix for Bulma 1.0: Prevent white background on NavLink items */
 .navbar-item {
     background-color: transparent !important;
+    border-radius: 4px;
+    transition: background-color 0.2s ease, color 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.navbar-item .icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
 }
 
 .navbar-item:hover {
     background-color: rgba(0, 0, 0, 0.05) !important;
+}
+
+/* Dark mode hover */
+@media (prefers-color-scheme: dark) {
+    .navbar-item:hover {
+        background-color: rgba(255, 255, 255, 0.1) !important;
+    }
 }
 
 .navbar-item.active,
@@ -22,5 +51,16 @@
 .navbar-item.active:hover,
 .navbar-item.active:focus,
 .navbar-item:focus {
-    background-color: transparent !important;
+    background-color: rgba(0, 0, 0, 0.08) !important;
+}
+
+/* Dark mode active state */
+@media (prefers-color-scheme: dark) {
+    .navbar-item.active,
+    .navbar-item:active,
+    .navbar-item.active:hover,
+    .navbar-item.active:focus,
+    .navbar-item:focus {
+        background-color: rgba(255, 255, 255, 0.15) !important;
+    }
 }

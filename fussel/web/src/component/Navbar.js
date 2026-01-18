@@ -12,7 +12,6 @@ export default class Navbar extends React.Component {
           <i className="fas fa-book"></i>
         </span>
         <span className="navbar-text">
-          &nbsp;
           Albums
         </span>
       </NavLink>
@@ -27,7 +26,6 @@ export default class Navbar extends React.Component {
             <i className="fas fa-user-friends"></i>
           </span>
           <span className="navbar-text">
-            &nbsp;
             People
           </span>
         </NavLink>

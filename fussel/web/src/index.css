@@ -2,3 +2,125 @@
 .noscroll {
     position: fixed!important
 }
+
+/* Better spacing and containers */
+.container {
+    max-width: 1400px;
+    padding: 1.5rem;
+}
+
+.hero.is-small {
+    margin-bottom: 1.5rem;
+    margin-top: 0;
+}
+
+.hero-body {
+    padding: 1rem 0;
+}
+
+/* Consistent spacing between hero and content - ensure both start at same position */
+.container section.hero {
+    margin-bottom: 1.5rem;
+}
+
+/* Ensure both columns and masonry start at the same position after hero */
+.container section.hero + .columns,
+.container section.hero + .columns.is-multiline {
+    margin-top: 0 !important;
+    padding-top: 0 !important;
+}
+
+.container section.hero + [class*="ResponsiveMasonry"] {
+    margin-top: 0 !important;
+    padding-top: 0 !important;
+}
+
+/* Ensure all columns have consistent spacing */
+.columns.is-multiline .column {
+    margin-top: 0 !important;
+    padding-top: 0 !important;
+}
+
+.column.is-one-quarter {
+    margin-bottom: 2rem;
+}
+
+/* Enhanced breadcrumb styling */
+.breadcrumb {
+    margin-bottom: 0;
+}
+
+.breadcrumb ul {
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.breadcrumb li {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.breadcrumb li + li::before {
+    content: "/";
+    color: rgba(0, 0, 0, 0.4);
+    font-size: 1em;
+    margin-left: 8px;
+    margin-right: 0;
+    padding: 0;
+    font-weight: 400;
+}
+
+@media (prefers-color-scheme: dark) {
+    .breadcrumb li + li::before {
+        color: rgba(255, 255, 255, 0.4);
+    }
+}
+
+.breadcrumb .title.is-5 {
+    font-size: 1.25rem;
+    font-weight: 400;
+    line-height: 1.5;
+    margin: 0;
+    transition: color 0.2s ease;
+}
+
+.breadcrumb a.title.is-5 {
+    color: rgba(0, 0, 0, 0.7);
+    text-decoration: none;
+}
+
+.breadcrumb a.title.is-5:hover {
+    color: rgba(0, 0, 0, 1);
+}
+
+@media (prefers-color-scheme: dark) {
+    .breadcrumb a.title.is-5 {
+        color: rgba(255, 255, 255, 0.7);
+    }
+    
+    .breadcrumb a.title.is-5:hover {
+        color: rgba(255, 255, 255, 1);
+    }
+}
+
+.breadcrumb li.is-active .title.is-5 {
+    color: rgba(0, 0, 0, 0.9);
+    font-weight: 400;
+}
+
+@media (prefers-color-scheme: dark) {
+    .breadcrumb li.is-active .title.is-5 {
+        color: rgba(255, 255, 255, 0.9);
+    }
+}
+
+.breadcrumb .fa-book {
+    color: rgba(0, 0, 0, 0.6);
+}
+
+@media (prefers-color-scheme: dark) {
+    .breadcrumb .fa-book {
+        color: rgba(255, 255, 255, 0.6);
+    }
+}

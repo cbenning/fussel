@@ -49,6 +49,7 @@ Docker is the easiest way to run Fussel without installing any dependencies loca
    
    Or edit `docker-compose.yml` directly and replace the path placeholders.
 
+
 2. **Optional: Customize settings** via environment variables or `.env` file:
    ```bash
    # Example .env file (or export these before running docker-compose)

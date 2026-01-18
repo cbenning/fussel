@@ -40,6 +40,7 @@ class Site:
     def __init(self):
         self.site_name = Config.instance().site_name
         self.people_enabled = Config.instance().people_enabled
+        self.allow_download = Config.instance().allow_download
 
 
 @dataclass
@@ -87,6 +88,8 @@ class People:
         print(f'Searching in [magenta]{original_src}[/magenta]...')
         faces = self.extract_faces(original_src)
 
+        # Store face data on the photo object
+        photo.faces = []
         for face in faces:
             print(f' ------> Found: [cyan]{face.name}[/cyan]')
 
@@ -99,6 +102,18 @@ class People:
 
             person = self.people[face.name]
             person.photos.append(photo)
+            
+            # Store face data (name + slug + geometry) on photo
+            photo.faces.append({
+                'name': face.name,
+                'slug': person.slug,
+                'geometry': {
+                    'x': float(face.geometry.x),
+                    'y': float(face.geometry.y),
+                    'w': float(face.geometry.w),
+                    'h': float(face.geometry.h)
+                }
+            })
 
             if not person.has_thumbnail():
                 with Image.open(largest_src) as im:
@@ -226,7 +241,7 @@ class Person:
 
 class Photo:
 
-    def __init__(self, name, width, height, src, thumb, slug, srcSet):
+    def __init__(self, name, width, height, src, thumb, slug, srcSet, originalSrc=None):
 
         self.width = width
         self.height = height
@@ -236,6 +251,7 @@ class Photo:
         self.srcSet = srcSet
         self.faces: list = []
         self.slug = slug
+        self.originalSrc = originalSrc
 
     @classmethod
     def process_photo(cls, external_path, photo, filename, slug, output_path, people_q: Queue):
@@ -302,6 +318,10 @@ class Photo:
                 apply_watermark(largest_src, watermark_im,
                                 Config.instance().watermark_ratio)
 
+        # Construct original photo path for downloads
+        original_filename = "original_%s%s" % (os.path.basename(slug), extract_extension(photo))
+        original_src = "%s/%s" % (quote(external_path), quote(original_filename))
+        
         photo_obj = Photo(
             filename,
             width,
@@ -311,7 +331,8 @@ class Photo:
             "%s/%s" % (quote(external_path),
                        quote(os.path.basename(smallest_src))),
             slug,
-            srcSet
+            srcSet,
+            original_src
         )
 
         # Faces
@@ -430,11 +451,22 @@ class Albums:
 
         people = People.instance()
         print(f'Detecting Faces...')
+        # Create a mapping from photo slug to photo object for face detection
+        photo_by_slug = {}
+        for photo_file, result in results:
+            if result is not None:
+                photo_by_slug[result.slug] = result
+        
+        # Process face detection and update the photo objects in results
         while not people_q.empty():
             (photo_obj, new_original_photo, largest_src,
              output_path, external_path) = people_q.get()
-            people.detect_faces(photo_obj, new_original_photo,
-                                largest_src, output_path, external_path)
+            # Find the corresponding photo object in results by matching slug
+            # The photo_obj from queue might be a different instance due to multiprocessing
+            if photo_obj.slug in photo_by_slug:
+                actual_photo = photo_by_slug[photo_obj.slug]
+                people.detect_faces(actual_photo, new_original_photo,
+                                    largest_src, output_path, external_path)
 
         for photo_file, result in results:
             if result is not None:
@@ -452,7 +484,7 @@ class Albums:
                     continue
                 sub_album_name = "%s" % Config.instance().recursive_albums_name_pattern
                 sub_album_name = sub_album_name.replace(
-                    "{parent_album}", unique_album_slug)
+                    "{parent_album}", album_name)
                 sub_album_name = sub_album_name.replace(
                     "{album}", os.path.basename(sub_album_dir))
                 self.process_album_path(

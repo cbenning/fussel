@@ -8,14 +8,43 @@ Keep an eye on the ticket and maybe one day I can remove this */
 .modal-close-button {
   position: absolute;
   z-index: 100;
-  right: 15px;
-  top: 15px;
+  right: 20px;
+  top: 20px;
+  background-color: rgba(255, 255, 255, 0.1) !important;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  color: white !important;
+  border-radius: 50% !important;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.modal-close-button:hover {
+  background-color: rgba(255, 255, 255, 0.2) !important;
+  transform: scale(1.1);
+  border-color: rgba(255, 255, 255, 0.3) !important;
 }
 
 .gallery-image{
-  width: "100%";
-  display: "block";
+  width: 100%;
+  display: block;
   cursor: pointer;
+  border-radius: 4px;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  -webkit-user-drag: none;
+  user-drag: none;
+  -webkit-touch-callout: none;
+}
+
+.gallery-image:hover {
+  transform: scale(1.02);
+  opacity: 0.9;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
 .footer {
@@ -39,6 +68,9 @@ Keep an eye on the ticket and maybe one day I can remove this */
   height: auto;
   max-width: 100%;
   max-height: 100%;
+  -webkit-user-drag: none;
+  user-drag: none;
+  -webkit-touch-callout: none;
   -ms-transform: translate(-50%, -50%);
   -webkit-transform: translate(-50%, -50%);
   -moz-transform: translate(-50%, -50%);
@@ -48,17 +80,189 @@ Keep an eye on the ticket and maybe one day I can remove this */
   top: 50%;
 }
 
-.swiper {
-  width: 100%;
-  height: 100%;
-}
-
 .ReactModal__Content {
   inset: 10px;
   padding: 10px;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  border: none !important;
+  outline: none !important;
 }
 
 .ReactModal__Content--after-open {
   inset: 10px;
   padding: 10px;
+  opacity: 1;
+  border: none !important;
+  outline: none !important;
+}
+
+.ReactModal__Overlay {
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.ReactModal__Overlay--after-open {
+  opacity: 1;
+  background-color: rgba(0, 0, 0, 0.85) !important;
+}
+
+.modal-info-bar {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.photo-counter {
+  background-color: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: white;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.modal-info-button {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  color: white !important;
+  border-radius: 50% !important;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.modal-info-button:hover {
+  background-color: rgba(255, 255, 255, 0.2) !important;
+  transform: scale(1.1);
+  border-color: rgba(255, 255, 255, 0.3) !important;
+}
+
+.photo-info-panel {
+  position: absolute;
+  bottom: 20px;
+  left: 20px;
+  right: 20px;
+  z-index: 100;
+  background-color: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  padding: 16px 20px;
+  color: white;
+  animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.photo-info-content {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.photo-info-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.photo-info-label {
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.8);
+  min-width: 70px;
+  flex-shrink: 0;
+}
+
+.photo-info-value {
+  color: rgba(255, 255, 255, 0.95);
+  word-break: break-word;
+}
+
+.photo-info-person-link {
+  color: rgba(255, 255, 255, 0.95);
+  text-decoration: underline;
+  transition: color 0.2s ease;
+}
+
+.photo-info-person-link:hover {
+  color: rgba(255, 255, 255, 1);
+}
+
+/* Face tag overlay styles */
+.swiper-slide-content {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.face-tag-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.face-tag-rectangle {
+  position: absolute;
+  border: 1.5px solid rgba(50, 115, 220, 0.5);
+  background-color: rgba(50, 115, 220, 0.05);
+  pointer-events: none;
+  border-radius: 2px;
+}
+
+.face-tag-label {
+  position: absolute;
+  top: -24px;
+  left: 0;
+  background-color: rgba(50, 115, 220, 0.75);
+  color: white;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-size: 11px;
+  font-weight: 500;
+  white-space: nowrap;
+  pointer-events: auto;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.1s ease;
+  display: inline-block;
+}
+
+.face-tag-label:hover {
+  background-color: rgba(50, 115, 220, 0.9);
+  transform: translateY(-1px);
+}
+
+.modal-info-button.is-active {
+  background-color: rgba(255, 255, 255, 0.25) !important;
+  border-color: rgba(255, 255, 255, 0.4) !important;
 }

@@ -20,6 +20,12 @@ gallery:
   # Default: exif_transpose: False
   exif_transpose: False
 
+  # Allow users to download original quality photos from the photo modal
+  # When set to False, prevents right-click save and drag-to-save, but determined
+  # users can still access images through browser dev tools or view source.
+  # Default: True
+  allow_download: True
+
   albums:
     # Recursively process sub-folders as albums
     # Default: recursive: True
