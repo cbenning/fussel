@@ -195,9 +195,19 @@ class Collection extends Component {
       viewerIsOpen: true ? this.props.params.image != undefined : false,
       currentPhotoIndex: 0,
       showPhotoInfo: savedShowPhotoInfo,
-      showFaceTags: savedShowFaceTags
+      showFaceTags: savedShowFaceTags,
+      zoomLevel: 1.0,
+      panX: 0,
+      panY: 0,
+      isDragging: false
     };
     this.swiperRef = null;
+    this.dragStartX = 0;
+    this.dragStartY = 0;
+    this.dragStartPanX = 0;
+    this.dragStartPanY = 0;
+    this.currentImageRef = null;
+    this._isDragging = false; // Synchronous flag for dragging state
   }
 
   modalStateTracker = (event) => {
@@ -289,8 +299,14 @@ class Collection extends Component {
 
   handleSlideChange = (swiper) => {
     const newIndex = swiper.activeIndex;
+    // Reset zoom when slide changes
+    this._isDragging = false;
     this.setState({
-      currentPhotoIndex: newIndex
+      currentPhotoIndex: newIndex,
+      zoomLevel: 1.0,
+      panX: 0,
+      panY: 0,
+      isDragging: false
     });
     
     // Update refs when slide changes - find the new active image
@@ -303,6 +319,7 @@ class Collection extends Component {
           const container = activeSlide.querySelector('.swiper-slide-content');
           if (img && container) {
             this.imageRef = img;
+            this.currentImageRef = img;
             this.slideContentRef = container;
             // Trigger recalculation after refs are updated
             if (this.state.showFaceTags) {
@@ -361,6 +378,357 @@ class Collection extends Component {
       }
     }
     return people;
+  }
+
+  // Zoom handlers
+  handleZoomIn = () => {
+    this.setState(prevState => ({
+      zoomLevel: Math.min(4.0, prevState.zoomLevel + 0.25)
+    }));
+  }
+
+  handleZoomOut = () => {
+    this.setState(prevState => ({
+      zoomLevel: Math.max(1.0, prevState.zoomLevel - 0.25)
+    }));
+  }
+
+  handleResetZoom = () => {
+    this._isDragging = false;
+    this.setState({
+      zoomLevel: 1.0,
+      panX: 0,
+      panY: 0,
+      isDragging: false
+    });
+  }
+
+  // Keyboard handlers
+  handleKeyDown = (e) => {
+    if (!this.state.viewerIsOpen) return;
+
+    // Escape to reset zoom
+    if (e.key === 'Escape' && this.state.zoomLevel > 1.0) {
+      e.preventDefault();
+      e.stopPropagation();
+      this.handleResetZoom();
+      return;
+    }
+
+    // Arrow keys for panning when zoomed
+    if (this.state.zoomLevel > 1.0 && this.currentImageRef) {
+      const step = 50;
+      let newPanX = this.state.panX;
+      let newPanY = this.state.panY;
+
+      if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        e.stopPropagation();
+        const container = this.currentImageRef.parentElement;
+        if (container) {
+          const containerRect = container.getBoundingClientRect();
+          const imgRect = this.currentImageRef.getBoundingClientRect();
+          const maxPanX = Math.max(0, (imgRect.width - containerRect.width) / 2);
+          // ArrowLeft should reveal left side, so move image right (increase panX)
+          newPanX = Math.max(-maxPanX, Math.min(maxPanX, this.state.panX + step));
+          this.setState({ panX: newPanX });
+        }
+        return;
+      }
+      if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        e.stopPropagation();
+        const container = this.currentImageRef.parentElement;
+        if (container) {
+          const containerRect = container.getBoundingClientRect();
+          const imgRect = this.currentImageRef.getBoundingClientRect();
+          const maxPanX = Math.max(0, (imgRect.width - containerRect.width) / 2);
+          // ArrowRight should reveal right side, so move image left (decrease panX)
+          newPanX = Math.max(-maxPanX, Math.min(maxPanX, this.state.panX - step));
+          this.setState({ panX: newPanX });
+        }
+        return;
+      }
+      if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        e.stopPropagation();
+        const container = this.currentImageRef.parentElement;
+        if (container) {
+          const containerRect = container.getBoundingClientRect();
+          const imgRect = this.currentImageRef.getBoundingClientRect();
+          const maxPanY = Math.max(0, (imgRect.height - containerRect.height) / 2);
+          // ArrowUp should reveal top, so move image down (increase panY)
+          newPanY = Math.max(-maxPanY, Math.min(maxPanY, this.state.panY + step));
+          this.setState({ panY: newPanY });
+        }
+        return;
+      }
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        e.stopPropagation();
+        const container = this.currentImageRef.parentElement;
+        if (container) {
+          const containerRect = container.getBoundingClientRect();
+          const imgRect = this.currentImageRef.getBoundingClientRect();
+          const maxPanY = Math.max(0, (imgRect.height - containerRect.height) / 2);
+          // ArrowDown should reveal bottom, so move image up (decrease panY)
+          newPanY = Math.max(-maxPanY, Math.min(maxPanY, this.state.panY - step));
+          this.setState({ panY: newPanY });
+        }
+        return;
+      }
+    }
+  }
+
+  // Double-click to zoom
+  handleDoubleClick = (e) => {
+    // Only handle double-clicks on images
+    if (e.target.tagName !== 'IMG') return;
+    
+    // Don't handle if double-clicking on a face tag label
+    if (e.target.closest('.face-tag-label')) return;
+    
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (this.state.zoomLevel > 1.0) {
+      // If zoomed, reset to normal (fit to screen)
+      this.handleResetZoom();
+    } else {
+      // If not zoomed, zoom to 100% (2.0x)
+      this.setState({
+        zoomLevel: 2.0,
+        panX: 0,
+        panY: 0
+      });
+    }
+  }
+
+  // Mouse drag handlers - use pointer events for better compatibility
+  handlePointerDown = (e) => {
+    console.log('handlePointerDown ENTRY', { 
+      zoomLevel: this.state.zoomLevel, 
+      target: e.target.tagName, 
+      targetClass: e.target.className,
+      isZoomed: this.state.zoomLevel > 1.0,
+      currentTarget: e.currentTarget.className
+    });
+    
+    // Only handle when zoomed
+    if (this.state.zoomLevel <= 1.0) {
+      console.log('handlePointerDown: zoomLevel too low, returning');
+      return;
+    }
+    
+    // Find the image - could be target or within currentTarget
+    let imgElement = e.target;
+    if (e.target.tagName !== 'IMG') {
+      // If clicking on container, find the image
+      imgElement = e.currentTarget.querySelector('.swiper-image');
+      if (!imgElement) {
+        console.log('handlePointerDown: no image found, returning', e.target.tagName);
+        return;
+      }
+    }
+    
+    // Don't handle if clicking on a face tag label (those should navigate)
+    if (e.target.closest('.face-tag-label')) {
+      console.log('handlePointerDown: clicked on face tag, returning');
+      return;
+    }
+
+    console.log('handlePointerDown PROCEEDING', { zoomLevel: this.state.zoomLevel, imgElement: imgElement.tagName });
+    e.preventDefault();
+    e.stopPropagation();
+    e.stopImmediatePropagation();
+    
+    // Disable Swiper interactions when panning
+    if (this.swiperRef) {
+      this.swiperRef.allowTouchMove = false;
+      this.swiperRef.simulateTouch = false;
+      if (this.swiperRef.keyboard) {
+        this.swiperRef.keyboard.disable();
+      }
+      // Disable Swiper's mouse event handling
+      if (this.swiperRef.touchEventsData) {
+        this.swiperRef.touchEventsData.touchesStart = {};
+        this.swiperRef.touchEventsData.touchesCurrent = {};
+      }
+    }
+    
+    // Set synchronous flag immediately (before async setState)
+    this._isDragging = true;
+    this.dragStartX = e.clientX;
+    this.dragStartY = e.clientY;
+    this.dragStartPanX = this.state.panX;
+    this.dragStartPanY = this.state.panY;
+    this.currentImageRef = imgElement;
+    
+    // Update state (async)
+    this.setState({ isDragging: true });
+
+    // Use capture phase to catch events before Swiper
+    document.addEventListener('pointermove', this.handlePointerMove, { capture: true, passive: false });
+    document.addEventListener('pointerup', this.handlePointerUp, { capture: true });
+    document.addEventListener('mousemove', this.handleMouseMove, { capture: true, passive: false });
+    document.addEventListener('mouseup', this.handleMouseUp, { capture: true });
+  }
+
+  handlePointerMove = (e) => {
+    // Use synchronous flag since setState is async
+    if (!this._isDragging || this.state.zoomLevel <= 1.0) {
+      return;
+    }
+    
+    if (!this.currentImageRef) {
+      const currentSlide = document.querySelector('.swiper-slide-active .swiper-image');
+      if (currentSlide) {
+        this.currentImageRef = currentSlide;
+      } else {
+        return;
+      }
+    }
+
+    console.log('handlePointerMove called', { isDragging: this._isDragging, zoomLevel: this.state.zoomLevel });
+    e.preventDefault();
+    e.stopPropagation();
+    e.stopImmediatePropagation();
+    
+    const container = this.currentImageRef.parentElement;
+    if (!container) return;
+
+    const deltaX = e.clientX - this.dragStartX;
+    const deltaY = e.clientY - this.dragStartY;
+    
+    const containerRect = container.getBoundingClientRect();
+    const imgRect = this.currentImageRef.getBoundingClientRect();
+    
+    const zoomedWidth = imgRect.width;
+    const zoomedHeight = imgRect.height;
+    const maxPanX = Math.max(0, (zoomedWidth - containerRect.width) / 2);
+    const maxPanY = Math.max(0, (zoomedHeight - containerRect.height) / 2);
+
+    const newPanX = Math.max(-maxPanX, Math.min(maxPanX, this.dragStartPanX + deltaX));
+    const newPanY = Math.max(-maxPanY, Math.min(maxPanY, this.dragStartPanY + deltaY));
+
+    this.setState({ panX: newPanX, panY: newPanY });
+  }
+
+  handlePointerUp = () => {
+    if (this._isDragging || this.state.isDragging) {
+      this._isDragging = false;
+      this.setState({ isDragging: false });
+      
+      if (this.swiperRef) {
+        if (this.state.zoomLevel === 1.0) {
+          this.swiperRef.allowTouchMove = true;
+          this.swiperRef.simulateTouch = true;
+          if (this.swiperRef.keyboard) {
+            this.swiperRef.keyboard.enable();
+          }
+        }
+      }
+      
+      document.removeEventListener('pointermove', this.handlePointerMove, { capture: true });
+      document.removeEventListener('pointerup', this.handlePointerUp, { capture: true });
+      document.removeEventListener('mousemove', this.handleMouseMove, { capture: true });
+      document.removeEventListener('mouseup', this.handleMouseUp, { capture: true });
+    }
+  }
+
+  handleMouseMove = (e) => {
+    // Use synchronous flag since setState is async
+    if (!this._isDragging || this.state.zoomLevel <= 1.0) {
+      return;
+    }
+    
+    if (!this.currentImageRef) {
+      // Try to find the current image if ref is not set
+      const currentSlide = document.querySelector('.swiper-slide-active .swiper-image');
+      if (currentSlide) {
+        this.currentImageRef = currentSlide;
+      } else {
+        return;
+      }
+    }
+
+    console.log('handleMouseMove called', { isDragging: this._isDragging, zoomLevel: this.state.zoomLevel, deltaX: e.clientX - this.dragStartX, deltaY: e.clientY - this.dragStartY });
+    e.preventDefault();
+    e.stopPropagation();
+    e.stopImmediatePropagation();
+    
+    const container = this.currentImageRef.parentElement;
+    if (!container) return;
+
+    const deltaX = e.clientX - this.dragStartX;
+    const deltaY = e.clientY - this.dragStartY;
+    
+    const containerRect = container.getBoundingClientRect();
+    const imgRect = this.currentImageRef.getBoundingClientRect();
+    
+    // Calculate max pan based on zoomed image size vs container
+    const zoomedWidth = imgRect.width;
+    const zoomedHeight = imgRect.height;
+    const maxPanX = Math.max(0, (zoomedWidth - containerRect.width) / 2);
+    const maxPanY = Math.max(0, (zoomedHeight - containerRect.height) / 2);
+
+    const newPanX = Math.max(-maxPanX, Math.min(maxPanX, this.dragStartPanX + deltaX));
+    const newPanY = Math.max(-maxPanY, Math.min(maxPanY, this.dragStartPanY + deltaY));
+
+    this.setState({ panX: newPanX, panY: newPanY });
+  }
+
+  handleMouseUp = () => {
+    if (this._isDragging || this.state.isDragging) {
+      this._isDragging = false;
+      this.setState({ isDragging: false });
+      
+      // Re-enable Swiper interactions when not zoomed
+      if (this.swiperRef) {
+        if (this.state.zoomLevel === 1.0) {
+          this.swiperRef.allowTouchMove = true;
+          this.swiperRef.simulateTouch = true;
+          if (this.swiperRef.keyboard) {
+            this.swiperRef.keyboard.enable();
+          }
+        }
+      }
+      
+      document.removeEventListener('mousemove', this.handleMouseMove, { capture: true });
+      document.removeEventListener('mouseup', this.handleMouseUp, { capture: true });
+    }
+  }
+
+  componentDidMount() {
+    window.addEventListener('keydown', this.handleKeyDown, true);
+  }
+
+  componentDidUpdate(prevProps, prevState) {
+    // Disable/enable Swiper keyboard and touch based on zoom level
+    if (this.swiperRef) {
+      if (this.swiperRef.keyboard) {
+        if (this.state.zoomLevel > 1.0 && prevState.zoomLevel <= 1.0) {
+          // Just zoomed in - disable Swiper keyboard
+          this.swiperRef.keyboard.disable();
+        } else if (this.state.zoomLevel <= 1.0 && prevState.zoomLevel > 1.0) {
+          // Just zoomed out - enable Swiper keyboard
+          this.swiperRef.keyboard.enable();
+        }
+      }
+      // Update allowTouchMove dynamically
+      if (this.state.zoomLevel > 1.0) {
+        this.swiperRef.allowTouchMove = false;
+      } else {
+        this.swiperRef.allowTouchMove = true;
+      }
+    }
+  }
+
+  componentWillUnmount() {
+    window.removeEventListener('keydown', this.handleKeyDown, true);
+    // Clean up mouse event listeners
+    document.removeEventListener('mousemove', this.handleMouseMove, { capture: true });
+    document.removeEventListener('mouseup', this.handleMouseUp, { capture: true });
   }
 
   render() {
@@ -432,6 +800,23 @@ class Collection extends Component {
           </button>
           <div className="modal-info-bar">
             <span className="photo-counter">{this.state.currentPhotoIndex + 1} / {totalPhotos}</span>
+            <button className="button is-text modal-info-button" onClick={this.handleZoomIn} title="Zoom in (+)">
+              <span className="icon is-small">
+                <i className="fas fa-search-plus"></i>
+              </span>
+            </button>
+            <button className="button is-text modal-info-button" onClick={this.handleZoomOut} title="Zoom out (-)">
+              <span className="icon is-small">
+                <i className="fas fa-search-minus"></i>
+              </span>
+            </button>
+            {this.state.zoomLevel > 1.0 && (
+              <button className="button is-text modal-info-button" onClick={this.handleResetZoom} title="Reset zoom (Escape)">
+                <span className="icon is-small">
+                  <i className="fas fa-compress"></i>
+                </span>
+              </button>
+            )}
             {currentPhoto && currentPhoto.faces && currentPhoto.faces.length > 0 && (
               <button className={`button is-text modal-info-button ${this.state.showFaceTags ? 'is-active' : ''}`} onClick={this.toggleFaceTags} title="Toggle face tags">
                 <span className="icon is-small">
@@ -505,33 +890,66 @@ class Collection extends Component {
               }
             }}
             navigation={{
-              enabled: true,
+              enabled: this.state.zoomLevel === 1.0,
             }}
-            keyboard={{ enabled: true, }}
+            keyboard={{ 
+              enabled: this.state.zoomLevel === 1.0,
+            }}
+            allowTouchMove={this.state.zoomLevel === 1.0}
+            simulateTouch={this.state.zoomLevel === 1.0}
             pagination={{ clickable: true, }}
             hashNavigation={{
               watchState: true,
             }}
             modules={[Keyboard, HashNavigation, Pagination, Navigation]}
-            className="swiper"
+            className={`swiper ${this.state.zoomLevel > 1.0 ? 'swiper-zoomed' : ''}`}
           >
             {
               collection_data["photos"].map(x =>
                 <SwiperSlide key={x.slug} slug={x.slug} data-hash={"/collections/" + this.props.params.collectionType + "/" + this.props.params.collection + "/" + x.slug}>
-                  <div className="swiper-slide-content">
+                  <div 
+                    className="swiper-slide-content"
+                    onPointerDown={this.state.zoomLevel > 1.0 && x.slug === currentPhoto?.slug ? this.handlePointerDown : undefined}
+                    onMouseDown={this.state.zoomLevel > 1.0 && x.slug === currentPhoto?.slug ? this.handlePointerDown : undefined}
+                    style={this.state.zoomLevel > 1.0 && x.slug === currentPhoto?.slug ? { cursor: 'grab' } : undefined}
+                  >
                     <img 
                       title={x.name} 
                       src={x.src}
-                      className="swiper-image"
+                      className={`swiper-image ${this.state.zoomLevel > 1.0 && x.slug === currentPhoto?.slug ? 'zoomed' : ''}`}
                       data-slug={x.slug}
-                      draggable={allowDownload}
+                      draggable={allowDownload && this.state.zoomLevel === 1.0}
                       onContextMenu={allowDownload ? undefined : (e) => e.preventDefault()}
+                      onDoubleClick={this.handleDoubleClick}
+                      style={this.state.zoomLevel > 1.0 && x.slug === currentPhoto?.slug ? {
+                        transform: `translate(calc(-50% + ${this.state.panX}px), calc(-50% + ${this.state.panY}px)) scale(${this.state.zoomLevel})`,
+                        transition: this._isDragging ? 'none' : 'transform 0.2s ease'
+                      } : undefined}
+                      ref={(imgEl) => {
+                        // Attach native event listeners directly to bypass React/Swiper
+                        if (imgEl && this.state.zoomLevel > 1.0 && x.slug === currentPhoto?.slug) {
+                          // Remove old listeners if they exist
+                          if (imgEl._panHandler) {
+                            imgEl.removeEventListener('mousedown', imgEl._panHandler);
+                            imgEl.removeEventListener('pointerdown', imgEl._panHandler);
+                          }
+                          // Create new handler
+                          imgEl._panHandler = (e) => {
+                            console.log('Native handler called', { zoomLevel: this.state.zoomLevel });
+                            this.handlePointerDown(e);
+                          };
+                          imgEl.addEventListener('mousedown', imgEl._panHandler, { capture: true });
+                          imgEl.addEventListener('pointerdown', imgEl._panHandler, { capture: true });
+                          this.currentImageRef = imgEl;
+                        }
+                      }}
                       onLoad={(e) => {
                         // Update refs for the currently active photo when its image loads
                         // Check both slug and index to ensure we're updating the right image
                         const currentPhoto = collection_data["photos"]?.[this.state.currentPhotoIndex];
                         if (currentPhoto && x.slug === currentPhoto.slug) {
                           this.imageRef = e.target;
+                          this.currentImageRef = e.target;
                           this.slideContentRef = e.target.parentElement;
                           // Force update when image loads so FaceTagOverlay can recalculate
                           // Use requestAnimationFrame to ensure image is fully rendered
