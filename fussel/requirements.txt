@@ -1,4 +1,4 @@
-Pillow==10.4.0
+Pillow==12.1.1
 beautifulsoup4==4.12.3
 massedit==0.70.0
 python-slugify==8.0.4
