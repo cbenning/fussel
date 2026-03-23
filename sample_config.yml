@@ -27,6 +27,11 @@ gallery:
   allow_download: True
 
   albums:
+    # Enable/disable albums view
+    # Setting to False hides the Albums navigation button
+    # Default: True
+    enable: True
+
     # Recursively process sub-folders as albums
     # Default: recursive: True
     recursive: True
@@ -37,6 +42,29 @@ gallery:
     # - {album} will be replaced with the album name
     # Default: "{parent_album} > {album}"
     recursive_name_pattern: "{parent_album} > {album}"
+
+  photos:
+    # Enable/disable photos (all photos) view
+    # Setting to False hides the Photos navigation button
+    # Default: True
+    enable: True
+
+    # Default sort by: 'date' or 'filename' (can be changed in UI)
+    # Default: 'date'
+    sort_by: 'date'
+
+    # Default sort order: 'asc' or 'desc' (can be changed in UI)
+    # Default: 'desc'
+    sort_order: 'desc'
+
+  # Thumbnail sizes to generate for each photo (width x height, aspect ratio preserved).
+  # Listed from smallest to largest. The largest size is also used as the full-size display image.
+  # Default: [[500,500],[800,800],[1024,1024],[1600,1600]]
+  # photo_sizes:
+  #   - [500, 500]
+  #   - [800, 800]
+  #   - [1024, 1024]
+  #   - [1600, 1600]
 
   people:
     # Face Tag detection.

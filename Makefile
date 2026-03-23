@@ -1,4 +1,9 @@
-.PHONY: help install install-python install-js dev clean generate build test serve
+.PHONY: help install install-python install-js dev clean generate build test serve fmt lint
+
+UV      := uv
+PYTHON  := $(UV) run python
+PYTEST  := $(UV) run pytest
+RUFF    := $(UV) run ruff
 
 # Default target
 help:
@@ -11,8 +16,10 @@ help:
 	@echo "  make generate       - Generate the gallery site"
 	@echo "  make serve          - Start HTTP server to preview generated site"
 	@echo "  make dev            - Run in development mode (watch web app)"
+	@echo "  make test           - Run tests"
+	@echo "  make fmt            - Format Python source with ruff"
+	@echo "  make lint           - Lint Python source with ruff (no changes)"
 	@echo "  make clean          - Clean build artifacts and dependencies"
-	@echo "  make test           - Run tests (if available)"
 	@echo ""
 	@echo "First time setup:"
 	@echo "  1. Copy sample_config.yml to config.yml"
@@ -23,12 +30,10 @@ help:
 # Install all dependencies
 install: install-python install-js
 
-# Install Python dependencies
+# Install Python dependencies via uv
 install-python:
-	@echo "Setting up Python virtual environment..."
-	python3 -m venv .venv || python -m venv .venv
-	.venv/bin/pip install --upgrade pip setuptools wheel
-	.venv/bin/pip install -e ".[test]"
+	@echo "Installing Python dependencies with uv..."
+	$(UV) sync --extra dev
 
 # Install JavaScript dependencies
 install-js:
@@ -43,7 +48,7 @@ install-js:
 # Generate the gallery site
 generate:
 	@echo "Generating gallery site..."
-	.venv/bin/python -m fussel.fussel
+	$(PYTHON) -m fussel.fussel
 
 # Development mode - run web app in watch mode
 dev:
@@ -53,6 +58,28 @@ dev:
 		exit 1; \
 	fi
 	cd fussel/web && yarn start
+
+# Run tests
+test:
+	@echo "Running tests..."
+	$(PYTEST) tests/ -v --cov=fussel --cov-report=html --cov-report=term
+
+# Format Python source
+fmt:
+	@echo "Formatting Python source..."
+	$(RUFF) format .
+	$(RUFF) check --fix .
+
+# Lint Python source (check only, no changes)
+lint:
+	@echo "Linting Python source..."
+	$(RUFF) format --check .
+	$(RUFF) check .
+
+# Serve the generated site
+serve:
+	@echo "Starting HTTP server..."
+	$(PYTHON) serve.py
 
 # Clean build artifacts
 clean:
@@ -64,13 +91,3 @@ clean:
 	find . -type d -name __pycache__ -exec rm -r {} + 2>/dev/null || true
 	find . -type f -name "*.pyc" -delete
 	find . -type f -name "*.pyo" -delete
-
-# Run tests
-test:
-	@echo "Running tests..."
-	.venv/bin/pytest tests/ -v --cov=fussel --cov-report=html --cov-report=term
-
-# Serve the generated site
-serve:
-	@echo "Starting HTTP server..."
-	@.venv/bin/python serve.py

@@ -6,16 +6,35 @@ import logo from '../images/animal-track-transparent-2.png';
 export default class Navbar extends React.Component {
 
   generateAlbumsButton = () => {
-    return (
-      <NavLink className="navbar-item" to="/collections/albums">
-        <span className="icon">
-          <i className="fas fa-book"></i>
-        </span>
-        <span className="navbar-text">
-          Albums
-        </span>
-      </NavLink>
-    )
+    if (this.props.hasAlbums) {
+      return (
+        <NavLink className="navbar-item" to="/collections/albums">
+          <span className="icon">
+            <i className="fas fa-book"></i>
+          </span>
+          <span className="navbar-text">
+            Albums
+          </span>
+        </NavLink>
+      )
+    }
+    return ''
+  }
+
+  generatePhotosButton = () => {
+    if (this.props.hasPhotos) {
+      return (
+        <NavLink className="navbar-item" to="/collections/photos">
+          <span className="icon">
+            <i className="fas fa-images"></i>
+          </span>
+          <span className="navbar-text">
+            Photos
+          </span>
+        </NavLink>
+      )
+    }
+    return ''
   }
 
   generatePeopleButton = () => {
@@ -46,6 +65,7 @@ export default class Navbar extends React.Component {
           <div className="navbar-menu is-active">
             <div className="navbar-start">
               {this.generateAlbumsButton()}
+              {this.generatePhotosButton()}
               {this.generatePeopleButton()}
             </div>
           </div>

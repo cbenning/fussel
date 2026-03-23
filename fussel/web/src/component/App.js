@@ -20,8 +20,11 @@ export default class App extends Component {
           <title>{site_data['site_name']}</title>
         </Helmet>
         <Routes>
-          <Route path="/" element={<Navbar hasPeople={site_data.people_enabled} />}>
+          <Route path="/" element={<Navbar hasPeople={site_data.people_enabled} hasAlbums={site_data.albums_enabled} hasPhotos={site_data.photos_enabled} />}>
             <Route index element={<Collections collectionType="albums" />} />
+            <Route path="collections/photos" element={<Collection />} />
+            <Route path="collections/photos/:albumSlug/:image" element={<Collection />} />
+            <Route path="collections/photos/:image" element={<Collection />} />
             <Route path="collections/:collectionType" element={<Collections />} />
             <Route path="collections/:collectionType/:collection" element={<Collection />} />
             <Route path="collections/:collectionType/:collection/:image" element={<Collection />} />

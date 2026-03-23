@@ -1,8 +1,19 @@
 import React, { Component } from "react";
-import Masonry, { ResponsiveMasonry } from "react-responsive-masonry"
+import { MasonryPhotoAlbum } from "react-photo-album";
+import "react-photo-album/masonry.css";
 import withRouter from './withRouter';
 import { albums_data } from "../_gallery/albums_data.js"
 import { people_data } from "../_gallery/people_data.js"
+// photos_data might not exist if photos is disabled
+let photos_data = [];
+try {
+  // Use dynamic import to handle missing file gracefully
+  const photosModule = require("../_gallery/photos_data.js");
+  photos_data = photosModule.photos_data || [];
+} catch (e) {
+  // photos_data.js doesn't exist - photos is disabled or not generated yet
+  photos_data = [];
+}
 import { site_data } from "../_gallery/site_data.js"
 import { Keyboard, Pagination, HashNavigation, Navigation } from "swiper/modules";
 import { Swiper, SwiperSlide } from 'swiper/react';
@@ -13,6 +24,7 @@ import Modal from 'react-modal';
 
 import { Link } from "react-router-dom";
 import "./Collection.css";
+import TimelineScrollbar from "./TimelineScrollbar";
 
 Modal.setAppElement('#app');
 
@@ -128,7 +140,7 @@ class FaceTagOverlay extends Component {
   }
 
   render() {
-    const { faces, imageRef, containerRef, originalWidth, originalHeight, navigate } = this.props;
+    const { faces, imageRef, containerRef, originalWidth, originalHeight, navigate, onCloseModal } = this.props;
     if (!imageRef || !containerRef || !faces || faces.length === 0) return null;
 
     // Use cached dimensions from state to avoid expensive getBoundingClientRect in render
@@ -169,6 +181,12 @@ class FaceTagOverlay extends Component {
                 href={`#/collections/people/${face.slug}`}
                 onClick={(e) => {
                   e.stopPropagation();
+                  e.preventDefault();
+                  // Close modal before navigating
+                  if (this.props.onCloseModal) {
+                    this.props.onCloseModal();
+                  }
+                  // Navigate to person's gallery
                   if (navigate) {
                     navigate(`/collections/people/${face.slug}`);
                   }
@@ -199,7 +217,12 @@ class Collection extends Component {
       zoomLevel: 1.0,
       panX: 0,
       panY: 0,
-      isDragging: false
+      isDragging: false,
+      // Photos-specific state
+      sortOrder: localStorage.getItem('fussel_photos_sortOrder') || 'desc',
+      selectedPeople: [],
+      peopleFilterOpen: false,
+      peopleFilterSearch: ''
     };
     this.swiperRef = null;
     this.dragStartX = 0;
@@ -208,6 +231,8 @@ class Collection extends Component {
     this.dragStartPanY = 0;
     this.currentImageRef = null;
     this._isDragging = false; // Synchronous flag for dragging state
+    this.galleryContainerRef = React.createRef();
+    this.headerRef = React.createRef();
   }
 
   modalStateTracker = (event) => {
@@ -220,7 +245,17 @@ class Collection extends Component {
       return
     }
 
-    var closedModalUrl = "/collections/" + this.props.params.collectionType + "/" + this.props.params.collection
+    const collectionType = this.props.params.collectionType || 'photos';
+    const collection = this.props.params.collection;
+    
+    // For photos view, there's no collection name - URL is /collections/photos
+    // For albums/people, URL is /collections/{type}/{collection}
+    var closedModalUrl;
+    if (collectionType === 'photos') {
+      closedModalUrl = "/collections/photos";
+    } else {
+      closedModalUrl = `/collections/${collectionType}/${collection}`;
+    }
 
     if (this.state.viewerIsOpen) {
       if (
@@ -230,8 +265,11 @@ class Collection extends Component {
         this.setState({
           viewerIsOpen: false
         })
-        // var page = document.getElementsByTagName('body')[0];
-        // page.classList.remove('noscroll');
+        // Re-enable body scrolling when modal is closed
+        const page = document.getElementsByTagName('body')[0];
+        if (page) {
+          page.classList.remove('noscroll');
+        }
       }
     }
 
@@ -243,33 +281,81 @@ class Collection extends Component {
         this.setState({
           viewerIsOpen: true
         })
-        // this.props.navigate("/collections/" + this.props.params.collectionType + "/" + this.props.params.collection + "/" + event.target.attributes.slug.value);
-        // var page = document.getElementsByTagName('body')[0];
-        // page.classList.add('noscroll');
+        // Prevent body scrolling when modal is open
+        const page = document.getElementsByTagName('body')[0];
+        if (page) {
+          page.classList.add('noscroll');
+        }
       }
     }
   }
 
   openModal = (event) => {
 
-    this.props.navigate("/collections/" + this.props.params.collectionType + "/" + this.props.params.collection + "/" + event.target.attributes.slug.value);
+    const collectionType = this.props.params.collectionType || 'photos';
+    const collection = this.props.params.collection;
+    const photoSlug = event.target.attributes.slug.value;
+    const albumSlug = event.target.attributes['data-album-slug']?.value;
+    
+    console.log('openModal called:', {
+      collectionType: collectionType,
+      collection: collection,
+      photoSlug: photoSlug,
+      albumSlug: albumSlug
+    });
+    
+    // For photos view, include albumSlug to avoid name collisions
+    // URL format: /collections/photos/{albumSlug}/{slug}
+    // For albums/people, URL is /collections/{type}/{collection}/{slug}
+    let url;
+    if (collectionType === 'photos') {
+      if (albumSlug) {
+        url = `/collections/photos/${albumSlug}/${photoSlug}`;
+      } else {
+        // Fallback for backward compatibility
+        url = `/collections/photos/${photoSlug}`;
+      }
+    } else {
+      url = `/collections/${collectionType}/${collection}/${photoSlug}`;
+    }
+    
+    console.log('Navigating to:', url);
+    this.props.navigate(url);
     this.setState({
       viewerIsOpen: true
     })
     // Add listener to detect if the back button was pressed and the modal should be closed
     window.addEventListener('hashchange', this.modalStateTracker, false);
-    // var page = document.getElementsByTagName('body')[0];
-    // page.classList.add('noscroll');
+    // Prevent body scrolling when modal is open
+    const page = document.getElementsByTagName('body')[0];
+    if (page) {
+      page.classList.add('noscroll');
+    }
   };
 
   closeModal = () => {
 
-    this.props.navigate("/collections/" + this.props.params.collectionType + "/" + this.props.params.collection);
+    const collectionType = this.props.params.collectionType || 'photos';
+    const collection = this.props.params.collection;
+    
+    // For photos view, there's no collection name - URL is /collections/photos
+    // For albums/people, URL is /collections/{type}/{collection}
+    let url;
+    if (collectionType === 'photos') {
+      url = '/collections/photos';
+    } else {
+      url = `/collections/${collectionType}/${collection}`;
+    }
+    
+    this.props.navigate(url);
     this.setState({
       viewerIsOpen: false
     })
-    // var page = document.getElementsByTagName('body')[0];
-    // page.classList.remove('noscroll');
+    // Re-enable body scrolling when modal is closed
+    const page = document.getElementsByTagName('body')[0];
+    if (page) {
+      page.classList.remove('noscroll');
+    }
   };
 
   title = (collectionType) => {
@@ -280,10 +366,22 @@ class Collection extends Component {
     else if (collectionType == "people") {
       titleStr = "People"
     }
+    else if (collectionType == "photos") {
+      titleStr = "Photos"
+    }
     return titleStr
   }
 
   collection = (collectionType, collection) => {
+    // Handle photos specially - it doesn't have a collection name
+    if (collectionType == "photos") {
+      return {
+        name: "Photos",
+        slug: "photos",
+        photos: photos_data || []
+      }
+    }
+    
     let data = {}
     if (collectionType == "albums") {
       data = albums_data
@@ -295,6 +393,23 @@ class Collection extends Component {
       return data[collection]
     }
     return {}
+  }
+
+  // Helper function to find photo by slug, optionally using albumSlug for disambiguation
+  findPhotoIndex = (photos, slug, albumSlug) => {
+    if (!albumSlug) {
+      // No albumSlug provided - find first match (backward compatibility)
+      return photos.findIndex(p => p.slug === slug);
+    }
+    
+    // Try to find exact match with albumSlug first
+    const exactMatch = photos.findIndex(p => p.slug === slug && p.albumSlug === albumSlug);
+    if (exactMatch !== -1) {
+      return exactMatch;
+    }
+    
+    // Fallback: if no exact match, find first with matching slug
+    return photos.findIndex(p => p.slug === slug);
   }
 
   handleSlideChange = (swiper) => {
@@ -380,6 +495,157 @@ class Collection extends Component {
     return people;
   }
 
+  // Photos filtering and sorting
+  getFilteredPhotos = (photos) => {
+    if (!photos) return [];
+    if (this.state.selectedPeople.length === 0) {
+      return photos;
+    }
+    return photos.filter(photo => {
+      // Check if photo has ALL selected people (AND logic, not OR)
+      // Strictly check for faces - must exist, be an array, and have length > 0
+      
+      // First check: photo must exist
+      if (!photo) {
+        console.warn('Filter: photo is null/undefined');
+        return false;
+      }
+      
+      // Second check: faces property must exist
+      if (!photo.hasOwnProperty('faces')) {
+        console.warn('Filter: photo missing faces property:', photo.name);
+        return false;
+      }
+      
+      // Third check: faces must not be null/undefined
+      if (photo.faces === null || photo.faces === undefined) {
+        console.warn('Filter: photo has null/undefined faces:', photo.name);
+        return false;
+      }
+      
+      // Fourth check: faces must be an array
+      if (!Array.isArray(photo.faces)) {
+        console.warn('Filter: photo faces is not an array:', photo.name, 'type:', typeof photo.faces, 'value:', photo.faces);
+        return false;
+      }
+      
+      // Fifth check: must have at least one face
+      if (photo.faces.length === 0) {
+        console.warn('Filter: photo has empty faces array:', photo.name, photo.slug);
+        return false;
+      }
+      
+      // Get all face slugs in this photo (filter out any undefined/null/invalid slugs)
+      const photoFaceSlugs = photo.faces
+        .map(face => {
+          // Check if face is an object with a slug property
+          if (!face || typeof face !== 'object') {
+            console.warn('Filter: invalid face object in photo:', photo.name, 'face:', face);
+            return null;
+          }
+          // Handle both face.slug and face being a string slug directly
+          const slug = face.slug || (typeof face === 'string' ? face : null);
+          return slug;
+        })
+        .filter(slug => slug !== null && slug !== undefined && slug !== '');
+      
+      // If no valid face slugs, exclude this photo
+      if (photoFaceSlugs.length === 0) {
+        console.warn('Filter: photo has faces but no valid slugs:', photo.name, photo.slug, 'faces:', photo.faces);
+        return false;
+      }
+      
+      // Check that every selected person is present in the photo
+      const hasAllPeople = this.state.selectedPeople.every(slug => photoFaceSlugs.includes(slug));
+      
+      if (!hasAllPeople) {
+        console.log('Filter: photo filtered out (missing people):', photo.name, photo.slug, 'has:', photoFaceSlugs, 'needs:', this.state.selectedPeople);
+      }
+      
+      return hasAllPeople;
+    });
+  }
+
+  getSortedAndFilteredPhotos = (photos) => {
+    let filtered = this.getFilteredPhotos(photos);
+    
+    // Debug: Check for any photos with empty faces that made it through
+    if (this.state.selectedPeople.length > 0) {
+      const photosWithEmptyFaces = filtered.filter(p => 
+        !p.faces || 
+        !Array.isArray(p.faces) || 
+        p.faces.length === 0 ||
+        (Array.isArray(p.faces) && p.faces.length > 0 && p.faces.every(face => {
+          const slug = (face && typeof face === 'object' ? face.slug : (typeof face === 'string' ? face : null));
+          return !slug || slug === '';
+        }))
+      );
+      
+      if (photosWithEmptyFaces.length > 0) {
+        console.error('BUG: Photos with empty/invalid faces passed filter:', 
+          photosWithEmptyFaces.map(p => ({
+            name: p.name,
+            slug: p.slug,
+            faces: p.faces,
+            facesType: typeof p.faces,
+            isArray: Array.isArray(p.faces),
+            length: Array.isArray(p.faces) ? p.faces.length : 'N/A'
+          }))
+        );
+      }
+    }
+    
+    // Apply sorting by date only
+    return filtered.sort((a, b) => {
+      const aVal = a.date ? new Date(a.date).getTime() : 0;
+      const bVal = b.date ? new Date(b.date).getTime() : 0;
+      
+      if (this.state.sortOrder === 'asc') {
+        return aVal > bVal ? 1 : (aVal < bVal ? -1 : 0);
+      } else { // desc
+        return aVal < bVal ? 1 : (aVal > bVal ? -1 : 0);
+      }
+    });
+  }
+
+  handleSortOrderChange = (e) => {
+    const newSortOrder = e.target.value;
+    this.setState({ sortOrder: newSortOrder });
+    localStorage.setItem('fussel_photos_sortOrder', newSortOrder);
+  }
+
+  handlePeopleFilterChange = (e) => {
+    const selectedOptions = Array.from(e.target.selectedOptions, option => option.value);
+    this.setState({ selectedPeople: selectedOptions });
+  }
+
+  togglePeopleFilter = () => {
+    this.setState(prevState => ({ 
+      peopleFilterOpen: !prevState.peopleFilterOpen,
+      peopleFilterSearch: '' // Clear search when closing
+    }));
+  }
+
+  handlePeopleFilterSearch = (e) => {
+    this.setState({ peopleFilterSearch: e.target.value });
+  }
+
+  togglePersonSelection = (personSlug) => {
+    this.setState(prevState => {
+      const isSelected = prevState.selectedPeople.includes(personSlug);
+      const newSelected = isSelected
+        ? prevState.selectedPeople.filter(slug => slug !== personSlug)
+        : [...prevState.selectedPeople, personSlug];
+      return { selectedPeople: newSelected };
+    });
+  }
+
+  handleClickOutside = (e) => {
+    if (this.peopleFilterRef && !this.peopleFilterRef.contains(e.target)) {
+      this.setState({ peopleFilterOpen: false, peopleFilterSearch: '' });
+    }
+  }
+
   // Zoom handlers
   handleZoomIn = () => {
     this.setState(prevState => ({
@@ -407,11 +673,17 @@ class Collection extends Component {
   handleKeyDown = (e) => {
     if (!this.state.viewerIsOpen) return;
 
-    // Escape to reset zoom
-    if (e.key === 'Escape' && this.state.zoomLevel > 1.0) {
+    // Escape key behavior:
+    // - If zoomed in: reset zoom
+    // - If not zoomed: close modal
+    if (e.key === 'Escape') {
       e.preventDefault();
       e.stopPropagation();
-      this.handleResetZoom();
+      if (this.state.zoomLevel > 1.0) {
+        this.handleResetZoom();
+      } else {
+        this.closeModal();
+      }
       return;
     }
 
@@ -701,8 +973,10 @@ class Collection extends Component {
 
   componentDidMount() {
     window.addEventListener('keydown', this.handleKeyDown, true);
+    // Close people filter dropdown when clicking outside
+    document.addEventListener('click', this.handleClickOutside);
   }
-
+  
   componentDidUpdate(prevProps, prevState) {
     // Disable/enable Swiper keyboard and touch based on zoom level
     if (this.swiperRef) {
@@ -722,59 +996,416 @@ class Collection extends Component {
         this.swiperRef.allowTouchMove = true;
       }
     }
+    
+    // Update photo index if URL changed (e.g., clicking a photo in gallery)
+    if (this.swiperRef && this.props.params.image && 
+        (prevProps.params.image !== this.props.params.image || 
+         prevState.selectedPeople !== this.state.selectedPeople ||
+         prevState.sortOrder !== this.state.sortOrder)) {
+      // Recalculate displayPhotos with current filters/sort
+      const collectionType = this.props.params.collectionType || 'photos';
+      const collection = this.props.params.collection || 'photos';
+      let collection_data = this.collection(collectionType, collection);
+      const isPhotos = collectionType === 'photos';
+      let displayPhotos = collection_data["photos"] || [];
+      if (isPhotos) {
+        displayPhotos = this.getSortedAndFilteredPhotos(displayPhotos);
+      }
+      
+      // Use albumSlug from URL params if available for disambiguation
+      const albumSlug = this.props.params.albumSlug;
+      const photoIndex = this.findPhotoIndex(displayPhotos, this.props.params.image, albumSlug);
+      if (photoIndex !== -1 && photoIndex !== this.state.currentPhotoIndex) {
+        this.setState({ currentPhotoIndex: photoIndex });
+        this.swiperRef.slideTo(photoIndex);
+      }
+    }
+    
+    // Update scroll position when content changes (e.g., filters applied, photos loaded)
+    const currentCollectionType = this.props.params.collectionType || 'photos';
   }
 
   componentWillUnmount() {
     window.removeEventListener('keydown', this.handleKeyDown, true);
+    document.removeEventListener('click', this.handleClickOutside);
     // Clean up mouse event listeners
     document.removeEventListener('mousemove', this.handleMouseMove, { capture: true });
     document.removeEventListener('mouseup', this.handleMouseUp, { capture: true });
   }
 
+  getHeaderHeight = () => {
+    let height = 0;
+    // Always query the DOM directly since refs might not be ready during render
+    const header = document.querySelector('.hero.is-small');
+    if (header) {
+      const headerRect = header.getBoundingClientRect();
+      height += headerRect.height;
+    } else if (this.headerRef && this.headerRef.current) {
+      const headerRect = this.headerRef.current.getBoundingClientRect();
+      height += headerRect.height;
+    }
+    // Also account for photos-controls if it exists
+    const photosControls = document.querySelector('.photos-controls');
+    if (photosControls) {
+      const controlsRect = photosControls.getBoundingClientRect();
+      height += controlsRect.height + 20; // 20px is the margin-bottom
+    }
+    return height;
+  }
+
   render() {
-    let collection_data = this.collection(this.props.params.collectionType, this.props.params.collection)
-    const totalPhotos = collection_data["photos"] ? collection_data["photos"].length : 0;
-    const currentPhoto = collection_data["photos"] ? collection_data["photos"][this.state.currentPhotoIndex] : null;
+    const collectionType = this.props.params.collectionType || 'photos'; // Default to photos if not in params
+    const collection = this.props.params.collection;
+    let collection_data = this.collection(collectionType, collection)
+    const isPhotos = collectionType === 'photos';
+    
+    // Store in instance for use in other methods
+    this._collectionType = collectionType;
+    this._collection = collection;
+    
+    // For photos, apply filtering and sorting
+    let displayPhotos = collection_data["photos"] || [];
+    if (isPhotos) {
+      displayPhotos = this.getSortedAndFilteredPhotos(displayPhotos);
+    }
+    
+    const totalPhotos = displayPhotos.length;
+    const currentPhoto = displayPhotos[this.state.currentPhotoIndex] || null;
     const photoPeople = currentPhoto ? this.getPhotoPeople(currentPhoto.slug) : [];
     const allowDownload = site_data.allow_download;
+    
+    // Debug: Log displayPhotos when filtering is active
+    if (isPhotos && this.state.selectedPeople.length > 0) {
+      console.log('Gallery render - displayPhotos:', {
+        length: displayPhotos.length,
+        selectedPeople: this.state.selectedPeople,
+        photos: displayPhotos.map(p => ({
+          name: p.name,
+          slug: p.slug,
+          facesCount: Array.isArray(p.faces) ? p.faces.length : 'not-array',
+          faces: p.faces
+        }))
+      });
+    }
+    
     return (
       <div className="container" >
-        <section className="hero is-small">
+        <section className="hero is-small" ref={this.headerRef}>
           <div className="hero-body">
             <nav className="breadcrumb" aria-label="breadcrumbs">
               <ul>
-                <li>
-                  <i className="fas fa-book fa-lg"></i>
-                  <Link className="title is-5" to={"/collections/" + this.props.params.collectionType}>&nbsp;&nbsp;{this.title(this.props.params.collectionType)}</Link>
-                </li>
-                <li className="is-active">
-                  <a className="title is-5">{collection_data["name"]}</a>
-                </li>
+                {isPhotos ? (
+                  // For Photos view, just show the title without subheading
+                  <li className="is-active">
+                    <i className="fas fa-images fa-lg"></i>
+                    <span className="title is-5">&nbsp;&nbsp;{this.title(collectionType)}</span>
+                  </li>
+                ) : (
+                  // For Albums/People, show the collection type and subheading
+                  <>
+                    <li>
+                      <i className="fas fa-book fa-lg"></i>
+                      <Link className="title is-5" to={"/collections/" + collectionType}>&nbsp;&nbsp;{this.title(collectionType)}</Link>
+                    </li>
+                    <li className="is-active">
+                      <a className="title is-5">{collection_data["name"]}</a>
+                    </li>
+                  </>
+                )}
               </ul>
             </nav>
           </div>
         </section>
-        <ResponsiveMasonry
-          columnsCountBreakPoints={{ 300: 1, 600: 2, 900: 3, 1200: 4, 1500: 5 }}
+        {isPhotos && (
+          <div className="photos-controls field is-grouped is-grouped-multiline" style={{ marginBottom: '20px' }}>
+            <div className="field">
+              <label className="label" style={{ fontSize: '0.85rem', marginBottom: '0.25rem' }}>Date order</label>
+              <div className="control">
+                <div className="select is-small">
+                  <select value={this.state.sortOrder} onChange={this.handleSortOrderChange}>
+                    <option value="desc">Newest first</option>
+                    <option value="asc">Oldest first</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+            {people_data && Object.keys(people_data).length > 0 && (
+              <div className="field">
+                <label className="label" style={{ fontSize: '0.85rem', marginBottom: '0.25rem' }}>Filter by people</label>
+                <div className="control">
+                  <div 
+                    ref={el => this.peopleFilterRef = el}
+                    className="people-filter-dropdown" 
+                    style={{ position: 'relative', minWidth: '200px' }}
+                  >
+                    <button
+                      type="button"
+                      className="people-filter-trigger"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        this.togglePeopleFilter();
+                      }}
+                      style={{
+                        width: '100%',
+                        textAlign: 'left',
+                        padding: '0.375em 2.5em 0.375em 0.625em',
+                        fontSize: '0.875rem',
+                        border: '1px solid rgba(0, 0, 0, 0.2)',
+                        borderRadius: '4px',
+                        backgroundColor: 'transparent',
+                        color: 'inherit',
+                        cursor: 'pointer',
+                        minHeight: '2.25em',
+                        position: 'relative'
+                      }}
+                    >
+                      {this.state.selectedPeople.length === 0 
+                        ? 'Select people...'
+                        : `${this.state.selectedPeople.length} ${this.state.selectedPeople.length === 1 ? 'person' : 'people'} selected`
+                      }
+                      <span style={{ position: 'absolute', right: '0.625em', top: '50%', transform: 'translateY(-50%)' }}>
+                        <i className={`fas fa-chevron-${this.state.peopleFilterOpen ? 'up' : 'down'}`} style={{ fontSize: '0.75rem' }}></i>
+                      </span>
+                    </button>
+                    {this.state.peopleFilterOpen && (
+                      <div 
+                        className="people-filter-dropdown-menu" 
+                        onClick={(e) => e.stopPropagation()}
+                        style={{
+                        position: 'absolute',
+                        top: '100%',
+                        left: 0,
+                        right: 0,
+                        marginTop: '4px',
+                        backgroundColor: '#fff',
+                        border: '1px solid #dbdbdb',
+                        borderRadius: '4px',
+                        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
+                        zIndex: 1000,
+                        maxHeight: '300px',
+                        display: 'flex',
+                        flexDirection: 'column'
+                      }}>
+                        <div style={{ padding: '8px', borderBottom: '1px solid #dbdbdb' }}>
+                          <input
+                            type="text"
+                            className="input is-small"
+                            placeholder="Search people..."
+                            value={this.state.peopleFilterSearch}
+                            onChange={this.handlePeopleFilterSearch}
+                            style={{
+                              width: '100%',
+                              fontSize: '0.875rem',
+                              padding: '0.375em 0.625em'
+                            }}
+                            autoFocus
+                          />
+                        </div>
+                        <div style={{ overflowY: 'auto', maxHeight: '250px' }}>
+                          {(() => {
+                            // Get all people, sorted alphabetically
+                            const allPeople = Object.keys(people_data)
+                              .map(slug => ({ slug, name: people_data[slug].name }))
+                              .sort((a, b) => a.name.localeCompare(b.name));
+                            
+                            // Filter by search query
+                            const filtered = this.state.peopleFilterSearch
+                              ? allPeople.filter(p => 
+                                  p.name.toLowerCase().includes(this.state.peopleFilterSearch.toLowerCase())
+                                )
+                              : allPeople;
+                            
+                            // Show selected first, then others
+                            const selected = filtered.filter(p => this.state.selectedPeople.includes(p.slug));
+                            const unselected = filtered.filter(p => !this.state.selectedPeople.includes(p.slug));
+                            const sorted = [...selected, ...unselected];
+                            
+                            return sorted.map(({ slug, name }) => (
+                              <div
+                                key={slug}
+                                onClick={() => this.togglePersonSelection(slug)}
+                                style={{
+                                  padding: '8px 12px',
+                                  cursor: 'pointer',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '8px',
+                                  backgroundColor: this.state.selectedPeople.includes(slug) ? 'rgba(0, 0, 0, 0.05)' : 'transparent',
+                                  transition: 'background-color 0.15s'
+                                }}
+                                onMouseEnter={(e) => {
+                                  if (!this.state.selectedPeople.includes(slug)) {
+                                    e.currentTarget.style.backgroundColor = 'rgba(0, 0, 0, 0.05)';
+                                  }
+                                }}
+                                onMouseLeave={(e) => {
+                                  e.currentTarget.style.backgroundColor = this.state.selectedPeople.includes(slug) ? 'rgba(0, 0, 0, 0.05)' : 'transparent';
+                                }}
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={this.state.selectedPeople.includes(slug)}
+                                  onChange={() => {}} // Handled by parent onClick
+                                  style={{ cursor: 'pointer' }}
+                                />
+                                <span>{name}</span>
+                              </div>
+                            ));
+                          })()}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+            {this.state.selectedPeople.length > 0 && (
+              <div className="field is-align-self-flex-end">
+                <div className="control">
+                  <button 
+                    className="button is-small is-light"
+                    onClick={() => this.setState({ selectedPeople: [] })}
+                  >
+                    Clear filter
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+        <div 
+          ref={this.galleryContainerRef}
+          style={{ position: 'relative' }}
         >
-          <Masonry
-            gutter="10px"
-          >
-            {collection_data["photos"].map((image, i) => (
-              <img
-                className="gallery-image"
-                key={i}
-                src={image.srcSet["(500, 500)w"]}
-                alt={image.name}
-                slug={image.slug}
-                loading="lazy"
-                draggable={allowDownload}
-                onContextMenu={allowDownload ? undefined : (e) => e.preventDefault()}
-                onClick={this.openModal}
-              />
-            ))}
-          </Masonry>
-        </ResponsiveMasonry>
+          <MasonryPhotoAlbum
+            key={`gallery-${this.state.selectedPeople.join(',')}-${this.state.sortOrder}-${displayPhotos.length}`}
+            photos={displayPhotos.map((image, i) => {
+              // Create a new object to ensure reference changes
+              return {
+                src: image.srcSet["(500, 500)w"] || image.src,
+                width: image.width,
+                height: image.height,
+                alt: image.name,
+                key: image.slug || i,
+                // Store original image data for onClick handler
+                originalImage: image
+              };
+            })}
+            columns={(containerWidth) => {
+              if (containerWidth < 600) return 1;
+              if (containerWidth < 900) return 2;
+              if (containerWidth < 1200) return 3;
+              if (containerWidth < 1500) return 4;
+              return 5;
+            }}
+            spacing={10}
+            padding={0}
+            onClick={({ index, photo }) => {
+              console.log('Photo clicked:', {
+                index: index,
+                photoObject: photo,
+                hasOriginalImage: !!photo.originalImage,
+                photoSrc: photo.src,
+                photoKey: photo.key
+              });
+              
+              // Verify the photo matches what we expect
+              const clickedPhoto = photo.originalImage;
+              if (!clickedPhoto) {
+                console.error('No originalImage found in photo object!', photo);
+                return;
+              }
+              
+              const expectedPhoto = displayPhotos[index];
+              
+              console.log('Photo comparison:', {
+                clickedSlug: clickedPhoto.slug,
+                clickedName: clickedPhoto.name,
+                clickedSrc: clickedPhoto.src,
+                expectedSlug: expectedPhoto?.slug,
+                expectedName: expectedPhoto?.name,
+                expectedSrc: expectedPhoto?.src,
+                index: index,
+                displayPhotosLength: displayPhotos.length
+              });
+              
+              // Debug: log if there's a mismatch
+              if (expectedPhoto && clickedPhoto.slug !== expectedPhoto.slug) {
+                console.warn('Photo mismatch detected:', {
+                  index: index,
+                  clickedSlug: clickedPhoto.slug,
+                  clickedName: clickedPhoto.name,
+                  expectedSlug: expectedPhoto.slug,
+                  expectedName: expectedPhoto.name
+                });
+              }
+              
+              // Create a synthetic event for openModal using the clicked photo's slug and albumSlug
+              const syntheticEvent = {
+                target: {
+                  attributes: {
+                    slug: { value: clickedPhoto.slug },
+                    'data-album-slug': clickedPhoto.albumSlug ? { value: clickedPhoto.albumSlug } : undefined
+                  }
+                }
+              };
+              
+              console.log('Opening modal with slug:', clickedPhoto.slug, 'albumSlug:', clickedPhoto.albumSlug);
+              this.openModal(syntheticEvent);
+            }}
+            renderPhoto={({ imageProps, photo, index }) => {
+              // Use the index from react-photo-album, which matches displayPhotos array order
+              // react-photo-album calculates width/height for masonry - don't override
+              // Merge className to ensure both react-photo-album's class and ours are applied
+              const className = imageProps.className 
+                ? `${imageProps.className} gallery-image`
+                : 'gallery-image';
+              
+              // Verify the photo data matches what we expect
+              const originalImage = photo.originalImage;
+              const expectedPhoto = displayPhotos[index];
+              
+              if (originalImage && expectedPhoto && originalImage.slug !== expectedPhoto.slug) {
+                console.warn('Render mismatch:', {
+                  index: index,
+                  renderedSlug: originalImage.slug,
+                  renderedName: originalImage.name,
+                  expectedSlug: expectedPhoto.slug,
+                  expectedName: expectedPhoto.name,
+                  renderedSrc: photo.src,
+                  expectedSrc: expectedPhoto.srcSet?.["(500, 500)w"] || expectedPhoto.src
+                });
+              }
+              
+              // Create a new props object to ensure data-photo-index is set
+              const finalProps = {
+                ...imageProps,
+                className: className,
+                'data-photo-index': String(index),
+                'data-photo-slug': originalImage?.slug || '',
+                'data-album-slug': originalImage?.albumSlug || '',
+                draggable: allowDownload,
+                onContextMenu: allowDownload ? undefined : (e) => e.preventDefault()
+              };
+              
+              return (
+                <img {...finalProps} />
+              );
+            }}
+          />
+        </div>
+        {isPhotos && (() => {
+          // Calculate header height once per render to ensure consistency
+          const headerHeight = this.getHeaderHeight();
+          return (
+            <TimelineScrollbar
+              photos={displayPhotos}
+              sortOrder={this.state.sortOrder}
+              scrollContainerRef={this.galleryContainerRef}
+              headerHeight={headerHeight}
+            />
+          );
+        })()}
         <Modal
           isOpen={this.state.viewerIsOpen}
           onRequestClose={this.closeModal}
@@ -782,7 +1413,8 @@ class Collection extends Component {
           
           style={{
             overlay: {
-              backgroundColor: 'rgba(0, 0, 0, 0.85)'
+              backgroundColor: 'rgba(0, 0, 0, 0.85)',
+              zIndex: 9999
             },
             content: {
               inset: '10px',
@@ -790,6 +1422,7 @@ class Collection extends Component {
               backgroundColor: 'rgba(0, 0, 0, 1)',
               border: 'none',
               outline: 'none',
+              zIndex: 10000
             }
           }}
         >
@@ -850,6 +1483,28 @@ class Collection extends Component {
                     <span className="photo-info-value">{currentPhoto.width} × {currentPhoto.height}</span>
                   </p>
                 )}
+                {site_data.albums_enabled && currentPhoto.albumSlug && albums_data && albums_data[currentPhoto.albumSlug] && (
+                  <div className="photo-info-item">
+                    <span className="photo-info-label">Album:</span>
+                    <span className="photo-info-value">
+                      <a 
+                        className="photo-info-person-link"
+                        href={`#/collections/albums/${currentPhoto.albumSlug}`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          e.preventDefault();
+                          // Close modal first, then navigate after a brief delay to ensure cleanup
+                          this.closeModal();
+                          setTimeout(() => {
+                            this.props.navigate(`/collections/albums/${currentPhoto.albumSlug}`);
+                          }, 100);
+                        }}
+                      >
+                        {albums_data[currentPhoto.albumSlug].name}
+                      </a>
+                    </span>
+                  </div>
+                )}
                 {photoPeople.length > 0 && (
                   <div className="photo-info-item">
                     <span className="photo-info-label">People:</span>
@@ -861,8 +1516,12 @@ class Collection extends Component {
                           href={`#/collections/people/${person.slug}`}
                           onClick={(e) => {
                             e.stopPropagation();
-                            this.setState({ viewerIsOpen: false });
-                            this.props.navigate(`/collections/people/${person.slug}`);
+                            e.preventDefault();
+                            // Close modal first, then navigate after a brief delay to ensure cleanup
+                            this.closeModal();
+                            setTimeout(() => {
+                              this.props.navigate(`/collections/people/${person.slug}`);
+                            }, 100);
                           }}
                         >
                           {person.name}
@@ -882,10 +1541,39 @@ class Collection extends Component {
             onSwiper={(swiper) => { 
               this.swiperRef = swiper;
               // Set initial photo index if opening from URL hash
+              // Use displayPhotos which is already filtered and sorted
               if (this.props.params.image) {
-                const photoIndex = collection_data["photos"].findIndex(p => p.slug === this.props.params.image);
+                // Use albumSlug from URL params if available for disambiguation
+                const albumSlug = this.props.params.albumSlug;
+                console.log('onSwiper called with image param:', this.props.params.image, 'albumSlug:', albumSlug);
+                console.log('displayPhotos at onSwiper:', {
+                  length: displayPhotos.length,
+                  firstFew: displayPhotos.slice(0, 5).map(p => ({ slug: p.slug, name: p.name, albumSlug: p.albumSlug })),
+                  lookingFor: this.props.params.image
+                });
+                
+                const photoIndex = this.findPhotoIndex(displayPhotos, this.props.params.image, albumSlug);
+                console.log('Found photo at index:', photoIndex);
+                
                 if (photoIndex !== -1) {
+                  console.log('Opening modal to photo:', {
+                    slug: this.props.params.image,
+                    albumSlug: albumSlug,
+                    index: photoIndex,
+                    photoName: displayPhotos[photoIndex].name,
+                    photoAlbumSlug: displayPhotos[photoIndex].albumSlug,
+                    totalPhotos: displayPhotos.length,
+                    firstFewSlugs: displayPhotos.slice(0, 3).map(p => ({ slug: p.slug, albumSlug: p.albumSlug }))
+                  });
                   this.setState({ currentPhotoIndex: photoIndex });
+                  // Use requestAnimationFrame to ensure DOM is ready
+                  requestAnimationFrame(() => {
+                    swiper.slideTo(photoIndex);
+                    console.log('Called swiper.slideTo with index:', photoIndex);
+                  });
+                } else {
+                  // Photo not found in filtered list - might be filtered out
+                  console.warn('Photo not found in filtered displayPhotos:', this.props.params.image, 'albumSlug:', albumSlug, 'Available slugs (first 5):', displayPhotos.slice(0, 5).map(p => ({ slug: p.slug, albumSlug: p.albumSlug })));
                 }
               }
             }}
@@ -905,8 +1593,27 @@ class Collection extends Component {
             className={`swiper ${this.state.zoomLevel > 1.0 ? 'swiper-zoomed' : ''}`}
           >
             {
-              collection_data["photos"].map(x =>
-                <SwiperSlide key={x.slug} slug={x.slug} data-hash={"/collections/" + this.props.params.collectionType + "/" + this.props.params.collection + "/" + x.slug}>
+              displayPhotos.map(x => {
+                const collectionType = this.props.params.collectionType || 'photos';
+                const collection = this.props.params.collection;
+                
+                // For photos view, include albumSlug to avoid name collisions
+                // URL format: /collections/photos/{albumSlug}/{slug}
+                // For albums/people, URL is /collections/{type}/{collection}/{slug}
+                let hashUrl;
+                if (collectionType === 'photos') {
+                  if (x.albumSlug) {
+                    hashUrl = `/collections/photos/${x.albumSlug}/${x.slug}`;
+                  } else {
+                    // Fallback for backward compatibility
+                    hashUrl = `/collections/photos/${x.slug}`;
+                  }
+                } else {
+                  hashUrl = `/collections/${collectionType}/${collection}/${x.slug}`;
+                }
+                
+                return (
+                  <SwiperSlide key={x.slug} slug={x.slug} data-hash={hashUrl}>
                   <div 
                     className="swiper-slide-content"
                     onPointerDown={this.state.zoomLevel > 1.0 && x.slug === currentPhoto?.slug ? this.handlePointerDown : undefined}
@@ -946,24 +1653,28 @@ class Collection extends Component {
                       onLoad={(e) => {
                         // Update refs for the currently active photo when its image loads
                         // Check both slug and index to ensure we're updating the right image
-                        const currentPhoto = collection_data["photos"]?.[this.state.currentPhotoIndex];
+                        const currentPhoto = displayPhotos[this.state.currentPhotoIndex];
                         if (currentPhoto && x.slug === currentPhoto.slug) {
                           this.imageRef = e.target;
                           this.currentImageRef = e.target;
                           this.slideContentRef = e.target.parentElement;
                           // Force update when image loads so FaceTagOverlay can recalculate
-                          // Use requestAnimationFrame to ensure image is fully rendered
+                          // Use multiple requestAnimationFrame calls and a small delay to ensure image is fully rendered and dimensions are stable
                           if (this.state.showFaceTags) {
                             requestAnimationFrame(() => {
                               requestAnimationFrame(() => {
-                                this.forceUpdate();
+                                // Additional delay to ensure browser has finished layout calculations
+                                setTimeout(() => {
+                                  this.forceUpdate();
+                                }, 50);
                               });
                             });
                           }
                         }
                       }}
                     />
-                    {this.state.showFaceTags && this.state.zoomLevel === 1.0 && x.faces && x.faces.length > 0 && x.slug === (collection_data["photos"]?.[this.state.currentPhotoIndex]?.slug) && this.imageRef && this.slideContentRef && (
+                    {this.state.showFaceTags && this.state.zoomLevel === 1.0 && x.faces && x.faces.length > 0 && x.slug === (displayPhotos[this.state.currentPhotoIndex]?.slug) && this.imageRef && this.slideContentRef && 
+                     this.imageRef.complete && this.imageRef.naturalWidth > 0 && this.imageRef.naturalHeight > 0 && (
                       <FaceTagOverlay 
                         key={x.slug}
                         faces={x.faces} 
@@ -972,11 +1683,13 @@ class Collection extends Component {
                         originalWidth={x.width} 
                         originalHeight={x.height}
                         navigate={this.props.navigate}
+                        onCloseModal={this.closeModal}
                       />
                     )}
                   </div>
-                </SwiperSlide>
-              )
+                  </SwiperSlide>
+                );
+              })
             }
           </Swiper>
         </Modal>

@@ -1,3 +1,2 @@
-from .generate import SiteGenerator
-from .config import Config
-from .util import *
+from .config import Config as Config
+from .generate import SiteGenerator as SiteGenerator
