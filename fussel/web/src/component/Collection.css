@@ -161,56 +161,125 @@ Keep an eye on the ticket and maybe one day I can remove this */
   border-color: rgba(255, 255, 255, 0.3) !important;
 }
 
-.photo-info-panel {
-  position: absolute;
-  bottom: 20px;
-  left: 20px;
-  right: 20px;
-  z-index: 100;
-  background-color: rgba(0, 0, 0, 0.8);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 8px;
-  padding: 16px 20px;
-  color: white;
-  animation: slideUp 0.3s ease;
+.modal-body {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: row;
 }
 
-@keyframes slideUp {
+.modal-photo-area {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  position: relative;
+  overflow: hidden;
+}
+
+.photo-info-panel {
+  width: 260px;
+  flex-shrink: 0;
+  height: 100%;
+  overflow-y: auto;
+  background-color: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(10px);
+  border-left: 1px solid rgba(255, 255, 255, 0.15);
+  color: white;
+  animation: slideInRight 0.3s ease;
+}
+
+@keyframes slideInRight {
   from {
     opacity: 0;
-    transform: translateY(20px);
+    transform: translateX(20px);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
+    transform: translateX(0);
   }
+}
+
+.photo-info-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 10px;
+  padding: 10px 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+  position: sticky;
+  top: 0;
+  background-color: rgba(0, 0, 0, 0.9);
+  z-index: 1;
+}
+
+.photo-info-panel-title {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.photo-info-panel-close {
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.5);
+  cursor: pointer;
+  padding: 2px 4px;
+  font-size: 13px;
+  line-height: 1;
+  transition: color 0.2s ease;
+}
+
+.photo-info-panel-close:hover {
+  color: rgba(255, 255, 255, 0.9);
 }
 
 .photo-info-content {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+}
+
+.photo-info-section {
+  padding: 12px 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.photo-info-section:last-child {
+  border-bottom: none;
+}
+
+.photo-info-section-heading {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: rgba(255, 255, 255, 0.45);
+  margin: 0 0 8px 0;
 }
 
 .photo-info-item {
   display: flex;
   align-items: flex-start;
-  gap: 12px;
-  margin: 0;
-  font-size: 13px;
-  line-height: 1.5;
+  gap: 8px;
+  margin: 0 0 6px 0;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.photo-info-item:last-child {
+  margin-bottom: 0;
 }
 
 .photo-info-label {
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.8);
-  min-width: 70px;
+  color: rgba(255, 255, 255, 0.65);
+  min-width: 72px;
   flex-shrink: 0;
 }
 
 .photo-info-value {
-  color: rgba(255, 255, 255, 0.95);
+  color: rgba(255, 255, 255, 0.9);
   word-break: break-word;
 }
 

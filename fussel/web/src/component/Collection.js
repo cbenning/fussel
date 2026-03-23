@@ -1464,76 +1464,14 @@ class Collection extends Component {
                 </span>
               </button>
             )}
-            <button className="button is-text modal-info-button" onClick={this.togglePhotoInfo}>
+            <button className={`button is-text modal-info-button ${this.state.showPhotoInfo ? 'is-active' : ''}`} onClick={this.togglePhotoInfo} title="Toggle photo info">
               <span className="icon is-small">
                 <i className="fas fa-info-circle"></i>
               </span>
             </button>
           </div>
-          {this.state.showPhotoInfo && currentPhoto && (
-            <div className="photo-info-panel">
-              <div className="photo-info-content">
-                <p className="photo-info-item">
-                  <span className="photo-info-label">File:</span>
-                  <span className="photo-info-value">{currentPhoto.name}</span>
-                </p>
-                {currentPhoto.width && currentPhoto.height && (
-                  <p className="photo-info-item">
-                    <span className="photo-info-label">Dimensions:</span>
-                    <span className="photo-info-value">{currentPhoto.width} × {currentPhoto.height}</span>
-                  </p>
-                )}
-                {site_data.albums_enabled && currentPhoto.albumSlug && albums_data && albums_data[currentPhoto.albumSlug] && (
-                  <div className="photo-info-item">
-                    <span className="photo-info-label">Album:</span>
-                    <span className="photo-info-value">
-                      <a 
-                        className="photo-info-person-link"
-                        href={`#/collections/albums/${currentPhoto.albumSlug}`}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          e.preventDefault();
-                          // Close modal first, then navigate after a brief delay to ensure cleanup
-                          this.closeModal();
-                          setTimeout(() => {
-                            this.props.navigate(`/collections/albums/${currentPhoto.albumSlug}`);
-                          }, 100);
-                        }}
-                      >
-                        {albums_data[currentPhoto.albumSlug].name}
-                      </a>
-                    </span>
-                  </div>
-                )}
-                {photoPeople.length > 0 && (
-                  <div className="photo-info-item">
-                    <span className="photo-info-label">People:</span>
-                    <span className="photo-info-value">
-                      {photoPeople.map((person, idx) => (
-                        <a 
-                          key={person.slug}
-                          className="photo-info-person-link"
-                          href={`#/collections/people/${person.slug}`}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            e.preventDefault();
-                            // Close modal first, then navigate after a brief delay to ensure cleanup
-                            this.closeModal();
-                            setTimeout(() => {
-                              this.props.navigate(`/collections/people/${person.slug}`);
-                            }, 100);
-                          }}
-                        >
-                          {person.name}
-                          {idx < photoPeople.length - 1 ? ', ' : ''}
-                        </a>
-                      ))}
-                    </span>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
+          <div className="modal-body">
+          <div className="modal-photo-area">
           <Swiper
             slidesPerView={1}
             preloadImages={false}
@@ -1692,6 +1630,216 @@ class Collection extends Component {
               })
             }
           </Swiper>
+          </div>
+          {this.state.showPhotoInfo && currentPhoto && (
+            <div className="photo-info-panel">
+              <div className="photo-info-panel-header">
+                <button className="photo-info-panel-close" onClick={this.togglePhotoInfo} title="Close info panel">
+                  <i className="fas fa-times"></i>
+                </button>
+                <span className="photo-info-panel-title">Info</span>
+              </div>
+              <div className="photo-info-content">
+                <div className="photo-info-section">
+                  <h4 className="photo-info-section-heading">General</h4>
+                  <p className="photo-info-item">
+                    <span className="photo-info-label">File:</span>
+                    <span className="photo-info-value">{currentPhoto.name}</span>
+                  </p>
+                  {currentPhoto.width && currentPhoto.height && (
+                    <p className="photo-info-item">
+                      <span className="photo-info-label">Dimensions:</span>
+                      <span className="photo-info-value">{currentPhoto.width} × {currentPhoto.height}</span>
+                    </p>
+                  )}
+                  {currentPhoto.date && (
+                    <p className="photo-info-item">
+                      <span className="photo-info-label">Date:</span>
+                      <span className="photo-info-value">{(() => { try { return new Date(currentPhoto.date).toLocaleString(); } catch(e) { return currentPhoto.date; } })()}</span>
+                    </p>
+                  )}
+                  {site_data.albums_enabled && currentPhoto.albumSlug && albums_data && albums_data[currentPhoto.albumSlug] && (
+                    <div className="photo-info-item">
+                      <span className="photo-info-label">Album:</span>
+                      <span className="photo-info-value">
+                        <a
+                          className="photo-info-person-link"
+                          href={`#/collections/albums/${currentPhoto.albumSlug}`}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            e.preventDefault();
+                            this.closeModal();
+                            setTimeout(() => {
+                              this.props.navigate(`/collections/albums/${currentPhoto.albumSlug}`);
+                            }, 100);
+                          }}
+                        >
+                          {albums_data[currentPhoto.albumSlug].name}
+                        </a>
+                      </span>
+                    </div>
+                  )}
+                  {photoPeople.length > 0 && (
+                    <div className="photo-info-item">
+                      <span className="photo-info-label">People:</span>
+                      <span className="photo-info-value">
+                        {photoPeople.map((person, idx) => (
+                          <a
+                            key={person.slug}
+                            className="photo-info-person-link"
+                            href={`#/collections/people/${person.slug}`}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              e.preventDefault();
+                              this.closeModal();
+                              setTimeout(() => {
+                                this.props.navigate(`/collections/people/${person.slug}`);
+                              }, 100);
+                            }}
+                          >
+                            {person.name}
+                            {idx < photoPeople.length - 1 ? ', ' : ''}
+                          </a>
+                        ))}
+                      </span>
+                    </div>
+                  )}
+                </div>
+                {currentPhoto.exif && currentPhoto.exif.camera && Object.keys(currentPhoto.exif.camera).length > 0 && (
+                  <div className="photo-info-section">
+                    <h4 className="photo-info-section-heading">Camera</h4>
+                    {(currentPhoto.exif.camera.make || currentPhoto.exif.camera.model) && (
+                      <p className="photo-info-item">
+                        <span className="photo-info-label">Camera:</span>
+                        <span className="photo-info-value">{[currentPhoto.exif.camera.make, currentPhoto.exif.camera.model].filter(Boolean).join(' ')}</span>
+                      </p>
+                    )}
+                    {currentPhoto.exif.camera.lens && (
+                      <p className="photo-info-item">
+                        <span className="photo-info-label">Lens:</span>
+                        <span className="photo-info-value">{currentPhoto.exif.camera.lens}</span>
+                      </p>
+                    )}
+                    {currentPhoto.exif.camera.software && (
+                      <p className="photo-info-item">
+                        <span className="photo-info-label">Software:</span>
+                        <span className="photo-info-value">{currentPhoto.exif.camera.software}</span>
+                      </p>
+                    )}
+                  </div>
+                )}
+                {currentPhoto.exif && currentPhoto.exif.shot && Object.keys(currentPhoto.exif.shot).length > 0 && (
+                  <div className="photo-info-section">
+                    <h4 className="photo-info-section-heading">Shot</h4>
+                    {currentPhoto.exif.shot.exposure && (
+                      <p className="photo-info-item">
+                        <span className="photo-info-label">Exposure:</span>
+                        <span className="photo-info-value">{currentPhoto.exif.shot.exposure}</span>
+                      </p>
+                    )}
+                    {currentPhoto.exif.shot.aperture && (
+                      <p className="photo-info-item">
+                        <span className="photo-info-label">Aperture:</span>
+                        <span className="photo-info-value">{currentPhoto.exif.shot.aperture}</span>
+                      </p>
+                    )}
+                    {currentPhoto.exif.shot.iso && (
+                      <p className="photo-info-item">
+                        <span className="photo-info-label">ISO:</span>
+                        <span className="photo-info-value">{currentPhoto.exif.shot.iso}</span>
+                      </p>
+                    )}
+                    {currentPhoto.exif.shot.focal_length && (
+                      <p className="photo-info-item">
+                        <span className="photo-info-label">Focal length:</span>
+                        <span className="photo-info-value">{currentPhoto.exif.shot.focal_length}</span>
+                      </p>
+                    )}
+                    {currentPhoto.exif.shot.exposure_program && (
+                      <p className="photo-info-item">
+                        <span className="photo-info-label">Program:</span>
+                        <span className="photo-info-value">{currentPhoto.exif.shot.exposure_program}</span>
+                      </p>
+                    )}
+                    {currentPhoto.exif.shot.exposure_compensation && (
+                      <p className="photo-info-item">
+                        <span className="photo-info-label">EV comp:</span>
+                        <span className="photo-info-value">{currentPhoto.exif.shot.exposure_compensation}</span>
+                      </p>
+                    )}
+                    {currentPhoto.exif.shot.metering_mode && (
+                      <p className="photo-info-item">
+                        <span className="photo-info-label">Metering:</span>
+                        <span className="photo-info-value">{currentPhoto.exif.shot.metering_mode}</span>
+                      </p>
+                    )}
+                    {currentPhoto.exif.shot.white_balance && (
+                      <p className="photo-info-item">
+                        <span className="photo-info-label">White bal:</span>
+                        <span className="photo-info-value">{currentPhoto.exif.shot.white_balance}</span>
+                      </p>
+                    )}
+                    {currentPhoto.exif.shot.flash && (
+                      <p className="photo-info-item">
+                        <span className="photo-info-label">Flash:</span>
+                        <span className="photo-info-value">{currentPhoto.exif.shot.flash}</span>
+                      </p>
+                    )}
+                  </div>
+                )}
+                {currentPhoto.exif && currentPhoto.exif.image && currentPhoto.exif.image.color_space && (
+                  <div className="photo-info-section">
+                    <h4 className="photo-info-section-heading">Image</h4>
+                    <p className="photo-info-item">
+                      <span className="photo-info-label">Color space:</span>
+                      <span className="photo-info-value">{currentPhoto.exif.image.color_space}</span>
+                    </p>
+                  </div>
+                )}
+                {currentPhoto.exif && currentPhoto.exif.rights && Object.keys(currentPhoto.exif.rights).length > 0 && (
+                  <div className="photo-info-section">
+                    <h4 className="photo-info-section-heading">Rights</h4>
+                    {currentPhoto.exif.rights.artist && (
+                      <p className="photo-info-item">
+                        <span className="photo-info-label">Artist:</span>
+                        <span className="photo-info-value">{currentPhoto.exif.rights.artist}</span>
+                      </p>
+                    )}
+                    {currentPhoto.exif.rights.copyright && (
+                      <p className="photo-info-item">
+                        <span className="photo-info-label">Copyright:</span>
+                        <span className="photo-info-value">{currentPhoto.exif.rights.copyright}</span>
+                      </p>
+                    )}
+                  </div>
+                )}
+                {currentPhoto.exif && currentPhoto.exif.gps && Object.keys(currentPhoto.exif.gps).length > 0 && (
+                  <div className="photo-info-section">
+                    <h4 className="photo-info-section-heading">Location</h4>
+                    {currentPhoto.exif.gps.latitude && (
+                      <p className="photo-info-item">
+                        <span className="photo-info-label">Latitude:</span>
+                        <span className="photo-info-value">{currentPhoto.exif.gps.latitude}</span>
+                      </p>
+                    )}
+                    {currentPhoto.exif.gps.longitude && (
+                      <p className="photo-info-item">
+                        <span className="photo-info-label">Longitude:</span>
+                        <span className="photo-info-value">{currentPhoto.exif.gps.longitude}</span>
+                      </p>
+                    )}
+                    {currentPhoto.exif.gps.altitude && (
+                      <p className="photo-info-item">
+                        <span className="photo-info-label">Altitude:</span>
+                        <span className="photo-info-value">{currentPhoto.exif.gps.altitude}</span>
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+          </div>
         </Modal>
       </div>
     );

@@ -259,6 +259,7 @@ class Photo:
         self.slug = slug
         self.originalSrc = originalSrc
         self.date = date
+        self.exif = {}
 
     @classmethod
     def _extract_date(cls, photo):
@@ -432,13 +433,191 @@ class Photo:
         return date_str
 
     @classmethod
+    def _extract_exif(cls, photo):
+        """Extract camera and shot metadata from a photo's EXIF data."""
+        result = {}
+
+        exposure_programs = {
+            0: "Not defined",
+            1: "Manual",
+            2: "Normal",
+            3: "Aperture priority",
+            4: "Shutter priority",
+            5: "Creative",
+            6: "Action",
+            7: "Portrait",
+            8: "Landscape",
+        }
+        metering_modes = {
+            0: "Unknown",
+            1: "Average",
+            2: "Center-weighted",
+            3: "Spot",
+            4: "Multi-spot",
+            5: "Multi-segment",
+            6: "Partial",
+        }
+        flash_values = {
+            0x00: "No flash",
+            0x01: "Flash fired",
+            0x05: "Flash fired, no return",
+            0x07: "Flash fired, return",
+            0x09: "Flash on, compulsory",
+            0x10: "Flash off",
+            0x18: "Flash off, auto",
+            0x19: "Flash auto",
+            0x1D: "Flash auto, no return",
+            0x1F: "Flash auto, return",
+            0x20: "No flash function",
+            0x41: "Flash fired, red-eye",
+            0x45: "Flash fired, red-eye, no return",
+            0x47: "Flash fired, red-eye, return",
+        }
+
+        try:
+            with Image.open(photo) as im:
+                if not hasattr(im, "getexif"):
+                    return result
+                exif = im.getexif()
+                if not exif:
+                    return result
+
+                # Camera
+                camera = {}
+                for tag_id, field in [(271, "make"), (272, "model"), (42036, "lens"), (305, "software")]:
+                    val = exif.get(tag_id)
+                    if val and isinstance(val, str) and val.strip():
+                        camera[field] = val.strip()
+                if camera:
+                    result["camera"] = camera
+
+                # Shot
+                shot = {}
+
+                exp = exif.get(33434)
+                if exp is not None:
+                    try:
+                        f = float(exp)
+                        if 0 < f < 1:
+                            shot["exposure"] = f"1/{round(1 / f)}s"
+                        elif f >= 1:
+                            shot["exposure"] = f"{f:.1f}s"
+                    except Exception:
+                        pass
+
+                fnumber = exif.get(33437)
+                if fnumber is not None:
+                    try:
+                        shot["aperture"] = f"f/{float(fnumber):.1f}"
+                    except Exception:
+                        pass
+
+                iso = exif.get(34855)
+                if iso is not None:
+                    shot["iso"] = str(iso)
+
+                fl = exif.get(37386)
+                if fl is not None:
+                    try:
+                        shot["focal_length"] = f"{float(fl):.0f}mm"
+                    except Exception:
+                        pass
+
+                ep = exif.get(34850)
+                if ep is not None:
+                    shot["exposure_program"] = exposure_programs.get(ep, str(ep))
+
+                ec = exif.get(37380)
+                if ec is not None:
+                    try:
+                        shot["exposure_compensation"] = f"{float(ec):+.1f} EV"
+                    except Exception:
+                        pass
+
+                mm = exif.get(37383)
+                if mm is not None:
+                    shot["metering_mode"] = metering_modes.get(mm, str(mm))
+
+                wb = exif.get(41987)
+                if wb is not None:
+                    shot["white_balance"] = "Auto" if wb == 0 else "Manual"
+
+                flash = exif.get(37385)
+                if flash is not None:
+                    shot["flash"] = flash_values.get(flash, f"0x{flash:02x}")
+
+                if shot:
+                    result["shot"] = shot
+
+                # Image
+                cs = exif.get(40961)
+                if cs is not None:
+                    if cs == 1:
+                        result["image"] = {"color_space": "sRGB"}
+                    elif cs == 65535:
+                        result["image"] = {"color_space": "Uncalibrated"}
+                    else:
+                        result["image"] = {"color_space": str(cs)}
+
+                # Rights
+                rights = {}
+                artist = exif.get(315)
+                if artist and isinstance(artist, str) and artist.strip():
+                    rights["artist"] = artist.strip()
+                copyright_val = exif.get(33432)
+                if copyright_val and isinstance(copyright_val, str) and copyright_val.strip():
+                    rights["copyright"] = copyright_val.strip()
+                if rights:
+                    result["rights"] = rights
+
+                # GPS
+                try:
+                    gps_ifd = exif.get_ifd(34853)
+                    if gps_ifd:
+                        gps = {}
+                        lat_ref = gps_ifd.get(1)
+                        lat = gps_ifd.get(2)
+                        lon_ref = gps_ifd.get(3)
+                        lon = gps_ifd.get(4)
+                        alt_ref = gps_ifd.get(5)
+                        alt = gps_ifd.get(6)
+
+                        if lat and lon and lat_ref and lon_ref:
+
+                            def _dms(dms, ref):
+                                dec = float(dms[0]) + float(dms[1]) / 60 + float(dms[2]) / 3600
+                                return -dec if ref in ("S", "W") else dec
+
+                            lat_dec = _dms(lat, lat_ref)
+                            lon_dec = _dms(lon, lon_ref)
+                            gps["latitude"] = f"{abs(lat_dec):.6f}° {'N' if lat_dec >= 0 else 'S'}"
+                            gps["longitude"] = f"{abs(lon_dec):.6f}° {'E' if lon_dec >= 0 else 'W'}"
+
+                        if alt is not None:
+                            try:
+                                gps["altitude"] = f"{float(alt):.0f}m {'below' if alt_ref else 'above'} sea level"
+                            except Exception:
+                                pass
+
+                        if gps:
+                            result["gps"] = gps
+                except Exception:
+                    pass
+
+        except Exception:
+            pass
+
+        return result
+
+    @classmethod
     def process_photo(cls, external_path, photo, filename, slug, output_path, people_q: Queue):
         new_original_photo = os.path.join(
             output_path, "original_%s%s" % (os.path.basename(slug), extract_extension(photo))
         )
 
-        # Extract date from ORIGINAL file (before copying/modifying)
+        # Extract date and EXIF metadata from ORIGINAL file (before copying/modifying)
         date_str = cls._extract_date(photo)
+        exif_data = cls._extract_exif(photo)
 
         # Verify original first to avoid PIL errors later when generating thumbnails etc
         try:
@@ -512,6 +691,7 @@ class Photo:
             original_src,
             date_str,
         )
+        photo_obj.exif = exif_data
 
         # Faces
         if Config.instance().people_enabled:

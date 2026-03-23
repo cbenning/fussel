@@ -239,12 +239,13 @@ class TestPhoto:
         mock_watermark_img.size = (100, 50)
 
         # Image.open is called for:
-        # EXIF extraction (3x original photo): method1 getexif, method2 _getexif, method3 XMP
+        # EXIF date extraction (3x original photo): method1 getexif, method2 _getexif, method3 XMP
+        # EXIF metadata extraction (1x original photo): _extract_exif
         # Verification (2x original photo): verify, transpose
         # Processing (1x new_original_photo): get size
         # Thumbnails (4x new_original_photo): 500x500, 800x800, 1024x1024, 1600x1600
         # Watermark (1x watermark_path)
-        # Total: 11 calls
+        # Total: 12 calls
         def cm(img):
             return MagicMock(__enter__=Mock(return_value=img), __exit__=Mock())
 
@@ -252,6 +253,7 @@ class TestPhoto:
             cm(mock_img),  # method 1: getexif()
             cm(mock_img),  # method 2: _getexif()
             cm(mock_img),  # method 3: XMP applist
+            cm(mock_img),  # _extract_exif
             cm(mock_img),  # verify
             cm(mock_img),  # transpose
             cm(mock_img),  # get size
@@ -337,6 +339,7 @@ class TestPhoto:
             cm(mock_img),  # method 1: getexif
             cm(mock_img),  # method 2: _getexif
             cm(mock_img),  # method 3: XMP
+            cm(mock_img),  # _extract_exif
             cm(mock_img),  # verify
             cm(mock_img),  # transpose
             cm(mock_img),  # get size from new_original_photo
@@ -456,12 +459,13 @@ class TestPhotoUnidentifiedImageError:
 
         good_cm = MagicMock(__enter__=Mock(return_value=mock_img), __exit__=Mock())
 
-        # First 3 calls are EXIF methods (all good), then verify, then transpose,
-        # then the copy open raises UnidentifiedImageError.
+        # First 3 calls are EXIF date methods, then _extract_exif, then verify, then
+        # transpose, then the copy open raises UnidentifiedImageError.
         mock_image.open.side_effect = [
             good_cm,  # method 1 getexif
             good_cm,  # method 2 _getexif
             good_cm,  # method 3 XMP
+            good_cm,  # _extract_exif
             good_cm,  # verify
             good_cm,  # transpose
             bad_cm,  # open new_original_photo -> UnidentifiedImageError
@@ -513,7 +517,8 @@ class TestPhotoUnidentifiedImageError:
         mock_image.open.side_effect = [
             good_cm,
             good_cm,
-            good_cm,  # EXIF methods
+            good_cm,  # EXIF date methods
+            good_cm,  # _extract_exif
             good_cm,
             good_cm,  # verify + transpose
             bad_cm,  # open copy -> UnidentifiedImageError
