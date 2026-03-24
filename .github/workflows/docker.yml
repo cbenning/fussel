@@ -2,7 +2,7 @@ name: Build and Push Docker Image
 
 on:
   release:
-    types: [published, created]
+    types: [published]
 
 jobs:
   build-and-push:
@@ -10,41 +10,43 @@ jobs:
     permissions:
       contents: read
       packages: write
-    
+
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-    
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v3
-    
-    - name: Log in to GitHub Container Registry
-      uses: docker/login-action@v3
-      with:
-        registry: ghcr.io
-        username: ${{ github.actor }}
-        password: ${{ secrets.GITHUB_TOKEN }}
-    
-    - name: Extract metadata
-      id: meta
-      run: |
-        TAG="${{ github.event.release.tag_name }}"
-        # Remove 'v' prefix if present for version
-        VERSION=${TAG#v}
-        echo "version=$VERSION" >> $GITHUB_OUTPUT
-        echo "tag=$TAG" >> $GITHUB_OUTPUT
-        echo "VERSION=$VERSION" >> $GITHUB_ENV
-        echo "TAG=$TAG" >> $GITHUB_ENV
-    
-    - name: Build and push Docker image
-      uses: docker/build-push-action@v5
-      with:
-        context: .
-        file: ./docker/Dockerfile
-        push: true
-        tags: |
-          ghcr.io/${{ github.repository_owner }}/fussel:latest
-          ghcr.io/${{ github.repository_owner }}/fussel:${{ env.VERSION }}
-          ghcr.io/${{ github.repository_owner }}/fussel:${{ env.TAG }}
-        cache-from: type=gha
-        cache-to: type=gha,mode=max
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU (for multi-platform builds)
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository_owner }}/fussel
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            type=raw,value=latest
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./docker/Dockerfile
+          push: true
+          platforms: linux/amd64,linux/arm64
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
