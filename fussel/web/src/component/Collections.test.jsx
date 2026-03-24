@@ -7,7 +7,7 @@ import { HashRouter } from 'react-router-dom';
 import Collections from './Collections';
 
 // Mock data imports
-jest.mock('../_gallery/albums_data.js', () => ({
+vi.mock('../_gallery/albums_data.js', () => ({
   albums_data: {
     'vacation-2024': {
       name: 'Vacation 2024',
@@ -24,7 +24,7 @@ jest.mock('../_gallery/albums_data.js', () => ({
   }
 }));
 
-jest.mock('../_gallery/people_data.js', () => ({
+vi.mock('../_gallery/people_data.js', () => ({
   people_data: {
     'john-doe': {
       name: 'John Doe',
@@ -36,13 +36,15 @@ jest.mock('../_gallery/people_data.js', () => ({
 }));
 
 // Mock withRouter
-jest.mock('./withRouter', () => (Component) => {
-  return function WrappedComponent(props) {
-    const mockParams = props.params || { collectionType: 'albums' };
-    const mockNavigate = jest.fn();
-    return <Component {...props} params={mockParams} navigate={mockNavigate} />;
-  };
-});
+vi.mock('./withRouter', () => ({
+  default: (Component) => {
+    return function WrappedComponent(props) {
+      const mockParams = props.params || { collectionType: 'albums' };
+      const mockNavigate = vi.fn();
+      return <Component {...props} params={mockParams} navigate={mockNavigate} />;
+    };
+  }
+}));
 
 describe('Collections', () => {
   it('should render title for albums collection type', () => {

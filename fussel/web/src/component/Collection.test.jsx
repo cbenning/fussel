@@ -7,7 +7,7 @@ import { HashRouter } from 'react-router-dom';
 import Collection from './Collection';
 
 // Mock data imports
-jest.mock('../_gallery/albums_data.js', () => ({
+vi.mock('../_gallery/albums_data.js', () => ({
   albums_data: {
     'vacation-2024': {
       name: 'Vacation 2024',
@@ -30,50 +30,63 @@ jest.mock('../_gallery/albums_data.js', () => ({
   }
 }));
 
-jest.mock('../_gallery/people_data.js', () => ({
+vi.mock('../_gallery/people_data.js', () => ({
   people_data: {}
 }));
 
 // Mock Swiper
-jest.mock('swiper/react', () => ({
+vi.mock('swiper/react', () => ({
   Swiper: ({ children, className }) => <div className={className} data-testid="swiper">{children}</div>,
   SwiperSlide: ({ children, slug, 'data-hash': dataHash }) => (
     <div data-testid="swiper-slide" data-slug={slug} data-hash={dataHash}>{children}</div>
   )
 }));
 
-jest.mock('swiper/modules', () => ({
+vi.mock('swiper/modules', () => ({
   Keyboard: {},
   Pagination: {},
   HashNavigation: {},
   Navigation: {}
 }));
 
+// Mock react-photo-album
+vi.mock('react-photo-album', () => ({
+  MasonryPhotoAlbum: ({ photos, onClick }) => (
+    <div data-testid="photo-album">
+      {(photos || []).map((photo, index) => (
+        <img
+          key={photo.key || index}
+          src={photo.src}
+          alt={photo.alt}
+          onClick={() => onClick && onClick({ photo, index })}
+        />
+      ))}
+    </div>
+  )
+}));
+
+vi.mock('react-photo-album/masonry.css', () => ({}));
+
 // Mock react-modal
-jest.mock('react-modal', () => {
-  const React = require('react');
-  return {
-    __esModule: true,
-    default: ({ isOpen, children, onRequestClose, style }) => {
-      if (!isOpen) return null;
-      return React.createElement('div', {
-        'data-testid': 'modal',
-        onClick: onRequestClose,
-        style
-      }, children);
-    },
-    setAppElement: jest.fn()
+vi.mock('react-modal', () => {
+  const MockModal = ({ isOpen, children, onRequestClose, style }) => {
+    if (!isOpen) return null;
+    return <div data-testid="modal" onClick={onRequestClose} style={style}>{children}</div>;
   };
+  MockModal.setAppElement = vi.fn();
+  return { default: MockModal };
 });
 
 // Mock withRouter
-const mockNavigate = jest.fn();
-jest.mock('./withRouter', () => (Component) => {
-  return function WrappedComponent(props) {
-    const mockParams = props.params || { collectionType: 'albums', collection: 'vacation-2024' };
-    return <Component {...props} params={mockParams} navigate={mockNavigate} />;
-  };
-});
+const mockNavigate = vi.fn();
+vi.mock('./withRouter', () => ({
+  default: (Component) => {
+    return function WrappedComponent(props) {
+      const mockParams = props.params || { collectionType: 'albums', collection: 'vacation-2024' };
+      return <Component {...props} params={mockParams} navigate={mockNavigate} />;
+    };
+  }
+}));
 
 describe('Collection', () => {
   beforeEach(() => {
@@ -130,7 +143,7 @@ describe('Collection', () => {
     const beachImage = screen.getByAltText('Beach Photo');
     fireEvent.click(beachImage);
 
-    expect(mockNavigate).toHaveBeenCalledWith('#/collections/albums/vacation-2024/beach-photo');
+    expect(mockNavigate).toHaveBeenCalledWith('/collections/albums/vacation-2024/beach-photo');
   });
 
   it('should render modal when image param is provided', () => {
@@ -177,10 +190,10 @@ describe('Collection', () => {
       </HashRouter>
     );
 
-    const closeButton = screen.getByRole('button');
+    const closeButton = document.querySelector('.modal-close-button');
     fireEvent.click(closeButton);
 
-    expect(mockNavigate).toHaveBeenCalledWith('#/collections/albums/vacation-2024');
+    expect(mockNavigate).toHaveBeenCalledWith('/collections/albums/vacation-2024');
   });
 
   it('should render title for albums collection type', () => {

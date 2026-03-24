@@ -4,7 +4,6 @@ import os
 import pathlib
 import shutil
 
-import massedit
 import yaml
 
 from .generator import SiteGenerator
@@ -60,10 +59,6 @@ def main():
 
     http_root = cfg.getKey("site.http_root", "/")
     web_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), "web")
-    filenames = [os.path.join(web_dir, "package.json")]
-    massedit.edit_files(
-        filenames, ['re.sub(r\'^.*"homepage":.*$\', \'  "homepage": "' + http_root + "\",', line)"], dry_run=False
-    )
 
     original_cwd = os.getcwd()
     os.chdir(web_dir)
@@ -71,7 +66,7 @@ def main():
         print("Error: yarn is required but not found. Please install yarn first.")
         print("Visit https://yarnpkg.com/getting-started/install for installation instructions.")
         exit(-1)
-    if os.system("yarn build") != 0:
+    if os.system(f"yarn build --base={http_root}") != 0:
         print("Failed")
         exit(-1)
     os.chdir(original_cwd)

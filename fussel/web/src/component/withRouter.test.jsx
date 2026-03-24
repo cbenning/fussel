@@ -7,14 +7,14 @@ import { useParams, useNavigate } from 'react-router';
 import withRouter from './withRouter';
 
 // Mock react-router hooks
-jest.mock('react-router', () => ({
-  useParams: jest.fn(),
-  useNavigate: jest.fn(),
+vi.mock('react-router', () => ({
+  useParams: vi.fn(),
+  useNavigate: vi.fn(),
 }));
 
 describe('withRouter', () => {
   const mockParams = { collectionType: 'albums', collection: 'vacation' };
-  const mockNavigate = jest.fn();
+  const mockNavigate = vi.fn();
 
   beforeEach(() => {
     useParams.mockReturnValue(mockParams);
@@ -22,7 +22,7 @@ describe('withRouter', () => {
   });
 
   afterEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it('should inject params and navigate props to wrapped component', () => {

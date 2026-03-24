@@ -7,7 +7,7 @@ import { HashRouter } from 'react-router-dom';
 import App from './App';
 
 // Mock site_data
-jest.mock('../_gallery/site_data.js', () => ({
+vi.mock('../_gallery/site_data.js', () => ({
   site_data: {
     site_name: 'Test Gallery',
     people_enabled: true
@@ -15,41 +15,36 @@ jest.mock('../_gallery/site_data.js', () => ({
 }));
 
 // Mock child components to simplify testing
-jest.mock('./Navbar', () => {
-  const React = require('react');
-  return function Navbar({ hasPeople, children }) {
+vi.mock('./Navbar', () => ({
+  default: function Navbar({ hasPeople, children }) {
     return (
       <div data-testid="navbar" data-has-people={hasPeople}>
         {children}
       </div>
     );
-  };
-});
+  }
+}));
 
-jest.mock('./Collections', () => {
-  const React = require('react');
-  return function Collections() {
+vi.mock('./Collections', () => ({
+  default: function Collections() {
     return <div data-testid="collections">Collections</div>;
-  };
-});
+  }
+}));
 
-jest.mock('./Collection', () => {
-  const React = require('react');
-  return function Collection() {
+vi.mock('./Collection', () => ({
+  default: function Collection() {
     return <div data-testid="collection">Collection</div>;
-  };
-});
+  }
+}));
 
-jest.mock('./NotFound', () => {
-  const React = require('react');
-  return function NotFound() {
+vi.mock('./NotFound', () => ({
+  default: function NotFound() {
     return <div data-testid="not-found">Not Found</div>;
-  };
-});
+  }
+}));
 
 // Mock Helmet
-jest.mock('react-helmet', () => {
-  const React = require('react');
+vi.mock('react-helmet', () => {
   return {
     Helmet: ({ children }) => <div data-testid="helmet">{children}</div>
   };

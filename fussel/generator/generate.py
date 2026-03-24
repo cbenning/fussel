@@ -982,17 +982,20 @@ class SiteGenerator:
             output_str += ";"
             outfile.write(output_str)
 
-        # Generate photos data if enabled
+        # Generate photos data (always write the file so it can be statically imported)
+        output_photos_data_file = os.path.join(output_data_path, "photos_data.js")
         if Config.instance().photos_enabled:
             photos = Photos.instance()
             photos.collect_all_photos()
             photos.sort_photos()
-            output_photos_data_file = os.path.join(output_data_path, "photos_data.js")
             with open(output_photos_data_file, "w") as outfile:
                 output_str = "export const photos_data = "
                 output_str += json.dumps(photos, sort_keys=True, indent=3, cls=SimpleEncoder)
                 output_str += ";"
                 outfile.write(output_str)
+        else:
+            with open(output_photos_data_file, "w") as outfile:
+                outfile.write("export const photos_data = [];\n")
 
         with open(output_site_data_file, "w") as outfile:
             output_str = "export const site_data = "

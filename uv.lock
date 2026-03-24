@@ -287,8 +287,6 @@ source = { editable = "." }
 dependencies = [
     { name = "beautifulsoup4" },
     { name = "jinja2-cli" },
-    { name = "massedit", version = "0.70.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10'" },
-    { name = "massedit", version = "0.71.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.10'" },
     { name = "pillow", version = "11.3.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10'" },
     { name = "pillow", version = "12.1.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.10'" },
     { name = "python-slugify" },
@@ -315,7 +313,6 @@ test = [
 requires-dist = [
     { name = "beautifulsoup4", specifier = ">=4.12.3" },
     { name = "jinja2-cli" },
-    { name = "massedit", specifier = ">=0.70.0" },
     { name = "pillow", specifier = ">=10.4.0" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=7.0.0" },
     { name = "pytest", marker = "extra == 'test'", specifier = ">=7.0.0" },
@@ -505,48 +502,12 @@ wheels = [
 ]
 
 [[package]]
-name = "massedit"
-version = "0.70.0"
-source = { registry = "https://pypi.org/simple" }
-resolution-markers = [
-    "python_full_version < '3.10'",
-]
-dependencies = [
-    { name = "mock", marker = "python_full_version < '3.10'" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/d0/05/707be7b14604d56f3d3d9ad852a8607d10f12b840f017fb02ae60b42fd6f/massedit-0.70.0.tar.gz", hash = "sha256:658d932c08402c7e36b0ee1a380c8f34be9cf18dc3f8451a8854164e32b442b7", size = 20087, upload-time = "2023-09-11T02:59:59.659Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/98/ba/79337849b42edeb5a3283c0324c8f253cd8ef49346c7911ca23adc4f4a1d/massedit-0.70.0-py3-none-any.whl", hash = "sha256:90d50894c90d67f4a508d3b9895a259c2ee5eb36fd6b60c5c5f38529d558c5fd", size = 34080, upload-time = "2023-09-11T03:09:28.765Z" },
-]
-
-[[package]]
-name = "massedit"
-version = "0.71.0"
-source = { registry = "https://pypi.org/simple" }
-resolution-markers = [
-    "python_full_version >= '3.10'",
-]
-sdist = { url = "https://files.pythonhosted.org/packages/bf/ab/54cb0d0e2d5ebc46aea89c0e4b9ec11f437faf14e50d3be43c5857cf897f/massedit-0.71.0.tar.gz", hash = "sha256:6386eedd429ea547531faeb2061747b010c9fd0b59cfd028d6de08e01a100f73", size = 19570, upload-time = "2025-09-21T21:30:18.057Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/1a/72/12a5e322d7e74c36f318992f44fd392a20a860f90c10df936e054e76e406/massedit-0.71.0-py3-none-any.whl", hash = "sha256:4ac211fddd0c27fac784e545872cb906480072153b412b180565a3a273a332c9", size = 13701, upload-time = "2025-09-21T21:30:16.648Z" },
-]
-
-[[package]]
 name = "mdurl"
 version = "0.1.2"
 source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/d6/54/cfe61301667036ec958cb99bd3efefba235e65cdeb9c84d24a8293ba1d90/mdurl-0.1.2.tar.gz", hash = "sha256:bb413d29f5eea38f31dd4754dd7377d4465116fb207585f97bf925588687c1ba", size = 8729, upload-time = "2022-08-14T12:40:10.846Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/b3/38/89ba8ad64ae25be8de66a6d463314cf1eb366222074cfda9ee839c56a4b4/mdurl-0.1.2-py3-none-any.whl", hash = "sha256:84008a41e51615a49fc9966191ff91509e3c40b939176e643fd50a5c2196b8f8", size = 9979, upload-time = "2022-08-14T12:40:09.779Z" },
-]
-
-[[package]]
-name = "mock"
-version = "5.2.0"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/07/8c/14c2ae915e5f9dca5a22edd68b35be94400719ccfa068a03e0fb63d0f6f6/mock-5.2.0.tar.gz", hash = "sha256:4e460e818629b4b173f32d08bf30d3af8123afbb8e04bb5707a1fd4799e503f0", size = 92796, upload-time = "2025-03-03T12:31:42.911Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/bd/d9/617e6af809bf3a1d468e0d58c3997b1dc219a9a9202e650d30c2fc85d481/mock-5.2.0-py3-none-any.whl", hash = "sha256:7ba87f72ca0e915175596069dbbcc7c75af7b5e9b9bc107ad6349ede0819982f", size = 31617, upload-time = "2025-03-03T12:31:41.518Z" },
 ]
 
 [[package]]

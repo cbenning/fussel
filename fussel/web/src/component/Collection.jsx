@@ -4,16 +4,7 @@ import "react-photo-album/masonry.css";
 import withRouter from './withRouter';
 import { albums_data } from "../_gallery/albums_data.js"
 import { people_data } from "../_gallery/people_data.js"
-// photos_data might not exist if photos is disabled
-let photos_data = [];
-try {
-  // Use dynamic import to handle missing file gracefully
-  const photosModule = require("../_gallery/photos_data.js");
-  photos_data = photosModule.photos_data || [];
-} catch (e) {
-  // photos_data.js doesn't exist - photos is disabled or not generated yet
-  photos_data = [];
-}
+import { photos_data } from "../_gallery/photos_data.js"
 import { site_data } from "../_gallery/site_data.js"
 import { Keyboard, Pagination, HashNavigation, Navigation } from "swiper/modules";
 import { Swiper, SwiperSlide } from 'swiper/react';

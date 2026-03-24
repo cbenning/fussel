@@ -7,7 +7,9 @@ import { HashRouter } from 'react-router-dom';
 import NotFound from './NotFound';
 
 // Mock withRouter
-jest.mock('./withRouter', () => (Component) => Component);
+vi.mock('./withRouter', () => ({
+  default: (Component) => Component
+}));
 
 describe('NotFound', () => {
   it('should render "Not Found" message', () => {

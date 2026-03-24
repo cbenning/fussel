@@ -10,7 +10,7 @@ describe('Navbar', () => {
   it('should render albums button', () => {
     render(
       <HashRouter>
-        <Navbar hasPeople={false} />
+        <Navbar hasAlbums={true} hasPeople={false} />
       </HashRouter>
     );
 

@@ -132,11 +132,10 @@ class TestMain:
     """Tests for main function."""
 
     @patch("fussel.fussel.SiteGenerator")
-    @patch("fussel.fussel.massedit")
     @patch("fussel.fussel.shutil")
     @patch("fussel.fussel.os")
     @patch("fussel.fussel.YamlConfig")
-    def test_main_success(self, mock_yaml_config_class, mock_os, mock_shutil, mock_massedit, mock_site_generator_class):
+    def test_main_success(self, mock_yaml_config_class, mock_os, mock_shutil, mock_site_generator_class):
         """Test successful main execution."""
         # Setup mocks
         mock_config = Mock()
@@ -169,12 +168,11 @@ class TestMain:
         mock_generator.generate.assert_called_once()
 
     @patch("fussel.fussel.SiteGenerator")
-    @patch("fussel.fussel.massedit")
     @patch("fussel.fussel.shutil")
     @patch("fussel.fussel.os")
     @patch("fussel.fussel.YamlConfig")
     def test_main_yarn_not_found(
-        self, mock_yaml_config_class, mock_os, mock_shutil, mock_massedit, mock_site_generator_class
+        self, mock_yaml_config_class, mock_os, mock_shutil, mock_site_generator_class
     ):
         """Test main when yarn is not found."""
         mock_config = Mock()
@@ -197,12 +195,11 @@ class TestMain:
             main()
 
     @patch("fussel.fussel.SiteGenerator")
-    @patch("fussel.fussel.massedit")
     @patch("fussel.fussel.shutil")
     @patch("fussel.fussel.os")
     @patch("fussel.fussel.YamlConfig")
     def test_main_yarn_build_fails(
-        self, mock_yaml_config_class, mock_os, mock_shutil, mock_massedit, mock_site_generator_class
+        self, mock_yaml_config_class, mock_os, mock_shutil, mock_site_generator_class
     ):
         """Test main when yarn build fails."""
         mock_config = Mock()
