@@ -44,11 +44,10 @@ vi.mock('./NotFound', () => ({
 }));
 
 // Mock Helmet
-vi.mock('react-helmet', () => {
-  return {
-    Helmet: ({ children }) => <div data-testid="helmet">{children}</div>
-  };
-});
+vi.mock('react-helmet-async', () => ({
+  HelmetProvider: ({ children }) => <>{children}</>,
+  Helmet: ({ children }) => <div data-testid="helmet">{children}</div>
+}));
 
 describe('App', () => {
   it('should render Helmet with site name', () => {

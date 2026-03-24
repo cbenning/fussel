@@ -95,7 +95,7 @@ If you prefer not to use Docker or want to develop Fussel, you can install it lo
 
 #### Prerequisites
 
-- **Python** 3.9+
+- **Python** 3.10+
 - **uv** - Python package manager ([install](https://docs.astral.sh/uv/getting-started/installation/))
 - **Node.js** v18+ (LTS recommended)
 - **Yarn** 1.22+ (required)

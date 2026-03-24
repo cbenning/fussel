@@ -7,7 +7,7 @@ name = "fussel"
 version = "1.0.0"
 description = "A static photo gallery generator"
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 license = {text = "MIT"}
 authors = [
     {name = "Fussel Contributors"}
@@ -18,7 +18,6 @@ classifiers = [
     "Intended Audience :: End Users/Desktop",
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
@@ -26,7 +25,7 @@ classifiers = [
 ]
 
 dependencies = [
-    "Pillow>=10.4.0",
+    "Pillow>=12.1.1",
     "beautifulsoup4>=4.12.3",
 "python-slugify>=8.0.4",
     "pyyaml>=6.0.2",

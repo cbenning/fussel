@@ -8,7 +8,7 @@
     "bulma": "^1.0.4",
     "react": "^19.2.3",
     "react-dom": "^19.2.3",
-    "react-helmet": "^6.1.0",
+    "react-helmet-async": "^3.0.0",
     "react-modal": "^3.16.3",
     "react-photo-album": "^3.4.0",
     "react-responsive-masonry": "^2.7.1",

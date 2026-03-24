@@ -5,7 +5,7 @@ import Collection from "./Collection";
 import NotFound from "./NotFound";
 import { site_data } from "../_gallery/site_data.js"
 import { Routes, Route } from "react-router-dom";
-import { Helmet } from "react-helmet";
+import { Helmet, HelmetProvider } from "react-helmet-async";
 
 export default class App extends Component {
 
@@ -15,6 +15,7 @@ export default class App extends Component {
 
   render() {
     return (
+      <HelmetProvider>
       <div>
         <Helmet>
           <title>{site_data['site_name']}</title>
@@ -38,6 +39,7 @@ export default class App extends Component {
         </Routes>
 
       </div>
+      </HelmetProvider>
     );
   }
 }
