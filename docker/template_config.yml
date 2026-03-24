@@ -20,6 +20,10 @@ gallery:
   # Default: exif_transpose: False
   exif_transpose: {{ EXIF_TRANSPOSE | default('False') }}
 
+  # Allow users to download original quality photos from the photo modal
+  # Default: True
+  allow_download: {{ ALLOW_DOWNLOAD | default('True') }}
+
   albums:
     # Recursively process sub-folders as albums
     # Default: recursive: True

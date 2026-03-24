@@ -4,7 +4,7 @@ pushd fussel
 
 set -e 
 
-source fussel/.venv/bin/activate
+source .venv/bin/activate
 
 echo "Generating yaml config..."
 
@@ -26,7 +26,7 @@ jinja2 \
 
 cat config.yml
 
-./generate.sh
+python -m fussel.fussel
 
 
 _PUID=$(id -u)
