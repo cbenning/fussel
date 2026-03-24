@@ -1,0 +1,45 @@
+version: '3.8'
+
+services:
+  fussel:
+    image: ghcr.io/cbenning/fussel:latest
+    container_name: fussel
+    volumes:
+      # Mount your input photos directory (read-only)
+      # Replace ${INPUT_DIR} with your actual input path, e.g., /home/user/photos:/input:ro
+      - ${INPUT_DIR:-./photos}:/input:ro
+      # Mount your output directory (read-write)
+      # Replace ${OUTPUT_DIR} with your actual output path, e.g., /home/user/output:/output
+      - ${OUTPUT_DIR:-./output}:/output
+    environment:
+      # Optional: Set user/group IDs to match your host user (prevents root-owned files)
+      # Set these in your .env file or export before running: export PUID=$(id -u) && export PGID=$(id -g)
+      # If not set, files will be owned by root
+      - PGID=${PGID:-}
+      - PUID=${PUID:-}
+      
+      # Required paths
+      - INPUT_PATH=/input
+      - OUTPUT_PATH=/output
+      
+      # Processing options
+      - PARALLEL_TASKS=${PARALLEL_TASKS:-4}
+      - OVERWRITE=${OVERWRITE:-False}
+      - EXIF_TRANSPOSE=${EXIF_TRANSPOSE:-False}
+      
+      # Album options
+      - RECURSIVE=${RECURSIVE:-True}
+      - RECURSIVE_NAME_PATTERN=${RECURSIVE_NAME_PATTERN:-"{parent_album} > {album}"}
+      
+      # People/Face detection
+      - FACE_TAG_ENABLE=${FACE_TAG_ENABLE:-True}
+      
+      # Watermark options
+      - WATERMARK_ENABLE=${WATERMARK_ENABLE:-True}
+      - WATERMARK_PATH=${WATERMARK_PATH:-web/src/images/fussel-watermark.png}
+      - WATERMARK_SIZE_RATIO=${WATERMARK_SIZE_RATIO:-0.3}
+      
+      # Site options
+      - SITE_ROOT=${SITE_ROOT:-/}
+      - SITE_TITLE=${SITE_TITLE:-Fussel Gallery}
+    restart: "no"  # Run once and exit

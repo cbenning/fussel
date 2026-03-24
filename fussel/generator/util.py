@@ -1,9 +1,9 @@
-
+import os
 
 from PIL import Image
 from slugify import slugify
-from .config import *
-import os
+
+from .config import Config
 
 
 def is_supported_album(path):
@@ -14,6 +14,7 @@ def is_supported_album(path):
 def extract_extension(path):
     return os.path.splitext(path)[1].lower()
 
+
 def is_supported_photo(path):
     ext = extract_extension(path)
     return ext in Config.instance().supported_extensions
@@ -21,23 +22,24 @@ def is_supported_photo(path):
 
 def find_unique_slug(slugs, lock, name):
 
-    slug = slugify(name, allow_unicode=False, max_length=0,
-                   word_boundary=True, separator="-", save_order=True)
+    slug = slugify(name, allow_unicode=False, max_length=0, word_boundary=True, separator="-", save_order=True)
     lock.acquire()
-    if slug not in slugs:
+    try:
+        if slug not in slugs:
+            slugs.add(slug)
+            return slug
+        count = 1
+        while True:
+            new_slug = slug + "-" + str(count)
+            if new_slug not in slugs:
+                slug = new_slug
+                break
+            count += 1
+
+        slugs.add(slug)
         return slug
-    count = 1
-    while True:
-        new_slug = slug + "-" + str(count)
-        if new_slug not in slugs:
-            slug = new_slug
-            break
-        count += 1
-
-    slugs.add(slug)
-    lock.release()
-
-    return slug
+    finally:
+        lock.release()
 
 
 def calculate_new_size(input_size, desired_size):
@@ -53,13 +55,13 @@ def increase_w(left, top, right, bottom, w, h, target_ratio):
     f_r = right
     f_w = f_r - f_l
     f_h = bottom - top
-    next_step_ratio = float((f_w+1)/f_h)
+    next_step_ratio = float((f_w + 1) / f_h)
     # print("%d/%d = %f = %f" % (f_w, f_h, next_step_ratio, target_ratio))
-    while next_step_ratio < target_ratio and f_l-1 > 0 and f_r+1 < w:
+    while next_step_ratio < target_ratio and f_l - 1 > 0 and f_r + 1 < w:
         f_l -= 1
         f_r += 1
         f_w = f_r - f_l
-        next_step_ratio = float((f_w+1)/f_h)
+        next_step_ratio = float((f_w + 1) / f_h)
         # print("%d/%d = %f = %f" % (f_w, f_h, next_step_ratio, target_ratio))
     return (f_l, top, f_r, bottom)
 
@@ -70,13 +72,13 @@ def increase_h(left, top, right, bottom, w, h, target_ratio):
     f_b = bottom
     f_w = right - left
     f_h = f_b - f_t
-    next_step_ratio = float((f_w+1)/f_h)
+    next_step_ratio = float((f_w + 1) / f_h)
     # print("%d/%d = %f = %f" % (f_w, f_h, next_step_ratio, target_ratio))
-    while next_step_ratio > target_ratio and f_t-1 > 0 and f_b+1 < h:
+    while next_step_ratio > target_ratio and f_t - 1 > 0 and f_b + 1 < h:
         f_t -= 1
         f_b += 1
-        f_w = f_b - f_t
-        next_step_ratio = float((f_w+1)/f_h)
+        f_h = f_b - f_t  # Recalculate height (f_w stays constant as width doesn't change)
+        next_step_ratio = float((f_w + 1) / f_h)
         # print("%d/%d = %f = %f" % (f_w, f_h, next_step_ratio, target_ratio))
     return (left, f_t, right, f_b)
 
@@ -89,16 +91,13 @@ def increase_size(left, top, right, bottom, w, h, target_ratio):
     f_r = right
     f_w = f_r - f_l
     original_f_w = f_r - f_l
-    f_h = f_b - f_t
-    # print("%d/%d = %f = %f" % (f_w, f_h, float((f_w + 1) / original_f_w), target_ratio))
     next_step_ratio = float((f_w + 1) / original_f_w)
-    while next_step_ratio < target_ratio and f_t-1 > 0 and f_b+1 < h and f_l-1 > 0 and f_r+1 < w:
+    while next_step_ratio < target_ratio and f_t - 1 > 0 and f_b + 1 < h and f_l - 1 > 0 and f_r + 1 < w:
         f_t -= 1
         f_b += 1
         f_l -= 1
         f_r += 1
         f_w = f_r - f_l
-        f_h = f_b - f_t
         next_step_ratio = float((f_w + 1) / original_f_w)
         # print("%d/%d = %f = %f" % (f_w, f_h, float((f_w + 1) / original_f_w), target_ratio))
     return (f_l, f_t, f_r, f_b)
@@ -106,7 +105,7 @@ def increase_size(left, top, right, bottom, w, h, target_ratio):
 
 def calculate_face_crop_dimensions(input_size, face_size, face_position):
 
-    target_ratio = float(4/3)
+    target_ratio = float(4 / 3)
     target_upsize_ratio = float(2.5)
 
     x = int(input_size[0] * float(face_position[0]))
@@ -114,22 +113,42 @@ def calculate_face_crop_dimensions(input_size, face_size, face_position):
     w = int(input_size[0] * float(face_size[0]))
     h = int(input_size[1] * float(face_size[1]))
 
-    left = x - int(w/2) + 1
-    right = x + int(w/2) - 1
-    top = y - int(h/2) + 1
-    bottom = y + int(h/2) - 1
+    left = x - int(w / 2) + 1
+    right = x + int(w / 2) - 1
+    top = y - int(h / 2) + 1
+    bottom = y + int(h / 2) - 1
 
     # try to increase
-    if float(right - left + 1 / bottom - top - 1) < target_ratio:  # horizontal expansion needed
-        left, top, right, bottom = increase_w(
-            left, top, right, bottom, input_size[0], input_size[1], target_ratio)
-    elif float(right - left + 1 / bottom - top - 1) > target_ratio:  # vertical expansion needed
-        left, top, right, bottom = increase_h(
-            left, top, right, bottom, input_size[0], input_size[1], target_ratio)
+    current_ratio = float((right - left + 1) / (bottom - top + 1))
+    if current_ratio < target_ratio:  # horizontal expansion needed
+        left, top, right, bottom = increase_w(left, top, right, bottom, input_size[0], input_size[1], target_ratio)
+    elif current_ratio > target_ratio:  # vertical expansion needed
+        left, top, right, bottom = increase_h(left, top, right, bottom, input_size[0], input_size[1], target_ratio)
 
     # attempt to expand photo
     left, top, right, bottom = increase_size(
-        left, top, right, bottom, input_size[0], input_size[1], target_upsize_ratio)
+        left, top, right, bottom, input_size[0], input_size[1], target_upsize_ratio
+    )
+
+    # Clamp to image boundaries to avoid negative values
+    if left < 0:
+        right = right - left  # Adjust right to maintain width
+        left = 0
+    if top < 0:
+        bottom = bottom - top  # Adjust bottom to maintain height
+        top = 0
+    if right >= input_size[0]:
+        left = left - (right - input_size[0] + 1)  # Adjust left to maintain width
+        right = input_size[0] - 1
+    if bottom >= input_size[1]:
+        top = top - (bottom - input_size[1] + 1)  # Adjust top to maintain height
+        bottom = input_size[1] - 1
+
+    # Final clamp to ensure we're within bounds
+    left = max(0, min(left, input_size[0] - 1))
+    top = max(0, min(top, input_size[1] - 1))
+    right = max(left + 1, min(right, input_size[0] - 1))
+    bottom = max(top + 1, min(bottom, input_size[1] - 1))
 
     return left, top, right, bottom
 
@@ -140,21 +159,18 @@ def apply_watermark(base_image_path, watermark_image, watermark_ratio):
         width, height = base_image.size
         orig_watermark_width, orig_watermark_height = watermark_image.size
         watermark_width = int(width * watermark_ratio)
-        watermark_height = int(
-            watermark_width/orig_watermark_width * orig_watermark_height)
-        watermark_image = watermark_image.resize(
-            (watermark_width, watermark_height))
+        watermark_height = int(watermark_width / orig_watermark_width * orig_watermark_height)
+        watermark_image = watermark_image.resize((watermark_width, watermark_height))
         transparent = Image.new(base_image.mode, (width, height), (0, 0, 0, 0))
         transparent.paste(base_image, (0, 0))
 
         watermark_x = width - watermark_width
         watermark_y = height - watermark_height
-        transparent.paste(watermark_image, box=(
-            watermark_x, watermark_y), mask=watermark_image)
+        transparent.paste(watermark_image, box=(watermark_x, watermark_y), mask=watermark_image)
         transparent.save(base_image_path)
 
 
 def pick_album_thumbnail(album_photos):
     if len(album_photos) > 0:
         return album_photos[0].thumb
-    return ''
+    return ""

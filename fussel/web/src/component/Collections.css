@@ -3,3 +3,59 @@
     overflow: hidden;
     object-fit: cover;
 }
+
+.card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+}
+
+/* Enhanced card content typography */
+.card-content {
+    padding: 1rem;
+}
+
+.card-content .title.is-5 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    line-height: 1.4;
+    margin-bottom: 0.5rem;
+    color: rgba(0, 0, 0, 0.9);
+    transition: color 0.2s ease;
+}
+
+@media (prefers-color-scheme: dark) {
+    .card-content .title.is-5 {
+        color: rgba(255, 255, 255, 0.9);
+    }
+}
+
+.card-content .subtitle.is-7 {
+    font-size: 0.85rem;
+    font-weight: 400;
+    line-height: 1.3;
+    margin-top: 0;
+    color: rgba(0, 0, 0, 0.6);
+    letter-spacing: 0.01em;
+}
+
+@media (prefers-color-scheme: dark) {
+    .card-content .subtitle.is-7 {
+        color: rgba(255, 255, 255, 0.6);
+    }
+}
+
+.card:hover .card-content .title.is-5 {
+    color: rgba(0, 0, 0, 1);
+}
+
+@media (prefers-color-scheme: dark) {
+    .card:hover .card-content .title.is-5 {
+        color: rgba(255, 255, 255, 1);
+    }
+}

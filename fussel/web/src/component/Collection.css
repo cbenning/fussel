@@ -8,14 +8,45 @@ Keep an eye on the ticket and maybe one day I can remove this */
 .modal-close-button {
   position: absolute;
   z-index: 100;
-  right: 15px;
-  top: 15px;
+  right: 20px;
+  top: 20px;
+  background-color: rgba(255, 255, 255, 0.1) !important;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  color: white !important;
+  border-radius: 50% !important;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.modal-close-button:hover {
+  background-color: rgba(255, 255, 255, 0.2) !important;
+  transform: scale(1.1);
+  border-color: rgba(255, 255, 255, 0.3) !important;
 }
 
 .gallery-image{
-  width: "100%";
-  display: "block";
+  display: block;
   cursor: pointer;
+  border-radius: 4px;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  -webkit-user-drag: none;
+  user-drag: none;
+  -webkit-touch-callout: none;
+  /* Let react-photo-album control width/height for masonry layout */
+  max-width: 100%;
+  height: auto;
+}
+
+.gallery-image:hover {
+  transform: scale(1.02);
+  opacity: 0.9;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
 .footer {
@@ -39,6 +70,9 @@ Keep an eye on the ticket and maybe one day I can remove this */
   height: auto;
   max-width: 100%;
   max-height: 100%;
+  -webkit-user-drag: none;
+  user-drag: none;
+  -webkit-touch-callout: none;
   -ms-transform: translate(-50%, -50%);
   -webkit-transform: translate(-50%, -50%);
   -moz-transform: translate(-50%, -50%);
@@ -48,17 +82,582 @@ Keep an eye on the ticket and maybe one day I can remove this */
   top: 50%;
 }
 
-.swiper {
-  width: 100%;
-  height: 100%;
+.swiper-slide img.zoomed {
+  cursor: grab;
+  user-select: none;
+  -webkit-user-select: none;
+  /* Inline style will override this transform */
+}
+
+.swiper-slide img.zoomed:active {
+  cursor: grabbing;
 }
 
 .ReactModal__Content {
   inset: 10px;
   padding: 10px;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  border: none !important;
+  outline: none !important;
 }
 
 .ReactModal__Content--after-open {
   inset: 10px;
   padding: 10px;
+  opacity: 1;
+  border: none !important;
+  outline: none !important;
+}
+
+.ReactModal__Overlay {
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.ReactModal__Overlay--after-open {
+  opacity: 1;
+  background-color: rgba(0, 0, 0, 0.85) !important;
+}
+
+.modal-info-bar {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.photo-counter {
+  background-color: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: white;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.modal-info-button {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  color: white !important;
+  border-radius: 50% !important;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.modal-info-button:hover {
+  background-color: rgba(255, 255, 255, 0.2) !important;
+  transform: scale(1.1);
+  border-color: rgba(255, 255, 255, 0.3) !important;
+}
+
+.modal-body {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: row;
+}
+
+.modal-photo-area {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  position: relative;
+  overflow: hidden;
+}
+
+.photo-info-panel {
+  width: 260px;
+  flex-shrink: 0;
+  height: 100%;
+  overflow-y: auto;
+  background-color: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(10px);
+  border-left: 1px solid rgba(255, 255, 255, 0.15);
+  color: white;
+  animation: slideInRight 0.3s ease;
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.photo-info-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 10px;
+  padding: 10px 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+  position: sticky;
+  top: 0;
+  background-color: rgba(0, 0, 0, 0.9);
+  z-index: 1;
+}
+
+.photo-info-panel-title {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.photo-info-panel-close {
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.5);
+  cursor: pointer;
+  padding: 2px 4px;
+  font-size: 13px;
+  line-height: 1;
+  transition: color 0.2s ease;
+}
+
+.photo-info-panel-close:hover {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.photo-info-content {
+  display: flex;
+  flex-direction: column;
+}
+
+.photo-info-section {
+  padding: 12px 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.photo-info-section:last-child {
+  border-bottom: none;
+}
+
+.photo-info-section-heading {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: rgba(255, 255, 255, 0.45);
+  margin: 0 0 8px 0;
+}
+
+.photo-info-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 0 0 6px 0;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.photo-info-item:last-child {
+  margin-bottom: 0;
+}
+
+.photo-info-label {
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.65);
+  min-width: 72px;
+  flex-shrink: 0;
+}
+
+.photo-info-value {
+  color: rgba(255, 255, 255, 0.9);
+  word-break: break-word;
+}
+
+.photo-info-person-link {
+  color: rgba(255, 255, 255, 0.95);
+  text-decoration: underline;
+  transition: color 0.2s ease;
+}
+
+.photo-info-person-link:hover {
+  color: rgba(255, 255, 255, 1);
+}
+
+/* Face tag overlay styles */
+.swiper-slide-content {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.face-tag-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.face-tag-rectangle {
+  position: absolute;
+  border: 1.5px solid rgba(50, 115, 220, 0.5);
+  background-color: rgba(50, 115, 220, 0.05);
+  pointer-events: none;
+  border-radius: 2px;
+}
+
+.face-tag-label {
+  position: absolute;
+  top: -24px;
+  left: 0;
+  background-color: rgba(50, 115, 220, 0.75);
+  color: white;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-size: 11px;
+  font-weight: 500;
+  white-space: nowrap;
+  pointer-events: auto;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.1s ease;
+  display: inline-block;
+}
+
+.face-tag-label:hover {
+  background-color: rgba(50, 115, 220, 0.9);
+  transform: translateY(-1px);
+}
+
+.modal-info-button.is-active {
+  background-color: rgba(255, 255, 255, 0.25) !important;
+  border-color: rgba(255, 255, 255, 0.4) !important;
+}
+
+/* Hide Swiper navigation arrows when zoomed */
+.swiper-zoomed .swiper-button-next,
+.swiper-zoomed .swiper-button-prev {
+  display: none !important;
+}
+
+/* Compact styling for photos view controls */
+.photos-controls {
+  margin-bottom: 16px;
+  padding: 10px 16px !important;
+  background-color: transparent !important;
+  border-radius: 8px !important;
+  border: 1px solid rgba(0, 0, 0, 0.1) !important;
+}
+
+.photos-controls .field {
+  margin-bottom: 0 !important;
+  margin-right: 1rem !important;
+}
+
+.photos-controls .field:last-child {
+  margin-right: 0 !important;
+}
+
+.photos-controls .label {
+  margin-bottom: 0.25rem !important;
+  font-size: 0.75rem !important;
+  font-weight: 600 !important;
+  color: inherit !important;
+}
+
+.photos-controls .select {
+  margin-bottom: 0 !important;
+}
+
+.photos-controls .select select {
+  font-size: 0.875rem !important;
+  padding-right: 2.5em !important;
+  color: inherit !important;
+  background-color: transparent !important;
+  border-color: rgba(0, 0, 0, 0.2) !important;
+}
+
+.photos-controls .select select:hover {
+  border-color: rgba(0, 0, 0, 0.3) !important;
+}
+
+.photos-controls .button {
+  font-size: 0.875rem !important;
+  height: 2.25em !important;
+  padding-left: 0.75em !important;
+  padding-right: 0.75em !important;
+  color: inherit !important;
+  background-color: transparent !important;
+}
+
+.photos-controls .tag {
+  font-size: 0.75rem !important;
+  height: 1.75em !important;
+  padding-left: 0.5em !important;
+  padding-right: 0.5em !important;
+  background-color: rgba(0, 0, 0, 0.05) !important;
+  color: inherit !important;
+}
+
+/* People filter dropdown */
+.people-filter-dropdown {
+  position: relative;
+}
+
+.people-filter-trigger {
+  position: relative;
+}
+
+.people-filter-dropdown-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  margin-top: 4px;
+  background-color: #fff;
+  border: 1px solid #dbdbdb;
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+  max-height: 300px;
+  display: flex;
+  flex-direction: column;
+}
+
+@media (prefers-color-scheme: dark) {
+  .photos-controls {
+    border-color: rgba(255, 255, 255, 0.1) !important;
+  }
+  
+  .photos-controls .select select {
+    border-color: rgba(255, 255, 255, 0.2) !important;
+    color: rgba(255, 255, 255, 0.9) !important;
+  }
+  
+  .photos-controls .select select:hover {
+    border-color: rgba(255, 255, 255, 0.3) !important;
+  }
+  
+  .photos-controls .button {
+    color: rgba(255, 255, 255, 0.9) !important;
+  }
+  
+  .photos-controls .tag {
+    background-color: rgba(255, 255, 255, 0.1) !important;
+    color: rgba(255, 255, 255, 0.9) !important;
+  }
+  
+  .people-filter-trigger {
+    background-color: rgba(255, 255, 255, 0.05) !important;
+    border-color: rgba(255, 255, 255, 0.2) !important;
+    color: rgba(255, 255, 255, 0.9) !important;
+  }
+  
+  .people-filter-dropdown-menu {
+    background-color: #1a1a1a !important;
+    border-color: rgba(255, 255, 255, 0.2) !important;
+  }
+  
+  .people-filter-dropdown-menu input {
+    background-color: rgba(255, 255, 255, 0.05) !important;
+    border-color: rgba(255, 255, 255, 0.2) !important;
+    color: rgba(255, 255, 255, 0.9) !important;
+  }
+  
+  .people-filter-dropdown-menu input::placeholder {
+    color: rgba(255, 255, 255, 0.5) !important;
+  }
+  
+  .people-filter-dropdown-menu > div > div {
+    color: rgba(255, 255, 255, 0.9) !important;
+  }
+  
+  .people-filter-dropdown-menu > div > div:hover {
+    background-color: rgba(255, 255, 255, 0.1) !important;
+  }
+  
+  .people-filter-dropdown-menu > div > div[style*="background-color: rgba(0, 0, 0, 0.05)"] {
+    background-color: rgba(255, 255, 255, 0.1) !important;
+  }
+}
+
+.people-filter-trigger:hover {
+  border-color: rgba(0, 0, 0, 0.3) !important;
+}
+
+@media (prefers-color-scheme: dark) {
+  .people-filter-trigger:hover {
+    border-color: rgba(255, 255, 255, 0.3) !important;
+  }
+}
+
+/* Prevent body scrolling when modal is open */
+body.noscroll {
+  overflow: hidden !important;
+}
+
+/* react-photo-album styling to ensure full width */
+[class*="react-photo-album"] {
+  width: 100% !important;
+}
+
+
+[class*="react-photo-album--gallery"] {
+  width: 100% !important;
+}
+
+[class*="react-photo-album--masonry"] {
+  width: 100% !important;
+  gap: 10px !important;
+}
+
+[class*="react-photo-album--masonry"] > div {
+  gap: 10px !important;
+}
+
+/* Ensure masonry images don't have width forced - react-photo-album calculates sizes */
+[class*="react-photo-album--masonry"] img {
+  /* Don't set width - let react-photo-album calculate from imageProps.style */
+  height: auto;
+  display: block;
+}
+
+/* Timeline Scrollbar Styles */
+.timeline-scrollbar {
+  position: fixed;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 80px;
+  z-index: 1000;
+  pointer-events: none;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 0;
+}
+
+.timeline-track {
+  position: relative;
+  width: 4px;
+  background-color: rgba(0, 0, 0, 0.2);
+  border-radius: 2px;
+  pointer-events: auto;
+  margin: 20px 0;
+  min-height: 200px;
+  /* Height will be set dynamically via inline style */
+}
+
+.timeline-thumb {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  background-color: rgba(0, 0, 0, 0.4);
+  border-radius: 2px;
+  pointer-events: none;
+  transition: background-color 0.2s ease;
+  min-height: 20px;
+}
+
+.timeline-scrollbar:hover .timeline-thumb {
+  background-color: rgba(0, 0, 0, 0.6);
+}
+
+.timeline-label {
+  position: absolute;
+  right: 12px;
+  transform: translateY(-50%);
+  background-color: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-size: 11px;
+  font-weight: 500;
+  color: rgba(0, 0, 0, 0.8);
+  cursor: pointer;
+  pointer-events: auto;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  z-index: 1;
+}
+
+.timeline-label:hover {
+  background-color: rgba(255, 255, 255, 1);
+  border-color: rgba(0, 0, 0, 0.2);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  transform: translateY(-50%) scale(1.05);
+}
+
+.timeline-label::before {
+  content: '';
+  position: absolute;
+  left: -8px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 0;
+  height: 0;
+  border-top: 4px solid transparent;
+  border-bottom: 4px solid transparent;
+  border-right: 4px solid rgba(255, 255, 255, 0.9);
+}
+
+.timeline-label:hover::before {
+  border-right-color: rgba(255, 255, 255, 1);
+}
+
+@media (prefers-color-scheme: dark) {
+  .timeline-track {
+    background-color: rgba(255, 255, 255, 0.1);
+  }
+
+  .timeline-thumb {
+    background-color: rgba(255, 255, 255, 0.4);
+  }
+
+  .timeline-scrollbar:hover .timeline-thumb {
+    background-color: rgba(255, 255, 255, 0.6);
+  }
+
+  .timeline-label {
+    background-color: rgba(0, 0, 0, 0.8);
+    border-color: rgba(255, 255, 255, 0.2);
+    color: rgba(255, 255, 255, 0.9);
+  }
+
+  .timeline-label:hover {
+    background-color: rgba(0, 0, 0, 0.95);
+    border-color: rgba(255, 255, 255, 0.3);
+  }
+
+  .timeline-label::before {
+    border-right-color: rgba(0, 0, 0, 0.8);
+  }
+
+  .timeline-label:hover::before {
+    border-right-color: rgba(0, 0, 0, 0.95);
+  }
+}
+
+/* Hide timeline on small screens */
+@media (max-width: 768px) {
+  .timeline-scrollbar {
+    display: none;
+  }
 }
