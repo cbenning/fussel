@@ -92,6 +92,10 @@ def main():
         dirs_exist_ok=True,
     )
 
+    # Prevent GitHub Pages Jekyll processing from ignoring _gallery
+    with open(os.path.join(new_site_location, ".nojekyll"), "w") as f:
+        pass
+
     print(f"site generated at: {new_site_location}")
     print("\n\n to preview your site, run: \n   make serve")
     print(f"\n   or manually: \n   python -m http.server --directory {new_site_location}")
