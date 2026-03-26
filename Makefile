@@ -16,7 +16,7 @@ help:
 	@echo "  make generate       - Generate the gallery site"
 	@echo "  make serve          - Start HTTP server to preview generated site"
 	@echo "  make dev            - Run in development mode (watch web app)"
-	@echo "  make test           - Run tests"
+	@echo "  make test           - Run all tests (Python + JS)"
 	@echo "  make fmt            - Format Python source with ruff"
 	@echo "  make lint           - Lint Python source with ruff (no changes)"
 	@echo "  make clean          - Clean build artifacts and dependencies"
@@ -61,8 +61,10 @@ dev:
 
 # Run tests
 test:
-	@echo "Running tests..."
+	@echo "Running Python tests..."
 	$(PYTEST) tests/ -v --cov=fussel --cov-report=html --cov-report=term
+	@echo "Running JS tests..."
+	cd fussel/web && yarn test
 
 # Format Python source
 fmt:
