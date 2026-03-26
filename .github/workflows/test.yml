@@ -56,7 +56,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node-version: ["18", "20", "22"]
+        node-version: ["20", "22"]
 
     steps:
       - uses: actions/checkout@v4
@@ -71,6 +71,14 @@ jobs:
       - name: Install JS dependencies
         run: yarn install --frozen-lockfile
         working-directory: fussel/web
+
+      - name: Create gallery data stubs
+        run: |
+          mkdir -p fussel/web/src/_gallery
+          echo 'export const albums_data = {};' > fussel/web/src/_gallery/albums_data.js
+          echo 'export const people_data = {};' > fussel/web/src/_gallery/people_data.js
+          echo 'export const photos_data = [];' > fussel/web/src/_gallery/photos_data.js
+          printf 'export const site_data = { site_name: "", people_enabled: false, albums_enabled: false, photos_enabled: false };\n' > fussel/web/src/_gallery/site_data.js
 
       - name: Run JS tests
         run: yarn test
