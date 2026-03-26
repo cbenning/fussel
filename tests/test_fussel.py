@@ -171,9 +171,7 @@ class TestMain:
     @patch("fussel.fussel.shutil")
     @patch("fussel.fussel.os")
     @patch("fussel.fussel.YamlConfig")
-    def test_main_yarn_not_found(
-        self, mock_yaml_config_class, mock_os, mock_shutil, mock_site_generator_class
-    ):
+    def test_main_yarn_not_found(self, mock_yaml_config_class, mock_os, mock_shutil, mock_site_generator_class):
         """Test main when yarn is not found."""
         mock_config = Mock()
         mock_config.getKey = Mock(return_value="/")
@@ -198,9 +196,7 @@ class TestMain:
     @patch("fussel.fussel.shutil")
     @patch("fussel.fussel.os")
     @patch("fussel.fussel.YamlConfig")
-    def test_main_yarn_build_fails(
-        self, mock_yaml_config_class, mock_os, mock_shutil, mock_site_generator_class
-    ):
+    def test_main_yarn_build_fails(self, mock_yaml_config_class, mock_os, mock_shutil, mock_site_generator_class):
         """Test main when yarn build fails."""
         mock_config = Mock()
         mock_config.getKey = Mock(return_value="/")
