@@ -66,7 +66,8 @@ def main():
         print("Error: yarn is required but not found. Please install yarn first.")
         print("Visit https://yarnpkg.com/getting-started/install for installation instructions.")
         exit(-1)
-    if os.system(f"yarn build --base={http_root}") != 0:
+    os.environ["VITE_BASE_URL"] = http_root
+    if os.system("yarn build") != 0:
         print("Failed")
         exit(-1)
     os.chdir(original_cwd)
