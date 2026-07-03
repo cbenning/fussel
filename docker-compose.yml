@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   fussel:
     image: ghcr.io/cbenning/fussel:latest
@@ -17,29 +15,29 @@ services:
       # If not set, files will be owned by root
       - PGID=${PGID:-}
       - PUID=${PUID:-}
-      
+
       # Required paths
       - INPUT_PATH=/input
       - OUTPUT_PATH=/output
-      
+
       # Processing options
       - PARALLEL_TASKS=${PARALLEL_TASKS:-4}
       - OVERWRITE=${OVERWRITE:-False}
       - EXIF_TRANSPOSE=${EXIF_TRANSPOSE:-False}
-      
+
       # Album options
       - RECURSIVE=${RECURSIVE:-True}
       - RECURSIVE_NAME_PATTERN=${RECURSIVE_NAME_PATTERN:-"{parent_album} > {album}"}
-      
+
       # People/Face detection
       - FACE_TAG_ENABLE=${FACE_TAG_ENABLE:-True}
-      
+
       # Watermark options
       - WATERMARK_ENABLE=${WATERMARK_ENABLE:-True}
       - WATERMARK_PATH=${WATERMARK_PATH:-web/src/images/fussel-watermark.png}
       - WATERMARK_SIZE_RATIO=${WATERMARK_SIZE_RATIO:-0.3}
-      
+
       # Site options
       - SITE_ROOT=${SITE_ROOT:-/}
       - SITE_TITLE=${SITE_TITLE:-Fussel Gallery}
-    restart: "no"  # Run once and exit
+    restart: "no" # Run once and exit

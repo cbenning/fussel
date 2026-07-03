@@ -47,7 +47,7 @@ class Config:
         cls._instance.output_photos_path = str(yaml_config.getKey("gallery.output_path", DEFAULT_OUTPUT_PHOTOS_PATH))
         cls._instance.http_root = str(yaml_config.getKey("site.http_root", "/"))
         cls._instance.site_name = str(yaml_config.getKey("site.title", DEFAULT_SITE_TITLE))
-        cls._instance.supported_extensions = (".jpg", ".jpeg", ".gif", ".png")
+        cls._instance.supported_extensions = (".avif", ".jpg", ".jpeg", ".gif", ".png")
 
         _parallel_tasks = os.cpu_count() / 2
         if _parallel_tasks < 1:
