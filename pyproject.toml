@@ -49,8 +49,8 @@ python_classes = "Test*"
 python_functions = "test_*"
 
 [project.optional-dependencies]
-test = ["pytest>=7.0.0", "pytest-cov>=4.0.0", "pytest-mock>=3.0.0"]
-dev  = ["pytest>=7.0.0", "pytest-cov>=4.0.0", "pytest-mock>=3.0.0", "ruff>=0.4.0"]
+test = ["pytest>=9.0.3", "pytest-cov>=4.0.0", "pytest-mock>=3.0.0"]
+dev  = ["pytest>=9.0.3", "pytest-cov>=4.0.0", "pytest-mock>=3.0.0", "ruff>=0.4.0"]
 
 [tool.ruff]
 line-length = 120
