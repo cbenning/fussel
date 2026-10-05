@@ -636,8 +636,11 @@ class Photo:
 
         try:
             with Image.open(new_original_photo) as im:
-                original_size = im.size
                 width, height = im.size
+                # EXIF orientations 5-8 are 90 degree rotations, so transposed output has width and height swapped
+                if Config.instance().exif_transpose and im.getexif().get(274) in (5, 6, 7, 8):
+                    width, height = height, width
+                original_size = (width, height)
         except UnidentifiedImageError as e:
             if os.path.exists(new_original_photo):
                 os.remove(new_original_photo)
@@ -663,9 +666,9 @@ class Photo:
             msg += f"[cyan]{new_size[0]}x{new_size[1]}[/cyan] "
             if Config.instance().overwrite or not os.path.exists(new_sub_photo):
                 with Image.open(new_original_photo) as im:
-                    im.thumbnail(new_size)
                     if Config.instance().exif_transpose:
                         im = ImageOps.exif_transpose(im)
+                    im.thumbnail(new_size)
                     im.save(new_sub_photo)
             srcSet[str(size) + "w"] = ["%s/%s" % (quote(external_path), quote(os.path.basename(new_sub_photo)))]
 

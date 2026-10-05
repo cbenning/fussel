@@ -4,7 +4,7 @@ Tests for fussel.fussel module (YamlConfig and main).
 
 import os
 import pickle
-from unittest.mock import Mock, patch
+from unittest.mock import Mock, mock_open, patch
 
 import pytest
 import yaml
@@ -131,11 +131,12 @@ class TestYamlConfig:
 class TestMain:
     """Tests for main function."""
 
+    @patch("fussel.fussel.open", new_callable=mock_open, create=True)
     @patch("fussel.fussel.SiteGenerator")
     @patch("fussel.fussel.shutil")
     @patch("fussel.fussel.os")
     @patch("fussel.fussel.YamlConfig")
-    def test_main_success(self, mock_yaml_config_class, mock_os, mock_shutil, mock_site_generator_class):
+    def test_main_success(self, mock_yaml_config_class, mock_os, mock_shutil, mock_site_generator_class, mock_file):
         """Test successful main execution."""
         # Setup mocks
         mock_config = Mock()
@@ -166,6 +167,9 @@ class TestMain:
         # Verify SiteGenerator was created and generate called
         mock_site_generator_class.assert_called_once()
         mock_generator.generate.assert_called_once()
+
+        # Verify .nojekyll is written to the output location
+        mock_file.assert_called_once_with(os.path.join("/test/output", ".nojekyll"), "w")
 
     @patch("fussel.fussel.SiteGenerator")
     @patch("fussel.fussel.shutil")

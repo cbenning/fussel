@@ -2,9 +2,11 @@
 Tests for utility classes in fussel.generator.generate module.
 """
 
+import os
 from unittest.mock import MagicMock, Mock, patch
 
 import pytest
+from PIL import Image
 
 from fussel.generator.generate import Albums, Person, Photo, PhotoProcessingFailure, Photos, SimpleEncoder, Site
 
@@ -638,3 +640,25 @@ class TestPhotos:
         # p_bad gets timestamp 0 so sorts before p_valid in asc order.
         assert photos.photos[0] is p_bad
         assert photos.photos[1] is p_valid
+
+
+@pytest.mark.parametrize("exif_transpose, expected_size", [(True, (300, 400)), (False, (400, 300))])
+def test_process_photo_dimensions_match_exif_orientation(tmp_path, exif_transpose, expected_size):
+    """Reported width/height must match the aspect ratio of the generated thumbnail."""
+    exif = Image.Exif()
+    exif[274] = 6  # rotated 90 degrees
+    Image.new("RGB", (400, 300)).save(tmp_path / "photo.jpg", exif=exif)
+
+    with patch("fussel.generator.generate.Config") as mock_config:
+        mock_config.instance.return_value.configure_mock(
+            overwrite=True,
+            watermark_enabled=False,
+            people_enabled=False,
+            exif_transpose=exif_transpose,
+            photo_sizes=[(200, 200)],
+        )
+        photo = Photo.process_photo("/ext", str(tmp_path / "photo.jpg"), "photo.jpg", "photo", str(tmp_path), None)
+
+    assert (photo.width, photo.height) == expected_size
+    with Image.open(tmp_path / os.path.basename(photo.src)) as thumb:
+        assert (thumb.width > thumb.height) == (photo.width > photo.height)
