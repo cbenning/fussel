@@ -669,6 +669,15 @@ class Photo:
                     if Config.instance().exif_transpose:
                         im = ImageOps.exif_transpose(im)
                     im.thumbnail(new_size)
+                    # JPEG can't store alpha or palettes, flatten onto white (e.g. a PNG named .jpg)
+                    if (
+                        im.mode in ("RGBA", "LA", "PA", "P")
+                        and Image.registered_extensions().get(os.path.splitext(new_sub_photo)[1].lower()) == "JPEG"
+                    ):
+                        im = im.convert("RGBA")
+                        flattened = Image.new("RGB", im.size, "white")
+                        flattened.paste(im, mask=im.getchannel("A"))
+                        im = flattened
                     im.save(new_sub_photo)
             srcSet[str(size) + "w"] = ["%s/%s" % (quote(external_path), quote(os.path.basename(new_sub_photo)))]
 

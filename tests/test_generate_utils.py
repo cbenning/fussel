@@ -662,3 +662,23 @@ def test_process_photo_dimensions_match_exif_orientation(tmp_path, exif_transpos
     assert (photo.width, photo.height) == expected_size
     with Image.open(tmp_path / os.path.basename(photo.src)) as thumb:
         assert (thumb.width > thumb.height) == (photo.width > photo.height)
+
+
+@pytest.mark.parametrize("mode", ["RGBA", "LA", "P"])
+def test_process_photo_saves_alpha_image_as_jpeg(tmp_path, mode):
+    """Images with alpha/palette modes (e.g. a PNG named .jpg) must not abort JPEG resizing."""
+    Image.new(mode, (400, 300)).save(tmp_path / "photo.png")
+    (tmp_path / "photo.png").rename(tmp_path / "photo.jpg")
+
+    with patch("fussel.generator.generate.Config") as mock_config:
+        mock_config.instance.return_value.configure_mock(
+            overwrite=True,
+            watermark_enabled=False,
+            people_enabled=False,
+            exif_transpose=False,
+            photo_sizes=[(200, 200)],
+        )
+        photo = Photo.process_photo("/ext", str(tmp_path / "photo.jpg"), "photo.jpg", "photo", str(tmp_path), None)
+
+    with Image.open(tmp_path / os.path.basename(photo.src)) as thumb:
+        assert thumb.format == "JPEG"
