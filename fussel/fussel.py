@@ -93,7 +93,7 @@ def main():
     )
 
     # Prevent GitHub Pages Jekyll processing from ignoring _gallery
-    with open(os.path.join(new_site_location, ".nojekyll"), "w") as f:
+    with open(os.path.join(new_site_location, ".nojekyll"), "w"):
         pass
 
     print(f"site generated at: {new_site_location}")

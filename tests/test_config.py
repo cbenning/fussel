@@ -185,7 +185,7 @@ class TestConfigInitialization:
         Config.init(mock_yaml_config)
         instance = Config.instance()
 
-        assert instance.supported_extensions == (".jpg", ".jpeg", ".gif", ".png")
+        assert instance.supported_extensions == (".avif", ".jpg", ".jpeg", ".gif", ".png")
 
     def test_photo_sizes_default(self):
         """Test that photo_sizes defaults to DEFAULT_PHOTO_SIZES."""
