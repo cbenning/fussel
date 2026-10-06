@@ -23,7 +23,7 @@
   },
   "devDependencies": {
     "@testing-library/dom": "^10.4.2",
-    "@testing-library/jest-dom": "^7.0.1",
+    "@testing-library/jest-dom": "^6.10.0",
     "@testing-library/react": "^16.3.3",
     "@vitejs/plugin-react": "^6.1.2",
     "@vitest/coverage-v8": "^5.0.3",
