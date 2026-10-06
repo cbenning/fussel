@@ -97,7 +97,7 @@ If you prefer not to use Docker or want to develop Fussel, you can install it lo
 
 - **Python** 3.10+
 - **uv** - Python package manager ([install](https://docs.astral.sh/uv/getting-started/installation/))
-- **Node.js** v18+ (LTS recommended)
+- **Node.js** v20.19+ or v22.13+ (LTS recommended)
 - **Yarn** 1.22+ (required)
 - **Make** (optional, but recommended for easier setup)
 
@@ -330,7 +330,7 @@ fussel/
 │   └── web/             # Vite/React frontend
 │       ├── src/
 │       │   └── component/  # React components + tests
-│       └── vite.config.js
+│       └── vite.config.mjs
 ├── tests/               # Python test suite
 ├── docker/              # Docker configuration
 ├── config.yml           # Your configuration (not in git)
