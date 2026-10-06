@@ -12,6 +12,7 @@ from urllib.parse import quote
 from bs4 import BeautifulSoup
 from PIL import Image, ImageFile, ImageOps, UnidentifiedImageError
 from PIL.ExifTags import TAGS
+from PIL.Image import registered_extensions
 from rich import print
 
 from .config import Config
@@ -622,12 +623,21 @@ class Photo:
         # Verify original first to avoid PIL errors later when generating thumbnails etc
         try:
             with Image.open(photo) as im:
+                actual_format = im.format
                 im.verify()
             # Unfortunately verify only catches a few defective images, this transpose catches more. Verify requires subsequent reopen according to Pillow docs.
             with Image.open(photo) as im2:
                 im2.transpose(Image.FLIP_TOP_BOTTOM)
         except Exception as e:
             raise PhotoProcessingFailure(message="Image Verification: " + str(e))
+
+        # Resized copies are saved by extension, so a mismatch (e.g. a PNG named .jpg) can fail or re-encode
+        extension = extract_extension(photo)
+        expected_format = registered_extensions().get(extension)
+        if expected_format and {"MPO": "JPEG"}.get(actual_format, actual_format) != expected_format:
+            raise PhotoProcessingFailure(
+                message=f"{actual_format} image found but file has a {extension} extension, rename it to match"
+            )
 
         # Only copy if overwrite explicitly asked for or if doesn't exist
         if Config.instance().overwrite or not os.path.exists(new_original_photo):

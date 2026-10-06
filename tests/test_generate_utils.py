@@ -137,6 +137,7 @@ class TestPhoto:
 
         # Mock Image operations
         mock_img = MagicMock()
+        mock_img.format = "JPEG"
         mock_img.size = (2000, 1500)
         mock_img.verify.return_value = None
         mock_img.transpose.return_value = mock_img
@@ -230,6 +231,7 @@ class TestPhoto:
         mock_calc_size.return_value = (500, 375)
 
         mock_img = MagicMock()
+        mock_img.format = "JPEG"
         mock_img.size = (2000, 1500)
         mock_img.verify.return_value = None
         mock_img.transpose.return_value = mock_img
@@ -325,6 +327,7 @@ class TestPhoto:
         mock_exists.side_effect = exists_side_effect
 
         mock_img = MagicMock()
+        mock_img.format = "JPEG"
         mock_img.size = (2000, 1500)
         mock_img.verify.return_value = None
         mock_img.transpose.return_value = mock_img
@@ -387,6 +390,7 @@ class TestPhoto:
         mock_calc_size.return_value = (500, 375)
 
         mock_img = MagicMock()
+        mock_img.format = "JPEG"
         mock_img.size = (2000, 1500)
         mock_img.verify.return_value = None
         mock_img.transpose.return_value = mock_img
@@ -452,6 +456,7 @@ class TestPhotoUnidentifiedImageError:
         mock_extract.return_value = ".jpg"
 
         mock_img = MagicMock()
+        mock_img.format = "JPEG"
         mock_img.verify.return_value = None
         mock_img.transpose.return_value = mock_img
 
@@ -662,3 +667,13 @@ def test_process_photo_dimensions_match_exif_orientation(tmp_path, exif_transpos
     assert (photo.width, photo.height) == expected_size
     with Image.open(tmp_path / os.path.basename(photo.src)) as thumb:
         assert (thumb.width > thumb.height) == (photo.width > photo.height)
+
+
+@pytest.mark.parametrize("image_format, extension", [("PNG", ".jpg"), ("GIF", ".jpeg"), ("JPEG", ".png")])
+def test_process_photo_skips_extension_format_mismatch(tmp_path, image_format, extension):
+    """A file whose content doesn't match its extension is skipped with a clear message."""
+    photo = tmp_path / f"photo{extension}"
+    Image.new("RGB", (400, 300)).save(photo, format=image_format)
+
+    with pytest.raises(PhotoProcessingFailure, match=f"{image_format} image found but file has a {extension}"):
+        Photo.process_photo("/ext", str(photo), photo.name, "photo", str(tmp_path), None)
