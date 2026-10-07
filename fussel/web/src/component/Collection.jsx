@@ -13,7 +13,7 @@ import 'swiper/css/navigation'
 import 'swiper/css/pagination'
 import Modal from 'react-modal';
 
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 import "./Collection.css";
 import TimelineScrollbar from "./TimelineScrollbar";
 

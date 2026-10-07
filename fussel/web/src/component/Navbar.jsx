@@ -1,5 +1,5 @@
 import React from "react";
-import { Outlet, NavLink } from "react-router-dom";
+import { Outlet, NavLink } from "react-router";
 import "./Navbar.css";
 import logo from '../images/animal-track-transparent-2.png';
 

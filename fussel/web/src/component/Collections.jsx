@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import { albums_data } from "../_gallery/albums_data.js"
 import { people_data } from "../_gallery/people_data.js"
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 import "./Collections.css";
 
 import withRouter from './withRouter';

@@ -3,7 +3,7 @@
  */
 import React from 'react';
 import { render, screen } from '@testing-library/react';
-import { HashRouter } from 'react-router-dom';
+import { HashRouter } from 'react-router';
 import App from './App';
 
 // Mock site_data
