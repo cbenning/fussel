@@ -1,11 +1,13 @@
+{#- Emit a string as a single-quoted YAML scalar: the only escape needed is doubling a single quote. -#}
+{% macro q(value) %}'{{ value | replace("'", "''") }}'{% endmacro -%}
 
 gallery:
   # Path to the root of your photo files
-  input_path: {{ INPUT_PATH }}
+  input_path: {{ q(INPUT_PATH) }}
 
   # Path to output the site to
   # Default: "site/"
-  output_path: {{ OUTPUT_PATH | default('site/', true) }}
+  output_path: {{ q(OUTPUT_PATH | default('site/', true)) }}
 
   # Setting to True will force a full rebuild of the gallery photos.
   # Setting to False will only generate files which are missing or added
@@ -34,7 +36,7 @@ gallery:
     # - {parent_album} will be replaced with the parent album
     # - {album} will be replaced with the album name
     # Default: "{parent_album} > {album}"
-    recursive_name_pattern: {{ RECURSIVE_NAME_PATTERN | default('{parent_album} > {album}', true) }}
+    recursive_name_pattern: {{ q(RECURSIVE_NAME_PATTERN | default('{parent_album} > {album}', true)) }}
 
   people:
     # Face Tag detection.
@@ -51,7 +53,7 @@ gallery:
     # Specify path to custom watermark
     # Should be a transparent png
     # Default: "web/src/images/fussel-watermark.png"
-    path: {{ WATERMARK_PATH | default('web/src/images/fussel-watermark.png', true) }}
+    path: {{ q(WATERMARK_PATH | default('web/src/images/fussel-watermark.png', true)) }}
 
     # Watermark size ratio (0.0 -> 1.0)
     # Default: 0.3
@@ -63,8 +65,8 @@ site:
   # If you host this service at http://<site>/my/photo/album/ set to 'http://<site>/my/photo/album/'
   # Include trailing slash
   # Default: "/"
-  http_root: {{ SITE_ROOT | default('/', true) }}
+  http_root: {{ q(SITE_ROOT | default('/', true)) }}
 
   # Title shown at the top of the browser tab
   # Default: "Fussel Gallery"
-  title: {{ SITE_TITLE | default('Fussel Gallery', true) }}
+  title: {{ q(SITE_TITLE | default('Fussel Gallery', true)) }}
