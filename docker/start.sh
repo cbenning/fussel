@@ -8,21 +8,7 @@ source .venv/bin/activate
 
 echo "Generating yaml config..."
 
-jinja2 \
-    -D INPUT_PATH="\"${INPUT_PATH}\"" \
-    -D OUTPUT_PATH="\"${OUTPUT_PATH}\"" \
-    -D OVERWRITE="${OVERWRITE}" \
-    -D EXIF_TRANSPOSE="${EXIF_TRANSPOSE}" \
-    -D RECURSIVE="${RECURSIVE}" \
-    -D RECURSIVE_NAME_PATTERN="\"${RECURSIVE_NAME_PATTERN}\"" \
-    -D FACE_TAG_ENABLE="${FACE_TAG_ENABLE}" \
-    -D WATERMARK_ENABLE="${WATERMARK_ENABLE}" \
-    -D WATERMARK_PATH="\"${WATERMARK_PATH}\"" \
-    -D WATERMARK_SIZE_RATIO="${WATERMARK_SIZE_RATIO}" \
-    -D SITE_ROOT="\"${SITE_ROOT}\"" \
-    -D SITE_TITLE="\"${SITE_TITLE}\"" \
-    -D PARALLEL_TASKS="${PARALLEL_TASKS}" \
-    ../template_config.yml > config.yml
+../generate_config.sh ../template_config.yml > config.yml
 
 cat config.yml
 

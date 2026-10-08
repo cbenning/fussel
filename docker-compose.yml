@@ -24,10 +24,11 @@ services:
       - PARALLEL_TASKS=${PARALLEL_TASKS:-4}
       - OVERWRITE=${OVERWRITE:-False}
       - EXIF_TRANSPOSE=${EXIF_TRANSPOSE:-False}
+      - ALLOW_DOWNLOAD=${ALLOW_DOWNLOAD:-True}
 
       # Album options
       - RECURSIVE=${RECURSIVE:-True}
-      - RECURSIVE_NAME_PATTERN=${RECURSIVE_NAME_PATTERN:-"{parent_album} > {album}"}
+      - RECURSIVE_NAME_PATTERN=${RECURSIVE_NAME_PATTERN:-}
 
       # People/Face detection
       - FACE_TAG_ENABLE=${FACE_TAG_ENABLE:-True}

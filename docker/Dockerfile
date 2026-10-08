@@ -21,6 +21,7 @@ ENV PATH="/root/.local/bin:$PATH"
 WORKDIR /
 
 COPY docker/start.sh /
+COPY docker/generate_config.sh /
 COPY docker/template_config.yml /
 
 CMD ["/start.sh"]
