@@ -11,7 +11,7 @@ from urllib.parse import quote
 
 from bs4 import BeautifulSoup
 from PIL import Image, ImageFile, ImageOps, UnidentifiedImageError
-from PIL.ExifTags import TAGS
+from PIL.ExifTags import GPS, IFD, Base
 from PIL.Image import registered_extensions
 from rich import print
 
@@ -29,7 +29,8 @@ from .util import (
 
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
-EXIF_IFD = 0x8769  # pointer to the Exif sub-IFD
+# DateTimeOriginal, DateTimeDigitized, DateTime, in order of preference
+EXIF_DATE_TAGS = (Base.DateTimeOriginal, Base.DateTimeDigitized, Base.DateTime)
 XMP_MARKER = "http://ns.adobe.com/xap/1.0/"
 XMP_DATE_FIELDS = [
     "photoshop:DateCreated",
@@ -322,95 +323,62 @@ class Photo:
     def _extract_date(cls, photo):
         """Extract the capture date from a photo file.
 
-        Tries four methods in order: getexif(), _getexif(), XMP APP1 segment,
-        and finally the file modification time.  Returns an ISO-format date
-        string, or None if nothing could be found.
+        Tries EXIF, then XMP, then the file modification time. Returns an ISO-format
+        date string, or None if nothing could be found.
         """
         date_str = None
 
-        # Method 1: Try getexif() (PIL 8.0+)
         try:
             with Image.open(photo) as im:
-                if hasattr(im, "getexif"):
-                    base_exif = im.getexif()
-                    if base_exif is not None and len(base_exif) > 0:
-                        # DateTimeOriginal and DateTimeDigitized live in the Exif sub-IFD
-                        exif = dict(base_exif)
-                        exif.update(base_exif.get_ifd(EXIF_IFD))
-                        # 36867 = DateTimeOriginal, 36868 = DateTimeDigitized, 306 = DateTime
-                        for tag_id in [36867, 36868, 306]:
-                            if tag_id in exif:
-                                value = exif[tag_id]
-                                if value and isinstance(value, str):
-                                    try:
-                                        date_str = datetime.strptime(value, "%Y:%m:%d %H:%M:%S").isoformat()
-                                        break
-                                    except (ValueError, TypeError):
-                                        pass
-
-                        if not date_str:
-                            for tag_id, value in exif.items():
-                                if not value or not isinstance(value, str):
-                                    continue
-                                tag_name = TAGS.get(tag_id, "")
-                                if tag_name in ["DateTimeOriginal", "DateTimeDigitized", "DateTime"]:
-                                    try:
-                                        date_str = datetime.strptime(value, "%Y:%m:%d %H:%M:%S").isoformat()
-                                        break
-                                    except (ValueError, TypeError):
-                                        pass
+                date_str = cls._exif_date(im) or cls._xmp_date(im)
         except Exception:
             pass
 
-        # Method 2: Fallback to _getexif()
         if not date_str:
             try:
-                with Image.open(photo) as im:
-                    if hasattr(im, "_getexif"):
-                        exif_old = im._getexif()
-                        if exif_old is not None:
-                            for tag_id in [36867, 36868, 306]:
-                                if tag_id in exif_old:
-                                    value = exif_old[tag_id]
-                                    if value and isinstance(value, str):
-                                        try:
-                                            date_str = datetime.strptime(value, "%Y:%m:%d %H:%M:%S").isoformat()
-                                            break
-                                        except (ValueError, TypeError):
-                                            pass
-            except Exception:
-                pass
-
-        # Method 3: Try XMP metadata
-        if not date_str:
-            try:
-                with Image.open(photo) as im:
-                    for packet in _iter_xmp_packets(im):
-                        for desc in _parse_xmp(packet):
-                            # html.parser lowercases attribute names, so compare case-insensitively
-                            attrs = {k.lower(): v for k, v in desc.attrs.items()}
-                            for field in XMP_DATE_FIELDS:
-                                value = attrs.get(field.lower()) or attrs.get(field.split(":")[-1].lower())
-                                if value:
-                                    date_str = _parse_xmp_date(value)
-                                if date_str:
-                                    break
-                            if date_str:
-                                break
-                        if date_str:
-                            break
-            except Exception:
-                pass
-
-        # Method 4: Fallback to file modification time
-        if not date_str:
-            try:
-                mtime = os.path.getmtime(photo)
-                date_str = datetime.fromtimestamp(mtime).isoformat()
+                date_str = datetime.fromtimestamp(os.path.getmtime(photo)).isoformat()
             except Exception:
                 pass
 
         return date_str
+
+    @staticmethod
+    def _exif_date(im):
+        """Return the capture date from EXIF (base IFD plus Exif sub-IFD), or None."""
+        try:
+            base_exif = im.getexif()
+            if not base_exif:
+                return None
+            # DateTimeOriginal and DateTimeDigitized live in the Exif sub-IFD
+            exif = dict(base_exif)
+            exif.update(base_exif.get_ifd(IFD.Exif))
+            for tag_id in EXIF_DATE_TAGS:
+                value = exif.get(tag_id)
+                if value and isinstance(value, str):
+                    try:
+                        return datetime.strptime(value, "%Y:%m:%d %H:%M:%S").isoformat()
+                    except (ValueError, TypeError):
+                        continue
+        except Exception:
+            pass
+        return None
+
+    @staticmethod
+    def _xmp_date(im):
+        """Return the capture date from embedded XMP, or None."""
+        try:
+            for packet in _iter_xmp_packets(im):
+                for desc in _parse_xmp(packet):
+                    # html.parser lowercases attribute names, so compare case-insensitively
+                    attrs = {k.lower(): v for k, v in desc.attrs.items()}
+                    for field in XMP_DATE_FIELDS:
+                        value = attrs.get(field.lower()) or attrs.get(field.split(":")[-1].lower())
+                        date_str = _parse_xmp_date(value) if value else None
+                        if date_str:
+                            return date_str
+        except Exception:
+            pass
+        return None
 
     @classmethod
     def _extract_exif(cls, photo):
@@ -463,11 +431,16 @@ class Photo:
                     return result
                 # Shot settings, lens and color space live in the Exif sub-IFD, not in the base IFD
                 exif = dict(base_exif)
-                exif.update(base_exif.get_ifd(EXIF_IFD))
+                exif.update(base_exif.get_ifd(IFD.Exif))
 
                 # Camera
                 camera = {}
-                for tag_id, field in [(271, "make"), (272, "model"), (42036, "lens"), (305, "software")]:
+                for tag_id, field in [
+                    (Base.Make, "make"),
+                    (Base.Model, "model"),
+                    (Base.LensModel, "lens"),
+                    (Base.Software, "software"),
+                ]:
                     val = exif.get(tag_id)
                     if val and isinstance(val, str) and val.strip():
                         camera[field] = val.strip()
@@ -477,7 +450,7 @@ class Photo:
                 # Shot
                 shot = {}
 
-                exp = exif.get(33434)
+                exp = exif.get(Base.ExposureTime)
                 if exp is not None:
                     try:
                         f = float(exp)
@@ -488,44 +461,44 @@ class Photo:
                     except Exception:
                         pass
 
-                fnumber = exif.get(33437)
+                fnumber = exif.get(Base.FNumber)
                 if fnumber is not None:
                     try:
                         shot["aperture"] = f"f/{float(fnumber):.1f}"
                     except Exception:
                         pass
 
-                iso = exif.get(34855)
+                iso = exif.get(Base.ISOSpeedRatings)
                 if iso is not None:
                     shot["iso"] = str(iso)
 
-                fl = exif.get(37386)
+                fl = exif.get(Base.FocalLength)
                 if fl is not None:
                     try:
                         shot["focal_length"] = f"{float(fl):.0f}mm"
                     except Exception:
                         pass
 
-                ep = exif.get(34850)
+                ep = exif.get(Base.ExposureProgram)
                 if ep is not None:
                     shot["exposure_program"] = exposure_programs.get(ep, str(ep))
 
-                ec = exif.get(37380)
+                ec = exif.get(Base.ExposureBiasValue)
                 if ec is not None:
                     try:
                         shot["exposure_compensation"] = f"{float(ec):+.1f} EV"
                     except Exception:
                         pass
 
-                mm = exif.get(37383)
+                mm = exif.get(Base.MeteringMode)
                 if mm is not None:
                     shot["metering_mode"] = metering_modes.get(mm, str(mm))
 
-                wb = exif.get(41987)
+                wb = exif.get(Base.WhiteBalance)
                 if wb is not None:
                     shot["white_balance"] = "Auto" if wb == 0 else "Manual"
 
-                flash = exif.get(37385)
+                flash = exif.get(Base.Flash)
                 if flash is not None:
                     shot["flash"] = flash_values.get(flash, f"0x{flash:02x}")
 
@@ -533,7 +506,7 @@ class Photo:
                     result["shot"] = shot
 
                 # Image
-                cs = exif.get(40961)
+                cs = exif.get(Base.ColorSpace)
                 if cs is not None:
                     if cs == 1:
                         result["image"] = {"color_space": "sRGB"}
@@ -544,10 +517,10 @@ class Photo:
 
                 # Rights
                 rights = {}
-                artist = exif.get(315)
+                artist = exif.get(Base.Artist)
                 if artist and isinstance(artist, str) and artist.strip():
                     rights["artist"] = artist.strip()
-                copyright_val = exif.get(33432)
+                copyright_val = exif.get(Base.Copyright)
                 if copyright_val and isinstance(copyright_val, str) and copyright_val.strip():
                     rights["copyright"] = copyright_val.strip()
                 if rights:
@@ -555,15 +528,15 @@ class Photo:
 
                 # GPS
                 try:
-                    gps_ifd = base_exif.get_ifd(34853)
+                    gps_ifd = base_exif.get_ifd(IFD.GPSInfo)
                     if gps_ifd:
                         gps = {}
-                        lat_ref = gps_ifd.get(1)
-                        lat = gps_ifd.get(2)
-                        lon_ref = gps_ifd.get(3)
-                        lon = gps_ifd.get(4)
-                        alt_ref = gps_ifd.get(5)
-                        alt = gps_ifd.get(6)
+                        lat_ref = gps_ifd.get(GPS.GPSLatitudeRef)
+                        lat = gps_ifd.get(GPS.GPSLatitude)
+                        lon_ref = gps_ifd.get(GPS.GPSLongitudeRef)
+                        lon = gps_ifd.get(GPS.GPSLongitude)
+                        alt_ref = gps_ifd.get(GPS.GPSAltitudeRef)
+                        alt = gps_ifd.get(GPS.GPSAltitude)
 
                         if lat and lon and lat_ref and lon_ref:
 
@@ -578,7 +551,9 @@ class Photo:
 
                         if alt is not None:
                             try:
-                                gps["altitude"] = f"{float(alt):.0f}m {'below' if alt_ref else 'above'} sea level"
+                                # GPSAltitudeRef is a BYTE: Pillow returns b"\x00" or b"\x01", both truthy
+                                below = alt_ref in (1, b"\x01")
+                                gps["altitude"] = f"{float(alt):.0f}m {'below' if below else 'above'} sea level"
                             except Exception:
                                 pass
 
@@ -630,7 +605,7 @@ class Photo:
             with Image.open(new_original_photo) as im:
                 width, height = im.size
                 # EXIF orientations 5-8 are 90 degree rotations, so transposed output has width and height swapped
-                if Config.instance().exif_transpose and im.getexif().get(274) in (5, 6, 7, 8):
+                if Config.instance().exif_transpose and im.getexif().get(Base.Orientation) in (5, 6, 7, 8):
                     width, height = height, width
                 original_size = (width, height)
         except UnidentifiedImageError as e:
