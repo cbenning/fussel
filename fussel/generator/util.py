@@ -23,6 +23,10 @@ def is_supported_photo(path):
 def find_unique_slug(slugs, lock, name):
 
     slug = slugify(name, allow_unicode=False, max_length=0, word_boundary=True, separator="-", save_order=True)
+    if not slug:
+        # Names with nothing to transliterate (only emoji or symbols) would otherwise get an
+        # empty slug, which puts their files in the parent folder and breaks their URLs
+        slug = "untitled"
     lock.acquire()
     try:
         if slug not in slugs:
