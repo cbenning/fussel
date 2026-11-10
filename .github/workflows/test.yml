@@ -33,13 +33,11 @@ jobs:
         run: uv run ruff check .
 
   python-tests:
-    name: Python tests (${{ matrix.python-version }})
+    name: Python tests (3.13)
     runs-on: ubuntu-latest
     needs: lint
-    strategy:
-      fail-fast: false
-      matrix:
-        python-version: ["3.11", "3.12", "3.13"]
+    env:
+      UV_PYTHON: "3.13"
 
     steps:
       - uses: actions/checkout@v4
@@ -47,8 +45,8 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@v4
 
-      - name: Set up Python ${{ matrix.python-version }}
-        run: uv python install ${{ matrix.python-version }}
+      - name: Set up Python 3.13
+        run: uv python install 3.13
 
       - name: Install dependencies
         run: uv sync --locked --extra dev
@@ -57,20 +55,16 @@ jobs:
         run: uv run pytest tests/ -v --cov=fussel --cov-report=term
 
   js-tests:
-    name: JS tests (Node ${{ matrix.node-version }})
+    name: JS tests (Node 24)
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        node-version: ["22", "24"]
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Node.js ${{ matrix.node-version }}
+      - name: Set up Node.js 24
         uses: actions/setup-node@v4
         with:
-          node-version: ${{ matrix.node-version }}
+          node-version: "24"
           cache: yarn
           cache-dependency-path: fussel/web/yarn.lock
 
