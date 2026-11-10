@@ -151,9 +151,7 @@ class TestPhoto:
         mock_shutil.copyfile.return_value = None
 
         # Test
-        from multiprocessing import Queue
-
-        people_q = Queue()
+        face_jobs = []
 
         result = Photo.process_photo(
             external_path="/external",
@@ -161,7 +159,7 @@ class TestPhoto:
             filename="photo.jpg",
             slug="photo",
             output_path="/output",
-            people_q=people_q,
+            face_jobs=face_jobs,
         )
 
         assert result is not None
@@ -183,11 +181,9 @@ class TestPhoto:
         mock_image.open.return_value.__enter__.return_value = mock_img
         mock_image.open.return_value.__exit__.return_value = None
 
-        from multiprocessing import Queue
-
         from fussel.generator.generate import PhotoProcessingFailure
 
-        people_q = Queue()
+        face_jobs = []
 
         with pytest.raises(PhotoProcessingFailure, match="Image Verification"):
             Photo.process_photo(
@@ -196,7 +192,7 @@ class TestPhoto:
                 filename="bad_photo.jpg",
                 slug="bad-photo",
                 output_path="/output",
-                people_q=people_q,
+                face_jobs=face_jobs,
             )
 
     @patch("fussel.generator.generate.Config")
@@ -270,9 +266,7 @@ class TestPhoto:
 
         mock_shutil.copyfile.return_value = None
 
-        from multiprocessing import Queue
-
-        people_q = Queue()
+        face_jobs = []
 
         result = Photo.process_photo(
             external_path="/external",
@@ -280,7 +274,7 @@ class TestPhoto:
             filename="photo.jpg",
             slug="photo",
             output_path="/output",
-            people_q=people_q,
+            face_jobs=face_jobs,
         )
 
         assert result is not None
@@ -353,9 +347,7 @@ class TestPhoto:
         ]
         mock_shutil.copyfile.return_value = None
 
-        from multiprocessing import Queue
-
-        people_q = Queue()
+        face_jobs = []
 
         result = Photo.process_photo(
             external_path="/external",
@@ -363,7 +355,7 @@ class TestPhoto:
             filename="photo.jpg",
             slug="photo",
             output_path="/output",
-            people_q=people_q,
+            face_jobs=face_jobs,
         )
 
         assert result is not None
@@ -402,9 +394,7 @@ class TestPhoto:
 
         mock_shutil.copyfile.return_value = None
 
-        from multiprocessing import Queue
-
-        people_q = Queue()
+        face_jobs = []
 
         result = Photo.process_photo(
             external_path="/external",
@@ -412,7 +402,7 @@ class TestPhoto:
             filename="photo.jpg",
             slug="photo",
             output_path="/output",
-            people_q=people_q,
+            face_jobs=face_jobs,
         )
 
         assert result is not None
@@ -479,9 +469,7 @@ class TestPhotoUnidentifiedImageError:
         ]
         mock_exists.return_value = True  # file exists at cleanup time
 
-        from multiprocessing import Queue
-
-        people_q = Queue()
+        face_jobs = []
 
         with pytest.raises(PhotoProcessingFailure):
             Photo.process_photo(
@@ -490,7 +478,7 @@ class TestPhotoUnidentifiedImageError:
                 filename="photo.jpg",
                 slug="photo",
                 output_path="/output",
-                people_q=people_q,
+                face_jobs=face_jobs,
             )
 
         mock_remove.assert_called_once()
@@ -532,9 +520,7 @@ class TestPhotoUnidentifiedImageError:
         ]
         mock_exists.return_value = False  # file was never written
 
-        from multiprocessing import Queue
-
-        people_q = Queue()
+        face_jobs = []
 
         with pytest.raises(PhotoProcessingFailure):
             Photo.process_photo(
@@ -543,7 +529,7 @@ class TestPhotoUnidentifiedImageError:
                 filename="photo.jpg",
                 slug="photo",
                 output_path="/output",
-                people_q=people_q,
+                face_jobs=face_jobs,
             )
 
         mock_remove.assert_not_called()

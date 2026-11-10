@@ -192,29 +192,21 @@ class TestAlbumsMethods:
             srcSet={},
         )
         mock_pool_instance = MagicMock()
-        mock_pool_instance.__enter__.return_value.map.return_value = [("/input/photo1.jpg", mock_photo)]
+        mock_pool_instance.__enter__.return_value.map.return_value = [("/input/photo1.jpg", mock_photo, [])]
         mock_pool.return_value = mock_pool_instance
 
         mock_people.instance.return_value.detect_faces = Mock()
         mock_people.instance.return_value.detect_faces.return_value = []
 
-        # Mock Queue
-        from unittest.mock import MagicMock as MockQueue
+        mock_yaml_config = Mock()
 
-        with patch("fussel.generator.generate.Queue") as mock_queue_class:
-            mock_queue = MockQueue()
-            mock_queue.empty.return_value = True
-            mock_queue_class.return_value = mock_queue
+        albums.process_album_path(
+            album_dir="/input/album1",
+            album_name="Album 1",
+            output_albums_photos_path="/output",
+            external_root="/external",
+            yaml_config=mock_yaml_config,
+        )
 
-            mock_yaml_config = Mock()
-
-            albums.process_album_path(
-                album_dir="/input/album1",
-                album_name="Album 1",
-                output_albums_photos_path="/output",
-                external_root="/external",
-                yaml_config=mock_yaml_config,
-            )
-
-            # Verify album was added
-            assert len(albums.albums) > 0 or mock_find_slug.called
+        # Verify album was added
+        assert len(albums.albums) > 0 or mock_find_slug.called
