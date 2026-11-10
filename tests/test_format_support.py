@@ -62,6 +62,21 @@ def make_exif(orientation=None):
     return exif
 
 
+def make_camera_exif():
+    """EXIF laid out as cameras write it: shot settings live in the Exif sub-IFD."""
+    exif = Image.Exif()
+    exif[271] = "TestMake"
+    sub = exif.get_ifd(0x8769)
+    sub[36867] = EXIF_DATE
+    sub[33434] = 0.01
+    sub[33437] = 2.8
+    sub[34855] = 400
+    sub[37386] = 50.0
+    sub[41987] = 0
+    sub[40961] = 1
+    return exif
+
+
 def save_image(path, exif=None):
     kwargs = {"exif": exif} if exif is not None else {}
     Image.new("RGB", SIZE, "red").save(path, **kwargs)
@@ -218,6 +233,22 @@ class TestExifAndDate:
     def test_xmp_date_is_used_without_exif(self, tmp_path, ext):
         path = save_with_xmp(tmp_path / f"img{ext}", DATE_XMP)
 
+        assert Photo._extract_date(path) == EXIF_DATE_ISO
+
+    @pytest.mark.parametrize("ext", EXIF_FORMATS)
+    def test_shot_settings_are_read_from_exif_sub_ifd(self, tmp_path, ext):
+        path = save_image(tmp_path / f"img{ext}", exif=make_camera_exif())
+
+        info = Photo._extract_exif(path)
+
+        assert info["shot"] == {
+            "exposure": "1/100s",
+            "aperture": "f/2.8",
+            "iso": "400",
+            "focal_length": "50mm",
+            "white_balance": "Auto",
+        }
+        assert info["image"] == {"color_space": "sRGB"}
         assert Photo._extract_date(path) == EXIF_DATE_ISO
 
     @pytest.mark.parametrize("ext", ALL_FORMATS)
