@@ -4,7 +4,13 @@ on:
   push:
     branches: [ main ]
   pull_request:
-    branches: [ main ]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
 
@@ -18,7 +24,7 @@ jobs:
         uses: astral-sh/setup-uv@v4
 
       - name: Install dependencies
-        run: uv sync --extra dev
+        run: uv sync --locked --extra dev
 
       - name: Ruff format check
         run: uv run ruff format --check .
@@ -45,7 +51,7 @@ jobs:
         run: uv python install ${{ matrix.python-version }}
 
       - name: Install dependencies
-        run: uv sync --extra dev
+        run: uv sync --locked --extra dev
 
       - name: Run tests
         run: uv run pytest tests/ -v --cov=fussel --cov-report=term
@@ -82,4 +88,8 @@ jobs:
 
       - name: Run JS tests
         run: yarn test
+        working-directory: fussel/web
+
+      - name: Build web app
+        run: yarn build
         working-directory: fussel/web
