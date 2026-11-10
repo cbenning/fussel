@@ -29,6 +29,7 @@ from .util import (
 
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
+EXIF_IFD = 0x8769  # pointer to the Exif sub-IFD
 XMP_MARKER = "http://ns.adobe.com/xap/1.0/"
 XMP_DATE_FIELDS = [
     "photoshop:DateCreated",
@@ -331,8 +332,11 @@ class Photo:
         try:
             with Image.open(photo) as im:
                 if hasattr(im, "getexif"):
-                    exif = im.getexif()
-                    if exif is not None and len(exif) > 0:
+                    base_exif = im.getexif()
+                    if base_exif is not None and len(base_exif) > 0:
+                        # DateTimeOriginal and DateTimeDigitized live in the Exif sub-IFD
+                        exif = dict(base_exif)
+                        exif.update(base_exif.get_ifd(EXIF_IFD))
                         # 36867 = DateTimeOriginal, 36868 = DateTimeDigitized, 306 = DateTime
                         for tag_id in [36867, 36868, 306]:
                             if tag_id in exif:
@@ -454,9 +458,12 @@ class Photo:
             with Image.open(photo) as im:
                 if not hasattr(im, "getexif"):
                     return result
-                exif = im.getexif()
-                if not exif:
+                base_exif = im.getexif()
+                if not base_exif:
                     return result
+                # Shot settings, lens and color space live in the Exif sub-IFD, not in the base IFD
+                exif = dict(base_exif)
+                exif.update(base_exif.get_ifd(EXIF_IFD))
 
                 # Camera
                 camera = {}
@@ -548,7 +555,7 @@ class Photo:
 
                 # GPS
                 try:
-                    gps_ifd = exif.get_ifd(34853)
+                    gps_ifd = base_exif.get_ifd(34853)
                     if gps_ifd:
                         gps = {}
                         lat_ref = gps_ifd.get(1)
