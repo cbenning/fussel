@@ -615,6 +615,7 @@ class Photo:
 
         sizes = Config.instance().photo_sizes
         largest_src = None
+        generated = set()  # files written in this run
         largest_generated = False
         smallest_src = None
 
@@ -632,13 +633,15 @@ class Photo:
 
             # Only generate if overwrite explicitly asked for or if doesn't exist
             msg += f"[cyan]{new_size[0]}x{new_size[1]}[/cyan] "
-            largest_generated = Config.instance().overwrite or not os.path.exists(new_sub_photo)
-            if largest_generated:
+            # Sizes larger than the photo all map to the same file, so skip one already written in this run
+            if new_sub_photo not in generated and (Config.instance().overwrite or not os.path.exists(new_sub_photo)):
                 with Image.open(new_original_photo) as im:
                     if Config.instance().exif_transpose:
                         im = ImageOps.exif_transpose(im)
                     im.thumbnail(new_size)
                     im.save(new_sub_photo)
+                generated.add(new_sub_photo)
+            largest_generated = new_sub_photo in generated
             srcSet[str(size) + "w"] = ["%s/%s" % (quote(external_path), quote(os.path.basename(new_sub_photo)))]
 
         print(msg)
@@ -900,6 +903,13 @@ class SiteGenerator:
         self.unique_person_slugs = {}
 
     def generate(self):
+
+        if Config.instance().watermark_enabled and not os.path.isfile(Config.instance().watermark_path):
+            print(
+                f"[red]Watermark image not found:[/red] [magenta]{Config.instance().watermark_path}[/magenta]\n"
+                "Set gallery.watermark.path to an existing image, or set gallery.watermark.enable to False."
+            )
+            raise SystemExit(1)
 
         print(f"[bold]Generating site from [magenta]{Config.instance().input_photos_dir}[magenta][/bold]")
         output_photos_path = os.path.normpath(

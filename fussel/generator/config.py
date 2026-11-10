@@ -1,11 +1,26 @@
 import os
 
 DEFAULT_WATERMARK_PATH = "web/src/images/fussel-watermark.png"
+# The "fussel" package folder. The web app and the bundled watermark live under it.
+PACKAGE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DEFAULT_WATERMARK_SIZE_RATIO = 0.3
 DEFAULT_RECURSIVE_ALBUMS_NAME_PATTERN = "{parent_album} > {album}"
 DEFAULT_OUTPUT_PHOTOS_PATH = "site/"
 DEFAULT_SITE_TITLE = "Fussel Gallery"
 DEFAULT_PHOTO_SIZES = [(500, 500), (800, 800), (1024, 1024), (1600, 1600)]
+
+
+def resolve_watermark_path(path):
+    """Find the watermark image for a configured path.
+
+    A relative path is looked up in the current directory first, then in the fussel package
+    folder, where the bundled watermark lives. The default path is relative to the package
+    folder, but the process usually runs from somewhere else (the Docker image runs from /).
+    """
+    if os.path.isabs(path) or os.path.exists(path):
+        return path
+    packaged = os.path.join(PACKAGE_DIR, path)
+    return packaged if os.path.exists(packaged) else path
 
 
 class Config:
@@ -58,7 +73,9 @@ class Config:
         instance.albums_enabled = bool(yaml_config.getKey("gallery.albums.enable", True))
         instance.photos_enabled = bool(yaml_config.getKey("gallery.photos.enable", True))
         instance.watermark_enabled = bool(yaml_config.getKey("gallery.watermark.enable", True))
-        instance.watermark_path = str(yaml_config.getKey("gallery.watermark.path", DEFAULT_WATERMARK_PATH))
+        instance.watermark_path = resolve_watermark_path(
+            str(yaml_config.getKey("gallery.watermark.path", DEFAULT_WATERMARK_PATH))
+        )
         instance.watermark_ratio = float(
             yaml_config.getKey("gallery.watermark.size_ratio", DEFAULT_WATERMARK_SIZE_RATIO)
         )

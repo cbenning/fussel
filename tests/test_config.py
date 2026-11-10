@@ -2,11 +2,19 @@
 Tests for fussel.generator.config module.
 """
 
+import os
 from unittest.mock import Mock, patch
 
 import pytest
 
-from fussel.generator.config import DEFAULT_PHOTO_SIZES, DEFAULT_WATERMARK_PATH, DEFAULT_WATERMARK_SIZE_RATIO, Config
+from fussel.generator.config import (
+    DEFAULT_PHOTO_SIZES,
+    DEFAULT_WATERMARK_PATH,
+    DEFAULT_WATERMARK_SIZE_RATIO,
+    PACKAGE_DIR,
+    Config,
+    resolve_watermark_path,
+)
 
 
 class TestConfigSingleton:
@@ -108,7 +116,7 @@ class TestConfigInitialization:
 
         assert instance.people_enabled is True  # Default
         assert instance.watermark_enabled is True  # Default
-        assert instance.watermark_path == DEFAULT_WATERMARK_PATH  # Default
+        assert instance.watermark_path == resolve_watermark_path(DEFAULT_WATERMARK_PATH)  # Default
         assert instance.watermark_ratio == DEFAULT_WATERMARK_SIZE_RATIO  # Default
         assert instance.recursive_albums is True  # Default
         assert instance.overwrite is False  # Default
@@ -218,3 +226,29 @@ class TestConfigInitialization:
         instance = Config.instance()
 
         assert instance.photo_sizes == [(320, 320), (640, 640)]
+
+
+class TestResolveWatermarkPath:
+    def test_default_path_finds_bundled_watermark_from_any_directory(self, tmp_path, monkeypatch):
+        """The Docker image runs from /, so the default relative path must not depend on the cwd."""
+        monkeypatch.chdir(tmp_path)
+
+        resolved = resolve_watermark_path(DEFAULT_WATERMARK_PATH)
+
+        assert os.path.isabs(resolved)
+        assert os.path.isfile(resolved)
+        assert resolved == os.path.join(PACKAGE_DIR, DEFAULT_WATERMARK_PATH)
+
+    def test_path_relative_to_cwd_wins(self, tmp_path, monkeypatch):
+        (tmp_path / "mine.png").write_bytes(b"x")
+        monkeypatch.chdir(tmp_path)
+
+        assert resolve_watermark_path("mine.png") == "mine.png"
+
+    def test_absolute_path_is_unchanged(self):
+        assert resolve_watermark_path("/custom/watermark.png") == "/custom/watermark.png"
+
+    def test_missing_path_is_returned_as_is(self, tmp_path, monkeypatch):
+        monkeypatch.chdir(tmp_path)
+
+        assert resolve_watermark_path("nope/missing.png") == "nope/missing.png"
