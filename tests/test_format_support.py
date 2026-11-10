@@ -8,6 +8,7 @@ from unittest.mock import Mock
 
 import pytest
 from PIL import Image, features
+from PIL.PngImagePlugin import PngInfo
 
 from fussel.generator.config import Config
 from fussel.generator.generate import People, Photo
@@ -25,7 +26,7 @@ EXIF_FORMATS = [
     ".png",
     pytest.param(".avif", marks=pytest.mark.skipif(not HAS_AVIF, reason="Pillow built without AVIF")),
 ]
-NON_JPEG_FORMATS = [f for f in ALL_FORMATS if f != ".jpg"]
+XMP_FORMATS = EXIF_FORMATS  # formats that can embed XMP
 
 SIZE = (100, 80)
 EXIF_DATE = "2020:01:02 03:04:05"
@@ -114,29 +115,72 @@ class TestResizeAndDownload:
             process(tmp_path, str(path))
 
 
+def save_with_xmp(path, xmp):
+    """Save a small image with raw XMP embedded in the format's native slot."""
+    im = Image.new("RGB", SIZE, "red")
+    if str(path).endswith(".png"):
+        info = PngInfo()
+        info.add_itxt("XML:com.adobe.xmp", xmp.decode("utf-8"))
+        im.save(path, pnginfo=info)
+    else:
+        im.save(path, xmp=xmp)
+    return str(path)
+
+
+FACE_XMP = (
+    b'<x:xmpmeta xmlns:x="adobe:ns:meta/"><rdf:RDF>'
+    b'<rdf:Description mwg-rs:type="Face" mwg-rs:name="Jane">'
+    b'<mwg-rs:Area stArea:x="0.5" stArea:y="0.5" stArea:w="0.2" stArea:h="0.3"/>'
+    b"</rdf:Description></rdf:RDF></x:xmpmeta>"
+)
+# Element-style MWG regions, as written by exiftool (rdf:parseType="Resource")
+FACE_XMP_ELEMENTS = (
+    b'<x:xmpmeta xmlns:x="adobe:ns:meta/"><rdf:RDF><rdf:Description>'
+    b'<mwg-rs:Regions rdf:parseType="Resource"><mwg-rs:RegionList><rdf:Bag>'
+    b'<rdf:li rdf:parseType="Resource">'
+    b"<mwg-rs:Name>Jane</mwg-rs:Name><mwg-rs:Type>Face</mwg-rs:Type>"
+    b'<mwg-rs:Area stArea:x="0.5" stArea:y="0.5" stArea:w="0.2" stArea:h="0.3" stArea:unit="normalized"/>'
+    b'</rdf:li><rdf:li rdf:parseType="Resource">'
+    b"<mwg-rs:Name>Bob</mwg-rs:Name><mwg-rs:Type>Face</mwg-rs:Type>"
+    b'<mwg-rs:Area stArea:x="0.1" stArea:y="0.2" stArea:w="0.1" stArea:h="0.1" stArea:unit="normalized"/>'
+    b"</rdf:li></rdf:Bag></mwg-rs:RegionList></mwg-rs:Regions></rdf:Description></rdf:RDF></x:xmpmeta>"
+)
+DATE_XMP = (
+    b'<x:xmpmeta xmlns:x="adobe:ns:meta/"><rdf:RDF>'
+    b'<rdf:Description xmlns:xmp="http://ns.adobe.com/xap/1.0/" xmp:CreateDate="2020-01-02T03:04:05"/>'
+    b"</rdf:RDF></x:xmpmeta>"
+)
+
+
 class TestFaceTags:
-    JPEG_XMP = (
-        b'<x:xmpmeta xmlns:x="adobe:ns:meta/"><rdf:RDF>'
-        b'<rdf:Description mwg-rs:type="Face" mwg-rs:name="Jane">'
-        b'<mwg-rs:Area stArea:x="0.5" stArea:y="0.5" stArea:w="0.2" stArea:h="0.3"/>'
-        b"</rdf:Description></rdf:RDF></x:xmpmeta>"
-    )
+    @pytest.mark.parametrize("ext", XMP_FORMATS)
+    def test_face_tags_are_read_from_xmp(self, tmp_path, ext):
+        path = save_with_xmp(tmp_path / f"face{ext}", FACE_XMP)
 
-    def test_jpeg_face_tags_are_read(self, tmp_path):
-        path = tmp_path / "face.jpg"
-        Image.new("RGB", SIZE, "red").save(path, xmp=self.JPEG_XMP)
-
-        faces = People.instance().extract_faces(str(path))
+        faces = People.instance().extract_faces(path)
 
         assert [f.name for f in faces] == ["Jane"]
 
-    @pytest.mark.parametrize("ext", NON_JPEG_FORMATS)
-    def test_non_jpeg_skips_faces_without_error(self, tmp_path, ext):
+    @pytest.mark.parametrize("ext", XMP_FORMATS)
+    def test_element_style_mwg_regions_are_read(self, tmp_path, ext):
+        path = save_with_xmp(tmp_path / f"face{ext}", FACE_XMP_ELEMENTS)
+
+        faces = People.instance().extract_faces(path)
+
+        assert [(f.name, f.geometry.x) for f in faces] == [("Jane", "0.5"), ("Bob", "0.1")]
+
+    def test_non_face_element_region_is_ignored(self, tmp_path):
+        xmp = FACE_XMP_ELEMENTS.replace(b"<mwg-rs:Type>Face</mwg-rs:Type>", b"<mwg-rs:Type>Pet</mwg-rs:Type>")
+        path = save_with_xmp(tmp_path / "pet.jpg", xmp)
+
+        assert People.instance().extract_faces(path) == []
+
+    def test_gif_has_no_faces_and_no_error(self, tmp_path):
         init_config()
-        photo, out = process(tmp_path, save_image(tmp_path / f"img{ext}"))
+        photo, out = process(tmp_path, save_image(tmp_path / "img.gif"))
         people = People.instance()
 
-        faces = people.detect_faces(photo, str(tmp_path / f"img{ext}"), str(out), str(out), "/ext")
+        faces = people.detect_faces(photo, str(tmp_path / "img.gif"), str(out), str(out), "/ext")
 
         assert faces == []
         assert photo.faces == []
@@ -150,6 +194,12 @@ class TestExifAndDate:
 
         assert Photo._extract_date(path) == EXIF_DATE_ISO
         assert Photo._extract_exif(path)["camera"]["make"] == "TestMake"
+
+    @pytest.mark.parametrize("ext", XMP_FORMATS)
+    def test_xmp_date_is_used_without_exif(self, tmp_path, ext):
+        path = save_with_xmp(tmp_path / f"img{ext}", DATE_XMP)
+
+        assert Photo._extract_date(path) == EXIF_DATE_ISO
 
     @pytest.mark.parametrize("ext", ALL_FORMATS)
     def test_without_exif_falls_back_to_mtime(self, tmp_path, ext):
