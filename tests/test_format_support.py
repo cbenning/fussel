@@ -10,6 +10,7 @@ import pytest
 from PIL import Image, features
 from PIL.PngImagePlugin import PngInfo
 
+from fussel.generator import generate
 from fussel.generator.config import Config
 from fussel.generator.generate import People, Photo
 
@@ -262,11 +263,6 @@ class TestWatermark:
             r, g, _ = marked.convert("RGB").getpixel((marked.width - 1, marked.height - 1))
         assert g > r
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason="Bug #190: generate.py skips watermark when overwrite is False, "
-        "because largest_src already exists by the time of the check",
-    )
     def test_watermark_is_applied_without_overwrite(self, tmp_path):
         watermark = tmp_path / "wm.png"
         Image.new("RGBA", (20, 20), (0, 255, 0, 255)).save(watermark)
@@ -284,3 +280,39 @@ class TestWatermark:
         with Image.open(out / resized_files(out)[0]) as marked:
             r, g, _ = marked.convert("RGB").getpixel((marked.width - 1, marked.height - 1))
         assert g > r
+
+    def test_rerun_without_overwrite_does_not_watermark_again(self, tmp_path, mocker):
+        watermark = tmp_path / "wm.png"
+        Image.new("RGBA", (20, 20), (0, 255, 0, 255)).save(watermark)
+        init_config(
+            **{
+                "gallery.watermark.enable": True,
+                "gallery.watermark.path": str(watermark),
+                "gallery.overwrite": False,
+            }
+        )
+        photo = save_image(tmp_path / "img.jpg")
+        spy = mocker.spy(generate, "apply_watermark")
+
+        process(tmp_path, photo)
+        process(tmp_path, photo)
+
+        assert spy.call_count == 1
+
+    def test_rerun_with_overwrite_watermarks_again(self, tmp_path, mocker):
+        watermark = tmp_path / "wm.png"
+        Image.new("RGBA", (20, 20), (0, 255, 0, 255)).save(watermark)
+        init_config(
+            **{
+                "gallery.watermark.enable": True,
+                "gallery.watermark.path": str(watermark),
+                "gallery.overwrite": True,
+            }
+        )
+        photo = save_image(tmp_path / "img.jpg")
+        spy = mocker.spy(generate, "apply_watermark")
+
+        process(tmp_path, photo)
+        process(tmp_path, photo)
+
+        assert spy.call_count == 2
