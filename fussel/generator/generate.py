@@ -11,7 +11,6 @@ from urllib.parse import quote
 
 from bs4 import BeautifulSoup
 from PIL import Image, ImageFile, ImageOps, UnidentifiedImageError
-from PIL.ExifTags import TAGS
 from PIL.Image import registered_extensions
 from rich import print
 
@@ -30,6 +29,8 @@ from .util import (
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 EXIF_IFD = 0x8769  # pointer to the Exif sub-IFD
+# DateTimeOriginal, DateTimeDigitized, DateTime, in order of preference
+EXIF_DATE_TAGS = (36867, 36868, 306)
 XMP_MARKER = "http://ns.adobe.com/xap/1.0/"
 XMP_DATE_FIELDS = [
     "photoshop:DateCreated",
@@ -322,95 +323,62 @@ class Photo:
     def _extract_date(cls, photo):
         """Extract the capture date from a photo file.
 
-        Tries four methods in order: getexif(), _getexif(), XMP APP1 segment,
-        and finally the file modification time.  Returns an ISO-format date
-        string, or None if nothing could be found.
+        Tries EXIF, then XMP, then the file modification time. Returns an ISO-format
+        date string, or None if nothing could be found.
         """
         date_str = None
 
-        # Method 1: Try getexif() (PIL 8.0+)
         try:
             with Image.open(photo) as im:
-                if hasattr(im, "getexif"):
-                    base_exif = im.getexif()
-                    if base_exif is not None and len(base_exif) > 0:
-                        # DateTimeOriginal and DateTimeDigitized live in the Exif sub-IFD
-                        exif = dict(base_exif)
-                        exif.update(base_exif.get_ifd(EXIF_IFD))
-                        # 36867 = DateTimeOriginal, 36868 = DateTimeDigitized, 306 = DateTime
-                        for tag_id in [36867, 36868, 306]:
-                            if tag_id in exif:
-                                value = exif[tag_id]
-                                if value and isinstance(value, str):
-                                    try:
-                                        date_str = datetime.strptime(value, "%Y:%m:%d %H:%M:%S").isoformat()
-                                        break
-                                    except (ValueError, TypeError):
-                                        pass
-
-                        if not date_str:
-                            for tag_id, value in exif.items():
-                                if not value or not isinstance(value, str):
-                                    continue
-                                tag_name = TAGS.get(tag_id, "")
-                                if tag_name in ["DateTimeOriginal", "DateTimeDigitized", "DateTime"]:
-                                    try:
-                                        date_str = datetime.strptime(value, "%Y:%m:%d %H:%M:%S").isoformat()
-                                        break
-                                    except (ValueError, TypeError):
-                                        pass
+                date_str = cls._exif_date(im) or cls._xmp_date(im)
         except Exception:
             pass
 
-        # Method 2: Fallback to _getexif()
         if not date_str:
             try:
-                with Image.open(photo) as im:
-                    if hasattr(im, "_getexif"):
-                        exif_old = im._getexif()
-                        if exif_old is not None:
-                            for tag_id in [36867, 36868, 306]:
-                                if tag_id in exif_old:
-                                    value = exif_old[tag_id]
-                                    if value and isinstance(value, str):
-                                        try:
-                                            date_str = datetime.strptime(value, "%Y:%m:%d %H:%M:%S").isoformat()
-                                            break
-                                        except (ValueError, TypeError):
-                                            pass
-            except Exception:
-                pass
-
-        # Method 3: Try XMP metadata
-        if not date_str:
-            try:
-                with Image.open(photo) as im:
-                    for packet in _iter_xmp_packets(im):
-                        for desc in _parse_xmp(packet):
-                            # html.parser lowercases attribute names, so compare case-insensitively
-                            attrs = {k.lower(): v for k, v in desc.attrs.items()}
-                            for field in XMP_DATE_FIELDS:
-                                value = attrs.get(field.lower()) or attrs.get(field.split(":")[-1].lower())
-                                if value:
-                                    date_str = _parse_xmp_date(value)
-                                if date_str:
-                                    break
-                            if date_str:
-                                break
-                        if date_str:
-                            break
-            except Exception:
-                pass
-
-        # Method 4: Fallback to file modification time
-        if not date_str:
-            try:
-                mtime = os.path.getmtime(photo)
-                date_str = datetime.fromtimestamp(mtime).isoformat()
+                date_str = datetime.fromtimestamp(os.path.getmtime(photo)).isoformat()
             except Exception:
                 pass
 
         return date_str
+
+    @staticmethod
+    def _exif_date(im):
+        """Return the capture date from EXIF (base IFD plus Exif sub-IFD), or None."""
+        try:
+            base_exif = im.getexif()
+            if not base_exif:
+                return None
+            # DateTimeOriginal and DateTimeDigitized live in the Exif sub-IFD
+            exif = dict(base_exif)
+            exif.update(base_exif.get_ifd(EXIF_IFD))
+            for tag_id in EXIF_DATE_TAGS:
+                value = exif.get(tag_id)
+                if value and isinstance(value, str):
+                    try:
+                        return datetime.strptime(value, "%Y:%m:%d %H:%M:%S").isoformat()
+                    except (ValueError, TypeError):
+                        continue
+        except Exception:
+            pass
+        return None
+
+    @staticmethod
+    def _xmp_date(im):
+        """Return the capture date from embedded XMP, or None."""
+        try:
+            for packet in _iter_xmp_packets(im):
+                for desc in _parse_xmp(packet):
+                    # html.parser lowercases attribute names, so compare case-insensitively
+                    attrs = {k.lower(): v for k, v in desc.attrs.items()}
+                    for field in XMP_DATE_FIELDS:
+                        value = attrs.get(field.lower()) or attrs.get(field.split(":")[-1].lower())
+                        date_str = _parse_xmp_date(value) if value else None
+                        if date_str:
+                            return date_str
+        except Exception:
+            pass
+        return None
 
     @classmethod
     def _extract_exif(cls, photo):

@@ -229,6 +229,26 @@ class TestExifAndDate:
         assert Photo._extract_date(path) == EXIF_DATE_ISO
         assert Photo._extract_exif(path)["camera"]["make"] == "TestMake"
 
+    @pytest.mark.parametrize("ext", EXIF_FORMATS)
+    def test_date_time_original_wins_over_other_exif_dates(self, tmp_path, ext):
+        exif = Image.Exif()
+        exif[306] = "2019:05:06 07:08:09"  # DateTime (file modified)
+        sub = exif.get_ifd(0x8769)
+        sub[36868] = "2018:01:01 00:00:00"  # DateTimeDigitized
+        sub[36867] = EXIF_DATE  # DateTimeOriginal
+        path = save_image(tmp_path / f"img{ext}", exif=exif)
+
+        assert Photo._extract_date(path) == EXIF_DATE_ISO
+
+    @pytest.mark.parametrize("ext", EXIF_FORMATS)
+    def test_unparseable_exif_date_falls_through_to_next_tag(self, tmp_path, ext):
+        exif = Image.Exif()
+        exif[306] = EXIF_DATE
+        exif.get_ifd(0x8769)[36867] = "0000:00:00 00:00:00"
+        path = save_image(tmp_path / f"img{ext}", exif=exif)
+
+        assert Photo._extract_date(path) == EXIF_DATE_ISO
+
     @pytest.mark.parametrize("ext", XMP_FORMATS)
     def test_xmp_date_is_used_without_exif(self, tmp_path, ext):
         path = save_with_xmp(tmp_path / f"img{ext}", DATE_XMP)
