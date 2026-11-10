@@ -29,6 +29,106 @@ from .util import (
 
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
+XMP_MARKER = "http://ns.adobe.com/xap/1.0/"
+XMP_DATE_FIELDS = [
+    "photoshop:DateCreated",
+    "DateCreated",
+    "xmp:CreateDate",
+    "CreateDate",
+    "exif:DateTimeOriginal",
+    "DateTimeOriginal",
+    "xmp:ModifyDate",
+    "ModifyDate",
+    "xmp:MetadataDate",
+    "MetadataDate",
+    "dc:date",
+    "date",
+]
+
+
+def _iter_xmp_packets(im):
+    """Yield each XMP packet embedded in an open image, as a str.
+
+    JPEG keeps XMP in APP1 segments (``im.applist``). Other formats expose it
+    through ``im.info``: ``xmp`` (WebP, AVIF, TIFF) or ``XML:com.adobe.xmp``
+    (PNG). Formats without XMP (GIF) yield nothing.
+    """
+    if hasattr(im, "applist"):
+        for segment, content in im.applist:
+            if segment != "APP1":
+                continue
+            # Content is either \x00<marker>\x00<body> or <marker>\x00<body>
+            parts = content.split(b"\x00", 2)
+            if len(parts) >= 3:
+                marker, body = parts[1], parts[2]
+            elif len(parts) == 2:
+                marker, body = parts[0], parts[1]
+            else:
+                continue
+            if marker.decode("utf-8", errors="ignore") != XMP_MARKER:
+                continue
+            try:
+                yield body.decode("utf-8")
+            except UnicodeDecodeError:
+                continue
+        return
+
+    for key in ("xmp", "XML:com.adobe.xmp"):
+        packet = im.info.get(key)
+        if isinstance(packet, bytes):
+            try:
+                packet = packet.decode("utf-8")
+            except UnicodeDecodeError:
+                continue
+        if isinstance(packet, str) and packet:
+            yield packet
+
+
+def _parse_xmp_soup(packet):
+    """Parse an XMP packet into a BeautifulSoup tree."""
+    try:
+        soup = BeautifulSoup(packet, "xml")
+    except Exception:
+        # lxml is not a dependency, so this is the usual path
+        import warnings
+
+        from bs4 import XMLParsedAsHTMLWarning
+
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", category=XMLParsedAsHTMLWarning)
+            soup = BeautifulSoup(packet, "html.parser")
+    return soup
+
+
+def _parse_xmp(packet):
+    """Parse an XMP packet and return its rdf:Description elements."""
+    soup = _parse_xmp_soup(packet)
+    return soup.find_all("rdf:description") or soup.find_all("description")
+
+
+def _region_field(element, field):
+    """Read an MWG region field (e.g. "name") given as an attribute or a child element."""
+    value = element.get(f"mwg-rs:{field}") or element.get(field)
+    if not value:
+        child = element.find(f"mwg-rs:{field}", recursive=False) or element.find(field, recursive=False)
+        value = child.get_text() if child else ""
+    return value.strip()
+
+
+def _parse_xmp_date(value):
+    """Parse an XMP date string to ISO format, or return None."""
+    value = str(value).strip().replace("Z", "+00:00")
+    try:
+        return datetime.fromisoformat(value).isoformat()
+    except (ValueError, TypeError):
+        pass
+    for fmt in ("%Y:%m:%d %H:%M:%S", "%Y-%m-%d %H:%M:%S", "%Y-%m-%dT%H:%M:%S", "%Y/%m/%d %H:%M:%S"):
+        try:
+            return datetime.strptime(value, fmt).isoformat()
+        except (ValueError, TypeError):
+            continue
+    return None
+
 
 class SimpleEncoder(json.JSONEncoder):
     def default(self, obj):
@@ -148,55 +248,16 @@ class People:
         seen_faces = set()  # Track (name, x, y) to avoid duplicates
 
         with Image.open(photo_path) as im:
-            if not hasattr(im, "applist"):
-                return faces
-
-            for segment, content in im.applist:
+            for packet in _iter_xmp_packets(im):
                 try:
-                    # XMP format can be either:
-                    # 1. \x00http://ns.adobe.com/xap/1.0/\x00<body> (starts with null)
-                    # 2. http://ns.adobe.com/xap/1.0/\x00<body> (doesn't start with null)
-                    parts = content.split(bytes("\x00", "utf-8"), 2)
-
-                    # Determine marker and body based on format
-                    if len(parts) >= 3:
-                        # Format 1: starts with null, parts[0] is empty, parts[1] is marker, parts[2] is body
-                        marker = parts[1].decode("utf-8", errors="ignore") if len(parts) > 1 else ""
-                        body_bytes = parts[2] if len(parts) > 2 else b""
-                    elif len(parts) == 2:
-                        # Format 2: doesn't start with null, parts[0] is marker, parts[1] is body
-                        marker = parts[0].decode("utf-8", errors="ignore")
-                        body_bytes = parts[1]
-                    else:
-                        continue
-
-                    if segment != "APP1" or marker != "http://ns.adobe.com/xap/1.0/":
-                        continue
-
-                    body_str = body_bytes.decode("utf-8")
-                    # Use 'xml' parser for better namespace handling
-                    try:
-                        soup = BeautifulSoup(body_str, "xml")
-                    except Exception:
-                        # Fallback to html.parser if xml parser not available
-                        import warnings
-
-                        from bs4 import XMLParsedAsHTMLWarning
-
-                        with warnings.catch_warnings():
-                            warnings.filterwarnings("ignore", category=XMLParsedAsHTMLWarning)
-                            soup = BeautifulSoup(body_str, "html.parser")
-
-                    # Find all description elements (try both with and without namespace)
-                    descriptions = soup.find_all("rdf:description")
-                    if not descriptions:
-                        descriptions = soup.find_all("description")
-
-                    # Process each description element
-                    for desc in descriptions:
-                        # Get type and name (try both namespace formats)
-                        desc_type = desc.get("mwg-rs:type") or desc.get("type")
-                        name = (desc.get("mwg-rs:name") or desc.get("name") or "").strip()
+                    soup = _parse_xmp_soup(packet)
+                    # MWG regions come in two serializations: attributes on rdf:Description,
+                    # or child elements inside rdf:li (rdf:parseType="Resource").
+                    candidates = soup.find_all("rdf:description") or soup.find_all("description")
+                    candidates += soup.find_all("rdf:li")
+                    for desc in candidates:
+                        desc_type = _region_field(desc, "type")
+                        name = _region_field(desc, "name")
 
                         # Find areas (try both namespace formats and recursive search)
                         areas = desc.find_all("mwg-rs:area", recursive=False)
@@ -207,8 +268,8 @@ class People:
                             if not areas:
                                 areas = desc.find_all("area")
 
-                        # Process if it's a Face type OR if it has a name and areas (some formats don't set type)
-                        if desc_type == "Face" or (name and areas):
+                        # Process Face regions, or untyped regions with a name and areas (some writers omit the type)
+                        if desc_type == "Face" or (not desc_type and name and areas):
                             for area in areas:
                                 # Get area attributes (try both namespace formats)
                                 w = area.get("starea:w") or area.get("w") or ""
@@ -222,14 +283,8 @@ class People:
                                     if face_key not in seen_faces:
                                         seen_faces.add(face_key)
                                         faces.append(Face(name=name, geometry=FaceGeometry(w=w, h=h, x=x, y=y)))
-
-                except (ValueError, UnicodeDecodeError, AttributeError, KeyError):
-                    # Skip segments that don't match expected format
-                    # Silently continue to next segment
-                    continue
                 except Exception:
-                    # Log unexpected errors but continue processing
-                    # This prevents one bad segment from breaking entire face detection
+                    # One bad packet must not break face detection for the photo
                     continue
 
         return faces
@@ -326,100 +381,20 @@ class Photo:
         if not date_str:
             try:
                 with Image.open(photo) as im:
-                    if hasattr(im, "applist"):
-                        for segment, content in im.applist:
-                            try:
-                                # XMP can be: \x00<marker>\x00<body>  or  <marker>\x00<body>
-                                parts = content.split(bytes("\x00", "utf-8"), 2)
-                                if len(parts) >= 3:
-                                    marker = parts[1].decode("utf-8", errors="ignore")
-                                    body_bytes = parts[2]
-                                elif len(parts) == 2:
-                                    marker = parts[0].decode("utf-8", errors="ignore")
-                                    body_bytes = parts[1]
-                                else:
-                                    continue
-
-                                if segment != "APP1" or marker != "http://ns.adobe.com/xap/1.0/":
-                                    continue
-
-                                body_str = body_bytes.decode("utf-8")
-
-                                try:
-                                    soup = BeautifulSoup(body_str, "xml")
-                                except Exception:
-                                    import warnings
-
-                                    from bs4 import XMLParsedAsHTMLWarning
-
-                                    with warnings.catch_warnings():
-                                        warnings.filterwarnings("ignore", category=XMLParsedAsHTMLWarning)
-                                        soup = BeautifulSoup(body_str, "html.parser")
-
-                                descriptions = soup.find_all("rdf:description")
-                                if not descriptions:
-                                    descriptions = soup.find_all("description")
-
-                                date_fields = [
-                                    "photoshop:DateCreated",
-                                    "DateCreated",
-                                    "xmp:CreateDate",
-                                    "CreateDate",
-                                    "exif:DateTimeOriginal",
-                                    "DateTimeOriginal",
-                                    "xmp:ModifyDate",
-                                    "ModifyDate",
-                                    "xmp:MetadataDate",
-                                    "MetadataDate",
-                                    "dc:date",
-                                    "date",
-                                ]
-
-                                for desc in descriptions:
-                                    for field in date_fields:
-                                        date_value = (
-                                            desc.get(field)
-                                            or desc.get(field.split(":")[-1] if ":" in field else field)
-                                            or None
-                                        )
-                                        if date_value:
-                                            date_value_str = str(date_value).strip()
-                                            if date_value_str.endswith("Z"):
-                                                date_value_str = date_value_str[:-1] + "+00:00"
-                                            try:
-                                                date_str = datetime.fromisoformat(
-                                                    date_value_str.replace("Z", "+00:00")
-                                                ).isoformat()
-                                                break
-                                            except (ValueError, TypeError):
-                                                try:
-                                                    date_str = datetime.strptime(
-                                                        date_value_str, "%Y:%m:%d %H:%M:%S"
-                                                    ).isoformat()
-                                                    break
-                                                except (ValueError, TypeError):
-                                                    for fmt in [
-                                                        "%Y-%m-%d %H:%M:%S",
-                                                        "%Y-%m-%dT%H:%M:%S",
-                                                        "%Y/%m/%d %H:%M:%S",
-                                                    ]:
-                                                        try:
-                                                            date_str = datetime.strptime(
-                                                                date_value_str, fmt
-                                                            ).isoformat()
-                                                            break
-                                                        except (ValueError, TypeError):
-                                                            continue
-                                        if date_str:
-                                            break
-                                    if date_str:
-                                        break
+                    for packet in _iter_xmp_packets(im):
+                        for desc in _parse_xmp(packet):
+                            # html.parser lowercases attribute names, so compare case-insensitively
+                            attrs = {k.lower(): v for k, v in desc.attrs.items()}
+                            for field in XMP_DATE_FIELDS:
+                                value = attrs.get(field.lower()) or attrs.get(field.split(":")[-1].lower())
+                                if value:
+                                    date_str = _parse_xmp_date(value)
                                 if date_str:
                                     break
-                            except (ValueError, UnicodeDecodeError, AttributeError, KeyError):
-                                continue
-                            except Exception:
-                                continue
+                            if date_str:
+                                break
+                        if date_str:
+                            break
             except Exception:
                 pass
 
