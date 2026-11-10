@@ -7,11 +7,12 @@ items), so everything beyond that was silently dropped.
 """
 
 import os
-from unittest.mock import Mock
 
 import pytest
+import yaml
 from PIL import Image
 
+from fussel.fussel import YamlConfig
 from fussel.generator.config import Config
 from fussel.generator.generate import Albums, People
 
@@ -42,19 +43,28 @@ def test_faces_in_a_large_album_are_not_lost(tmp_path):
     for i in range(PHOTO_COUNT):
         Image.new("RGB", (60, 48), "red").save(album / f"p{i:04d}.jpg", xmp=XMP.format(i=i).encode())
 
-    values = {
-        "gallery.input_path": str(root),
-        "gallery.photo_sizes": [[40, 40]],
-        "gallery.watermark.enable": False,
-        "gallery.people.enable": True,
-        "gallery.overwrite": True,
-        "gallery.parallel_tasks": 4,
-    }
-    yaml_config = Mock()
-    yaml_config.getKey = Mock(side_effect=lambda key, default=None: values.get(key, default))
-    Config.init(yaml_config)
+    # A real YamlConfig, not a Mock: with the forkserver start method (the default on Python 3.14)
+    # the config is pickled to the worker processes.
     out = tmp_path / "out"
     out.mkdir()
+    config_file = tmp_path / "config.yml"
+    config_file.write_text(
+        yaml.safe_dump(
+            {
+                "gallery": {
+                    "input_path": str(root),
+                    "output_path": str(out),
+                    "photo_sizes": [[40, 40]],
+                    "watermark": {"enable": False},
+                    "people": {"enable": True},
+                    "overwrite": True,
+                    "parallel_tasks": 4,
+                }
+            }
+        )
+    )
+    yaml_config = YamlConfig(str(config_file))
+    Config.init(yaml_config)
 
     Albums.instance().process_path(str(root), str(out), "/ext", yaml_config)
 
