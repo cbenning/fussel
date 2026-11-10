@@ -147,6 +147,30 @@ class TestFindUniqueSlug:
         assert result == "my-album-photos"
         assert "my-album-photos" in slugs
 
+    @pytest.mark.parametrize(
+        ("name", "expected"),
+        [
+            ("Café", "cafe"),
+            ("日本旅行", "ri-ben-lu-xing"),
+            ("Фото", "foto"),
+            ("Zoë – Ünïcode", "zoe-unicode"),
+        ],
+    )
+    def test_non_english_names_are_transliterated(self, name, expected):
+        assert find_unique_slug(set(), threading.Lock(), name) == expected
+
+    @pytest.mark.parametrize("name", ["\U0001f389\U0001f389", "!!!", "---", "   "])
+    def test_names_without_letters_get_a_fallback_slug(self, name):
+        """An empty slug would put an album's files in its parent folder and break its URL."""
+        slugs = set()
+        lock = threading.Lock()
+
+        first = find_unique_slug(slugs, lock, name)
+        second = find_unique_slug(slugs, lock, name)
+
+        assert first == "untitled"
+        assert second == "untitled-1"
+
 
 class TestCalculateNewSize:
     """Tests for calculate_new_size function."""
