@@ -14,17 +14,21 @@ from fussel.generator.config import Config
 from fussel.generator.generate import People, Photo
 
 HAS_AVIF = features.check("avif")
+HAS_WEBP = features.check("webp")
+WEBP = pytest.param(".webp", marks=pytest.mark.skipif(not HAS_WEBP, reason="Pillow built without WebP"))
 
 ALL_FORMATS = [
     ".jpg",
     ".png",
     ".gif",
     pytest.param(".avif", marks=pytest.mark.skipif(not HAS_AVIF, reason="Pillow built without AVIF")),
+    WEBP,
 ]
 EXIF_FORMATS = [
     ".jpg",
     ".png",
     pytest.param(".avif", marks=pytest.mark.skipif(not HAS_AVIF, reason="Pillow built without AVIF")),
+    WEBP,
 ]
 XMP_FORMATS = EXIF_FORMATS  # formats that can embed XMP
 
@@ -102,6 +106,20 @@ class TestResizeAndDownload:
         _, out = process(tmp_path, str(path))
 
         with Image.open(out / "original_img.gif") as original:
+            assert original.n_frames == 2
+        with Image.open(out / resized_files(out)[0]) as resized:
+            assert getattr(resized, "n_frames", 1) == 1
+
+    @pytest.mark.skipif(not HAS_WEBP, reason="Pillow built without WebP")
+    def test_animated_webp_resized_copy_is_first_frame_only(self, tmp_path):
+        init_config()
+        frames = [Image.new("RGB", SIZE, c) for c in ("red", "blue")]
+        path = tmp_path / "anim.webp"
+        frames[0].save(path, save_all=True, append_images=frames[1:])
+
+        _, out = process(tmp_path, str(path))
+
+        with Image.open(out / "original_img.webp") as original:
             assert original.n_frames == 2
         with Image.open(out / resized_files(out)[0]) as resized:
             assert getattr(resized, "n_frames", 1) == 1
