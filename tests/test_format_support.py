@@ -271,6 +271,66 @@ class TestExifAndDate:
         assert info["image"] == {"color_space": "sRGB"}
         assert Photo._extract_date(path) == EXIF_DATE_ISO
 
+    @pytest.mark.parametrize("ext", EXIF_FORMATS)
+    def test_every_exif_field_is_extracted(self, tmp_path, ext):
+        """Guards the EXIF tag names: a wrong one is swallowed by the broad except and just drops the field."""
+        exif = Image.Exif()
+        exif[271] = "Make"
+        exif[272] = "Model"
+        exif[305] = "Software"
+        exif[315] = "Artist"
+        exif[33432] = "Copyright"
+        sub = exif.get_ifd(0x8769)
+        sub[42036] = "Lens"
+        sub[33434] = 0.5
+        sub[33437] = 4.0
+        sub[34855] = 100
+        sub[37386] = 35.0
+        sub[34850] = 3
+        sub[37380] = 1.0
+        sub[37383] = 5
+        sub[41987] = 1
+        sub[37385] = 0x01
+        sub[40961] = 65535
+        gps = exif.get_ifd(0x8825)
+        gps[1], gps[2] = "N", (37.0, 30.0, 0.0)
+        gps[3], gps[4] = "W", (122.0, 15.0, 0.0)
+        gps[5], gps[6] = 0, 10.0
+        path = save_image(tmp_path / f"img{ext}", exif=exif)
+
+        info = Photo._extract_exif(path)
+
+        assert info["camera"] == {"make": "Make", "model": "Model", "lens": "Lens", "software": "Software"}
+        assert info["shot"] == {
+            "exposure": "1/2s",
+            "aperture": "f/4.0",
+            "iso": "100",
+            "focal_length": "35mm",
+            "exposure_program": "Aperture priority",
+            "exposure_compensation": "+1.0 EV",
+            "metering_mode": "Multi-segment",
+            "white_balance": "Manual",
+            "flash": "Flash fired",
+        }
+        assert info["image"] == {"color_space": "Uncalibrated"}
+        assert info["rights"] == {"artist": "Artist", "copyright": "Copyright"}
+        assert info["gps"] == {
+            "latitude": "37.500000\u00b0 N",
+            "longitude": "122.250000\u00b0 W",
+            "altitude": "10m above sea level",
+        }
+
+    @pytest.mark.parametrize("ext", EXIF_FORMATS)
+    @pytest.mark.parametrize(("alt_ref", "expected"), [(0, "above"), (1, "below")])
+    def test_gps_altitude_reference(self, tmp_path, ext, alt_ref, expected):
+        exif = Image.Exif()
+        exif[271] = "Make"  # PNG and AVIF drop EXIF that holds only a GPS IFD
+        gps = exif.get_ifd(0x8825)
+        gps[5], gps[6] = alt_ref, 25.0
+        path = save_image(tmp_path / f"img{ext}", exif=exif)
+
+        assert Photo._extract_exif(path)["gps"] == {"altitude": f"25m {expected} sea level"}
+
     @pytest.mark.parametrize("ext", ALL_FORMATS)
     def test_without_exif_falls_back_to_mtime(self, tmp_path, ext):
         path = save_image(tmp_path / f"img{ext}")
