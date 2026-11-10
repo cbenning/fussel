@@ -4,6 +4,8 @@ Tests for SiteGenerator class in fussel.generator.generate module.
 
 from unittest.mock import Mock, mock_open, patch
 
+import pytest
+
 from fussel.generator.generate import Albums, Config, People, Photos, Site, SiteGenerator
 
 
@@ -67,6 +69,7 @@ class TestSiteGenerator:
         mock_config.input_photos_dir = "/test/input"
         mock_config.http_root = "/"
         mock_config.overwrite = False
+        mock_config.watermark_enabled = False
         mock_config_class.instance.return_value = mock_config
 
         # Setup singleton mocks
@@ -126,6 +129,7 @@ class TestSiteGenerator:
         mock_config.input_photos_dir = "/test/input"
         mock_config.http_root = "/"
         mock_config.overwrite = True
+        mock_config.watermark_enabled = False
         mock_config_class.instance.return_value = mock_config
 
         mock_albums = Mock()
@@ -153,3 +157,22 @@ class TestSiteGenerator:
 
         # Verify rmtree was called for overwrite
         assert mock_rmtree.called
+
+
+class TestWatermarkValidation:
+    @patch("fussel.generator.generate.Albums")
+    @patch("fussel.generator.generate.Config")
+    def test_generate_exits_early_when_watermark_image_is_missing(self, mock_config_class, mock_albums_class, capsys):
+        mock_config = Mock()
+        mock_config.watermark_enabled = True
+        mock_config.watermark_path = "/nope/missing.png"
+        mock_config_class.instance.return_value = mock_config
+        generator = SiteGenerator.__new__(SiteGenerator)
+        generator.yaml_config = Mock()
+
+        with pytest.raises(SystemExit) as exc:
+            generator.generate()
+
+        assert exc.value.code == 1
+        assert "Watermark image not found" in capsys.readouterr().out
+        mock_albums_class.instance.assert_not_called()

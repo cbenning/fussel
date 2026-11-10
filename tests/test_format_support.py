@@ -392,6 +392,28 @@ class TestWatermark:
             r, g, _ = marked.convert("RGB").getpixel((marked.width - 1, marked.height - 1))
         assert g > r
 
+    def test_photo_smaller_than_the_largest_size_is_watermarked(self, tmp_path):
+        """Sizes larger than the photo all map to the same file, which must still be watermarked."""
+        watermark = tmp_path / "wm.png"
+        Image.new("RGBA", (20, 20), (0, 255, 0, 255)).save(watermark)
+        init_config(
+            **{
+                "gallery.photo_sizes": [[50, 50], [100, 100], [200, 200], [400, 400]],
+                "gallery.watermark.enable": True,
+                "gallery.watermark.path": str(watermark),
+                "gallery.watermark.size_ratio": 0.5,
+                "gallery.overwrite": False,
+            }
+        )
+
+        _, out = process(tmp_path, save_image(tmp_path / "img.jpg"))
+
+        largest = sorted(resized_files(out), key=lambda f: int(f.split("x")[0]))[-1]
+        assert largest.startswith("100x80_")  # the photo is 100x80, so 100, 200 and 400 share one file
+        with Image.open(out / largest) as marked:
+            r, g, _ = marked.convert("RGB").getpixel((marked.width - 1, marked.height - 1))
+        assert g > r
+
     def test_rerun_without_overwrite_does_not_watermark_again(self, tmp_path, mocker):
         watermark = tmp_path / "wm.png"
         Image.new("RGBA", (20, 20), (0, 255, 0, 255)).save(watermark)
