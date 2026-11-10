@@ -633,6 +633,7 @@ class Photo:
 
         sizes = Config.instance().photo_sizes
         largest_src = None
+        largest_generated = False
         smallest_src = None
 
         srcSet = {}
@@ -649,7 +650,8 @@ class Photo:
 
             # Only generate if overwrite explicitly asked for or if doesn't exist
             msg += f"[cyan]{new_size[0]}x{new_size[1]}[/cyan] "
-            if Config.instance().overwrite or not os.path.exists(new_sub_photo):
+            largest_generated = Config.instance().overwrite or not os.path.exists(new_sub_photo)
+            if largest_generated:
                 with Image.open(new_original_photo) as im:
                     if Config.instance().exif_transpose:
                         im = ImageOps.exif_transpose(im)
@@ -659,7 +661,8 @@ class Photo:
 
         print(msg)
 
-        if Config.instance().watermark_enabled and (Config.instance().overwrite or not os.path.exists(largest_src)):
+        # Watermark only a freshly generated image, so reruns never watermark twice
+        if Config.instance().watermark_enabled and largest_generated:
             with Image.open(Config.instance().watermark_path) as watermark_im:
                 print(" ------> Adding watermark")
                 apply_watermark(largest_src, watermark_im, Config.instance().watermark_ratio)
