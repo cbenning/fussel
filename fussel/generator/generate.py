@@ -5,7 +5,7 @@ import os
 import shutil
 from dataclasses import dataclass
 from datetime import datetime
-from multiprocessing import Pool, Queue
+from multiprocessing import Pool
 from threading import RLock
 from urllib.parse import quote
 
@@ -593,7 +593,7 @@ class Photo:
         return result
 
     @classmethod
-    def process_photo(cls, external_path, photo, filename, slug, output_path, people_q: Queue):
+    def process_photo(cls, external_path, photo, filename, slug, output_path, face_jobs: list):
         new_original_photo = os.path.join(
             output_path, "original_%s%s" % (os.path.basename(slug), extract_extension(photo))
         )
@@ -694,9 +694,8 @@ class Photo:
         # Faces
         if Config.instance().people_enabled:
             # Use original photo file for face detection to preserve all metadata
-            people_q.put(
+            face_jobs.append(
                 (
-                    photo_obj,
                     photo,  # Use original photo instead of new_original_photo
                     largest_src,
                     output_path,
@@ -708,24 +707,26 @@ class Photo:
 
 
 def _process_photo(t):
+    """Process one photo in a worker. Returns (photo_file, photo or None, face_jobs).
+
+    face_jobs are returned with the result, not through a queue: a multiprocessing.Queue
+    holds only about 64 KB in its pipe, and anything beyond that is lost when the pool is
+    terminated before the main process reads it.
+    """
     (external_path, photo_file, filename, unique_slug, album_folder) = t
     print(f" --> Processing [magenta]{photo_file}[/magenta]...")
+    face_jobs = []
     try:
-        return (
-            photo_file,
-            Photo.process_photo(
-                external_path, photo_file, filename, unique_slug, album_folder, _process_photo.people_q
-            ),
-        )
+        photo = Photo.process_photo(external_path, photo_file, filename, unique_slug, album_folder, face_jobs)
+        return (photo_file, photo, face_jobs)
     except PhotoProcessingFailure as e:
         print(
             f"[yellow]Skipping processing of image file[/yellow] [magenta]{photo_file}[/magenta] Reason: [red]{str(e)}[/red]"
         )
-        return (photo_file, None)
+        return (photo_file, None, [])
 
 
-def _proces_photo_init(people_q, yaml_config):
-    _process_photo.people_q = people_q
+def _init_worker(yaml_config):
     # Re-initialize Config in worker process
     Config.init(yaml_config)
 
@@ -804,12 +805,11 @@ class Albums:
 
         print(f"Found [cyan]{len(jobs)}[/cyan] photos to process")
         results = []
-        people_q = Queue()
         if len(jobs) > 0:
             with Pool(
                 processes=Config.instance().parallel_tasks,
-                initializer=_proces_photo_init,
-                initargs=[people_q, yaml_config],
+                initializer=_init_worker,
+                initargs=[yaml_config],
             ) as P:
                 results = P.map(_process_photo, jobs)
         else:
@@ -817,24 +817,13 @@ class Albums:
 
         people = People.instance()
         print("Detecting Faces...")
-        # Create a mapping from photo slug to photo object for face detection
-        photo_by_slug = {}
-        for photo_file, result in results:
-            if result is not None:
-                photo_by_slug[result.slug] = result
+        for _, photo_obj, face_jobs in results:
+            for original_photo, largest_src, output_path, face_external_path in face_jobs:
+                people.detect_faces(photo_obj, original_photo, largest_src, output_path, face_external_path)
 
-        # Process face detection and update the photo objects in results
-        while not people_q.empty():
-            (photo_obj, new_original_photo, largest_src, output_path, external_path) = people_q.get()
-            # Find the corresponding photo object in results by matching slug
-            # The photo_obj from queue might be a different instance due to multiprocessing
-            if photo_obj.slug in photo_by_slug:
-                actual_photo = photo_by_slug[photo_obj.slug]
-                people.detect_faces(actual_photo, new_original_photo, largest_src, output_path, external_path)
-
-        for photo_file, result in results:
-            if result is not None:
-                album_obj.add_photo(result)
+        for _, photo_obj, _ in results:
+            if photo_obj is not None:
+                album_obj.add_photo(photo_obj)
 
         if len(album_obj.photos) > 0:
             album_obj.src = pick_album_thumbnail(album_obj.photos)  # TODO internalize
