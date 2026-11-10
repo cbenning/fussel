@@ -131,10 +131,10 @@ def _parse_xmp_date(value):
 
 
 class SimpleEncoder(json.JSONEncoder):
-    def default(self, obj):
-        if hasattr(obj, "json_dump_obj"):
-            return obj.json_dump_obj()
-        return obj.__dict__
+    def default(self, o):
+        if hasattr(o, "json_dump_obj"):
+            return o.json_dump_obj()
+        return o.__dict__
 
 
 class Site:
@@ -602,7 +602,7 @@ class Photo:
                 im.verify()
             # Unfortunately verify only catches a few defective images, this transpose catches more. Verify requires subsequent reopen according to Pillow docs.
             with Image.open(photo) as im2:
-                im2.transpose(Image.FLIP_TOP_BOTTOM)
+                im2.transpose(Image.Transpose.FLIP_TOP_BOTTOM)
         except Exception as e:
             raise PhotoProcessingFailure(message="Image Verification: " + str(e))
 
@@ -851,7 +851,7 @@ class Album:
         self.name = name
         self.slug = slug
         self.photos: list = []
-        self.src: str = None
+        self.src: str | None = None
 
     def add_photo(self, photo):
         self.photos.append(photo)
