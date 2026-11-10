@@ -155,7 +155,9 @@ def calculate_face_crop_dimensions(input_size, face_size, face_position):
 
 def apply_watermark(base_image_path, watermark_image, watermark_ratio):
 
-    with Image.open(base_image_path) as base_image:
+    with Image.open(base_image_path) as opened_image:
+        # Palette/greyscale modes (e.g. GIF) can't take a transparent fill or alpha paste, so work in RGBA
+        base_image = opened_image if opened_image.mode in ("RGB", "RGBA") else opened_image.convert("RGBA")
         width, height = base_image.size
         orig_watermark_width, orig_watermark_height = watermark_image.size
         watermark_width = int(width * watermark_ratio)

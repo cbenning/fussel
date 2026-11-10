@@ -159,10 +159,34 @@ Point `gallery.input_path` to a directory containing subfolders, where each subf
 
 ### Supported Image Formats
 
-Fussel supports common image formats:
+Fussel scans for these extensions (case-insensitive):
 - JPEG (`.jpg`, `.jpeg`)
 - PNG (`.png`)
 - GIF (`.gif`)
+- AVIF (`.avif`)
+
+Other files in an album folder are ignored. A file whose real format does not match its extension (e.g. a PNG named `.jpg`) is skipped with a warning. Rename it to fix.
+
+#### Feature support by format
+
+JPEG is the primary tested format. Other formats are processed, but features that need JPEG-only metadata are skipped without error.
+
+| Feature | JPEG | PNG | GIF | AVIF |
+|---------|------|-----|-----|------|
+| Thumbnails and resized sizes | Yes | Yes | Partial (first frame only) | Yes |
+| Original download | Yes | Yes | Yes (animation kept) | Yes |
+| Face tags (XMP) and People galleries | Yes | No (skipped) | No (skipped) | No (skipped) |
+| EXIF info panel | Yes | Partial (only if EXIF embedded) | No | Partial (only if EXIF embedded) |
+| Capture date | Yes (EXIF, then XMP) | Partial (EXIF if present, else file modified time) | No (file modified time) | Partial (EXIF if present, else file modified time) |
+| EXIF transpose | Yes | Partial (only if EXIF orientation present) | No | Partial (only if EXIF orientation present) |
+| Watermark | Yes | Yes | Yes | Yes |
+
+**What happens when a feature is unsupported:**
+- **Face tags:** Fussel reads face rectangles from JPEG XMP segments only. For other formats the photo is processed normally, with no faces and no entry in People. No error or warning is printed.
+- **EXIF panel:** Photos without EXIF show no info panel data.
+- **Capture date:** Fussel tries EXIF, then XMP, then file modified time. Photos sort by that date in the Photos view, so formats without EXIF sort by when the file was last changed.
+- **GIF animation:** Resized copies contain the first frame only. The original download keeps the animation.
+- **AVIF:** Needs Pillow built with AVIF support. Pillow 13 (the minimum required) includes it in its standard wheels.
 
 ## ⚙️ Configuration
 
