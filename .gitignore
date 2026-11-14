@@ -21,6 +21,7 @@ config.yml
 fussel/web/src/_gallery
 fussel/web/build/
 fussel/web/public/static/_gallery
+fussel/web/public/people.json
 fussel/web/node_modules
 fussel/.venv
 

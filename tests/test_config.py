@@ -8,6 +8,7 @@ from unittest.mock import Mock, patch
 import pytest
 
 from fussel.generator.config import (
+    DEFAULT_PEOPLE_MANIFEST_PHOTOS,
     DEFAULT_PHOTO_SIZES,
     DEFAULT_WATERMARK_PATH,
     DEFAULT_WATERMARK_SIZE_RATIO,
@@ -194,6 +195,33 @@ class TestConfigInitialization:
         instance = Config.instance()
 
         assert instance.supported_extensions == (".avif", ".jpg", ".jpeg", ".gif", ".png", ".webp")
+
+    def test_people_manifest_photos_default(self):
+        """Test that people_manifest_photos defaults to DEFAULT_PEOPLE_MANIFEST_PHOTOS."""
+        mock_yaml_config = Mock()
+        mock_yaml_config.getKey = Mock(
+            side_effect=lambda key, default=None: {
+                "gallery.input_path": "/test/input",
+            }.get(key, default)
+        )
+
+        Config.init(mock_yaml_config)
+
+        assert Config.instance().people_manifest_photos == DEFAULT_PEOPLE_MANIFEST_PHOTOS == 6
+
+    def test_people_manifest_photos_custom(self):
+        """Test that people_manifest_photos can be overridden via config."""
+        mock_yaml_config = Mock()
+        mock_yaml_config.getKey = Mock(
+            side_effect=lambda key, default=None: {
+                "gallery.input_path": "/test/input",
+                "gallery.people.manifest_photos": 12,
+            }.get(key, default)
+        )
+
+        Config.init(mock_yaml_config)
+
+        assert Config.instance().people_manifest_photos == 12
 
     def test_photo_sizes_default(self):
         """Test that photo_sizes defaults to DEFAULT_PHOTO_SIZES."""

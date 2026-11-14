@@ -16,6 +16,7 @@ from PIL.Image import registered_extensions
 from rich import print
 
 from .config import Config
+from .people_manifest import write_people_manifest
 from .util import (
     apply_watermark,
     calculate_face_crop_dimensions,
@@ -953,6 +954,14 @@ class SiteGenerator:
             output_str += json.dumps(People.instance(), sort_keys=True, indent=3, cls=SimpleEncoder)
             output_str += ";"
             outfile.write(output_str)
+
+        # people.json sits at the site root (Vite copies public/ as it is) for other sites to fetch
+        write_people_manifest(
+            os.path.normpath(os.path.join(output_photos_path, "..", "..")),
+            People.instance().people,
+            Config.instance().people_enabled,
+            Config.instance().people_manifest_photos,
+        )
 
         # Generate photos data (always write the file so it can be statically imported)
         output_photos_data_file = os.path.join(output_data_path, "photos_data.js")
