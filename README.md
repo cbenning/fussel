@@ -231,6 +231,7 @@ gallery:
 gallery:
   people:
     enable: True                     # Enable face detection from XMP tags
+    manifest_photos: 6               # Photos listed per person in people.json (the count is always complete)
 ```
 
 ### Watermark Settings
@@ -313,6 +314,38 @@ Once generated, your gallery is a static site. You can host it anywhere:
    ```bash
    python -m http.server --directory <output_path>
    ```
+
+## 🔌 Using Gallery Data From Another Site
+
+When people detection is enabled, Fussel also writes `people.json` at the root of the gallery, next to `index.html`. Another site (a family tree, a blog) can fetch it to show a few thumbnails for a person and link to their gallery, without knowing how Fussel names things.
+
+```json
+{
+  "version": 1,
+  "people": [
+    {
+      "name": "Jane Doe",
+      "slug": "jane-doe",
+      "url": "#/collections/people/jane-doe",
+      "count": 12,
+      "thumb": "static/_gallery/albums/trip/jane-doe_beach.jpg",
+      "photos": [
+        {
+          "name": "beach.jpg",
+          "thumb": "static/_gallery/albums/trip/500x500_beach-jpg.jpg",
+          "url": "#/collections/people/jane-doe/beach-jpg"
+        }
+      ]
+    }
+  ]
+}
+```
+
+- `thumb` is a cropped face; each photo's `thumb` is its smallest size. `url` links open the gallery on that person or photo.
+- Every path is relative to the gallery root, so resolve it against the address of `people.json` itself. It works under any `site.http_root`.
+- `photos` holds the newest `gallery.people.manifest_photos` photos (default 6); `count` is the true total.
+- People are sorted by `slug`. Nothing is listed that the People page does not already show.
+- A site on another domain can only fetch `people.json` if the gallery's host sends an `Access-Control-Allow-Origin` header (GitHub Pages does). Images load either way.
 
 ## 🛠️ Development
 

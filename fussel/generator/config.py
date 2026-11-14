@@ -7,6 +7,7 @@ DEFAULT_WATERMARK_SIZE_RATIO = 0.3
 DEFAULT_RECURSIVE_ALBUMS_NAME_PATTERN = "{parent_album} > {album}"
 DEFAULT_OUTPUT_PHOTOS_PATH = "site/"
 DEFAULT_SITE_TITLE = "Fussel Gallery"
+DEFAULT_PEOPLE_MANIFEST_PHOTOS = 6
 DEFAULT_PHOTO_SIZES = [(500, 500), (800, 800), (1024, 1024), (1600, 1600)]
 
 
@@ -30,6 +31,7 @@ class Config:
     # Set by init(). Declared here so type checkers and editors know the attribute names and types.
     input_photos_dir: str
     people_enabled: bool
+    people_manifest_photos: int
     albums_enabled: bool
     photos_enabled: bool
     watermark_enabled: bool
@@ -70,6 +72,9 @@ class Config:
     def _populate_instance(cls, instance, yaml_config):
         instance.input_photos_dir = str(yaml_config.getKey("gallery.input_path"))
         instance.people_enabled = bool(yaml_config.getKey("gallery.people.enable", True))
+        instance.people_manifest_photos = int(
+            yaml_config.getKey("gallery.people.manifest_photos", DEFAULT_PEOPLE_MANIFEST_PHOTOS)
+        )
         instance.albums_enabled = bool(yaml_config.getKey("gallery.albums.enable", True))
         instance.photos_enabled = bool(yaml_config.getKey("gallery.photos.enable", True))
         instance.watermark_enabled = bool(yaml_config.getKey("gallery.watermark.enable", True))
