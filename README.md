@@ -333,6 +333,7 @@ When people detection is enabled, Fussel also writes `people.json` at the root o
         {
           "name": "beach.jpg",
           "thumb": "static/_gallery/albums/trip/500x500_beach-jpg.jpg",
+          "src": "static/_gallery/albums/trip/1600x1600_beach-jpg.jpg",
           "url": "#/collections/people/jane-doe/beach-jpg"
         }
       ]
@@ -341,7 +342,7 @@ When people detection is enabled, Fussel also writes `people.json` at the root o
 }
 ```
 
-- `thumb` is a cropped face; each photo's `thumb` is its smallest size. `url` links open the gallery on that person or photo.
+- `thumb` is a cropped face; each photo's `thumb` is its smallest size and its `src` is its largest, for showing the photo bigger. `url` links open the gallery on that person or photo.
 - Every path is relative to the gallery root, so resolve it against the address of `people.json` itself. It works under any `site.http_root`.
 - `photos` holds the newest `gallery.people.manifest_photos` photos (default 6); `count` is the true total.
 - People are sorted by `slug`. Nothing is listed that the People page does not already show.
