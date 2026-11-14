@@ -56,6 +56,7 @@ def build_people_manifest(people, max_photos=DEFAULT_PEOPLE_MANIFEST_PHOTOS):
                     {
                         "name": photo.name,
                         "thumb": _relative(photo.thumb),
+                        "src": _relative(photo.src),
                         "url": "#/collections/people/%s/%s" % (person.slug, photo.slug),
                     }
                     for photo in photos[: max(max_photos, 0)]

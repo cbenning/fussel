@@ -52,6 +52,7 @@ class TestBuildPeopleManifest:
                         {
                             "name": "beach.jpg",
                             "thumb": "static/_gallery/albums/trip/500x500_beach.jpg",
+                            "src": "static/_gallery/albums/trip/1600x1600_beach.jpg",
                             "url": "#/collections/people/ada-lovelace/beach",
                         }
                     ],
@@ -67,6 +68,7 @@ class TestBuildPeopleManifest:
 
         assert entry["thumb"] == "static/_gallery/albums/trip/ada_beach.jpg"
         assert entry["photos"][0]["thumb"] == "static/_gallery/albums/trip/500x500_beach.jpg"
+        assert entry["photos"][0]["src"] == "static/_gallery/albums/trip/1600x1600_beach.jpg"
 
     def test_lists_newest_photos_first_and_caps_them_but_counts_all(self):
         photos = [make_photo("p%d" % n, "2020-01-0%dT00:00:00" % n) for n in range(1, 6)]
