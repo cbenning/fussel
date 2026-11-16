@@ -3,7 +3,7 @@ import Navbar from "./Navbar";
 import Collections from "./Collections";
 import Collection from "./Collection";
 import NotFound from "./NotFound";
-import { site_data } from "../_gallery/site_data.js"
+import { site_data } from "../gallery.js"
 import { Routes, Route } from "react-router";
 import { Helmet, HelmetProvider } from "react-helmet-async";
 

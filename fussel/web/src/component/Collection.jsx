@@ -2,10 +2,10 @@ import React, { Component } from "react";
 import { MasonryPhotoAlbum } from "react-photo-album";
 import "react-photo-album/masonry.css";
 import withRouter from './withRouter';
-import { albums_data } from "../_gallery/albums_data.js"
-import { people_data } from "../_gallery/people_data.js"
-import { photos_data } from "../_gallery/photos_data.js"
-import { site_data } from "../_gallery/site_data.js"
+import { albums_data } from "../gallery.js"
+import { people_data } from "../gallery.js"
+import { photos_data } from "../gallery.js"
+import { site_data } from "../gallery.js"
 import { Keyboard, Pagination, HashNavigation, Navigation } from "swiper/modules";
 import { Swiper, SwiperSlide } from 'swiper/react';
 import 'swiper/css';

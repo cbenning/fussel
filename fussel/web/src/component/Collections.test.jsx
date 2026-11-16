@@ -7,7 +7,7 @@ import { HashRouter } from 'react-router';
 import Collections from './Collections';
 
 // Mock data imports
-vi.mock('../_gallery/albums_data.js', () => ({
+vi.mock('../gallery.js', () => ({
   albums_data: {
     'vacation-2024': {
       name: 'Vacation 2024',
@@ -21,10 +21,7 @@ vi.mock('../_gallery/albums_data.js', () => ({
       photos: [{ slug: 'photo3' }],
       src: '/path/to/family.jpg'
     }
-  }
-}));
-
-vi.mock('../_gallery/people_data.js', () => ({
+  },
   people_data: {
     'john-doe': {
       name: 'John Doe',

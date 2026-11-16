@@ -3,9 +3,10 @@ import react from '@vitejs/plugin-react'
 
 export default defineConfig({
   plugins: [react()],
-  base: process.env.VITE_BASE_URL || '/',
+  // Relative asset URLs: the bundle is prebuilt and must work under any http_root.
+  base: './',
   build: {
-    outDir: 'build',
+    outDir: '../web_dist',
     emptyOutDir: true,
   },
   test: {

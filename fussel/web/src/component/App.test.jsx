@@ -7,7 +7,7 @@ import { HashRouter } from 'react-router';
 import App from './App';
 
 // Mock site_data
-vi.mock('../_gallery/site_data.js', () => ({
+vi.mock('../gallery.js', () => ({
   site_data: {
     site_name: 'Test Gallery',
     people_enabled: true

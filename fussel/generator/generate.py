@@ -895,6 +895,11 @@ class Photos:
         return self.photos
 
 
+def write_json(path, data):
+    with open(path, "w") as outfile:
+        json.dump(data, outfile, sort_keys=True, indent=3, cls=SimpleEncoder)
+
+
 class SiteGenerator:
     def __init__(self, yaml_config):
 
@@ -913,27 +918,21 @@ class SiteGenerator:
             raise SystemExit(1)
 
         print(f"[bold]Generating site from [magenta]{Config.instance().input_photos_dir}[magenta][/bold]")
-        output_photos_path = os.path.normpath(
-            os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "web", "public", "static", "_gallery")
-        )
-        output_data_path = os.path.normpath(
-            os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "web", "src", "_gallery")
-        )
+        site_root = Config.instance().output_path
+        output_photos_path = os.path.join(site_root, "static", "_gallery")
+        output_data_path = os.path.join(output_photos_path, "data")
         external_root = os.path.normpath(os.path.join(Config.instance().http_root, "static", "_gallery", "albums"))
-        generated_site_path = os.path.normpath(
-            os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "web", "build")
-        )
 
         # Paths
-        output_albums_data_file = os.path.join(output_data_path, "albums_data.js")
-        output_people_data_file = os.path.join(output_data_path, "people_data.js")
-        output_site_data_file = os.path.join(output_data_path, "site_data.js")
+        output_albums_data_file = os.path.join(output_data_path, "albums.json")
+        output_people_data_file = os.path.join(output_data_path, "people.json")
+        output_site_data_file = os.path.join(output_data_path, "site.json")
+        output_photos_data_file = os.path.join(output_data_path, "photos.json")
         output_albums_photos_path = os.path.join(output_photos_path, "albums")
 
         # Cleanup and prep of deploy space
         if Config.instance().overwrite:
             shutil.rmtree(output_photos_path, ignore_errors=True)
-            shutil.rmtree(generated_site_path, ignore_errors=True)
 
         os.makedirs(output_photos_path, exist_ok=True)
         shutil.rmtree(output_data_path, ignore_errors=True)
@@ -943,46 +942,27 @@ class SiteGenerator:
             Config.instance().input_photos_dir, output_albums_photos_path, external_root, self.yaml_config
         )
 
-        with open(output_albums_data_file, "w") as outfile:
-            output_str = "export const albums_data = "
-            output_str += json.dumps(Albums.instance(), sort_keys=True, indent=3, cls=SimpleEncoder)
-            output_str += ";"
-            outfile.write(output_str)
+        write_json(output_albums_data_file, Albums.instance())
+        write_json(output_people_data_file, People.instance())
 
-        with open(output_people_data_file, "w") as outfile:
-            output_str = "export const people_data = "
-            output_str += json.dumps(People.instance(), sort_keys=True, indent=3, cls=SimpleEncoder)
-            output_str += ";"
-            outfile.write(output_str)
-
-        # people.json sits at the site root (Vite copies public/ as it is) for other sites to fetch
+        # people.json sits at the site root for other sites to fetch
         write_people_manifest(
-            os.path.normpath(os.path.join(output_photos_path, "..", "..")),
+            site_root,
             People.instance().people,
             Config.instance().people_enabled,
             Config.instance().people_manifest_photos,
         )
 
-        # Generate photos data (always write the file so it can be statically imported)
-        output_photos_data_file = os.path.join(output_data_path, "photos_data.js")
+        # Always write photos.json so the web app can fetch it
         if Config.instance().photos_enabled:
             photos = Photos.instance()
             photos.collect_all_photos()
             photos.sort_photos()
-            with open(output_photos_data_file, "w") as outfile:
-                output_str = "export const photos_data = "
-                output_str += json.dumps(photos, sort_keys=True, indent=3, cls=SimpleEncoder)
-                output_str += ";"
-                outfile.write(output_str)
+            write_json(output_photos_data_file, photos)
         else:
-            with open(output_photos_data_file, "w") as outfile:
-                outfile.write("export const photos_data = [];\n")
+            write_json(output_photos_data_file, [])
 
-        with open(output_site_data_file, "w") as outfile:
-            output_str = "export const site_data = "
-            output_str += json.dumps(Site.instance(), sort_keys=True, indent=3, cls=SimpleEncoder)
-            output_str += ";"
-            outfile.write(output_str)
+        write_json(output_site_data_file, Site.instance())
 
 
 class PhotoProcessingFailure(Exception):
