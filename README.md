@@ -51,14 +51,14 @@ cp sample_config.yml config.yml
 uvx fussel --config config.yml
 
 # or install it once and run it
-pipx install fussel
+uv tool install fussel
 fussel --config config.yml
 
 # 3. Preview the result
 python -m http.server --directory <your output_path>
 ```
 
-To update, run `pipx upgrade fussel` (`uvx` fetches the latest version when it runs).
+To update, run `uv tool upgrade fussel` (`uvx` fetches the latest version each time it runs). Fussel is a regular PyPI package, so `pipx install fussel` or `pip install fussel` also work.
 
 Relative paths in the config (such as `gallery.output_path`) resolve from the directory you run `fussel` in. Without `--config` it reads `./config.yml`.
 
@@ -465,7 +465,7 @@ Your existing `output_path` will be updated in-place.
 
 If installed from PyPI:
 ```bash
-pipx upgrade fussel
+uv tool upgrade fussel   # or: pipx upgrade fussel
 ```
 
 If installed via `make install` (a clone):
