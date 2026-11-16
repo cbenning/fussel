@@ -38,9 +38,33 @@
 
 ## 🚀 Quick Start
 
-### Option 1: Using Docker (Recommended - No Dependencies Required)
+### Option 1: Install from PyPI (Recommended)
 
-Docker is the easiest way to run Fussel without installing any dependencies locally.
+The quickest way to run Fussel. It needs only Python 3.11+ ([uv](https://docs.astral.sh/uv/getting-started/installation/) recommended). No Node.js or Yarn: the web app ships prebuilt in the package.
+
+```bash
+# 1. Get the config template and edit it. At minimum set gallery.input_path and gallery.output_path
+curl -O https://raw.githubusercontent.com/cbenning/fussel/main/sample_config.yml
+cp sample_config.yml config.yml
+
+# 2. Run it without installing anything
+uvx fussel --config config.yml
+
+# or install it once and run it
+pipx install fussel
+fussel --config config.yml
+
+# 3. Preview the result
+python -m http.server --directory <your output_path>
+```
+
+To update, run `pipx upgrade fussel` (`uvx` fetches the latest version when it runs).
+
+Relative paths in the config (such as `gallery.output_path`) resolve from the directory you run `fussel` in. Without `--config` it reads `./config.yml`.
+
+### Option 2: Using Docker (No Python Required)
+
+Docker runs Fussel without installing anything else locally.
 
 #### Using Docker Compose (Easiest)
 
@@ -89,24 +113,9 @@ docker run \
 
 See [Docker Configuration](#-docker-configuration) below for all available options.
 
-### Option 2: Install from PyPI
-
-Needs only Python 3.11+ ([uv](https://docs.astral.sh/uv/getting-started/installation/) recommended). No Node.js or Yarn: the web app ships prebuilt in the package.
-
-```bash
-# Create config.yml (see sample_config.yml), then run without installing:
-uvx fussel --config config.yml
-
-# or install it:
-pipx install fussel
-fussel --config config.yml
-```
-
-Relative paths in the config (such as `gallery.output_path`) resolve from the directory you run `fussel` in. Without `--config` it reads `./config.yml`.
-
 ### Option 3: Local Installation (development)
 
-If you want to develop Fussel, you can install it from a clone.
+For developing Fussel, or running it from a clone. Most users want Option 1 or 2.
 
 #### Prerequisites
 
@@ -268,7 +277,7 @@ site:
 
 ## 🐳 Docker Configuration
 
-This section provides detailed information about Docker configuration options. For a quick start, see the [Docker Quick Start](#option-1-using-docker-recommended---no-dependencies-required) section above.
+This section provides detailed information about Docker configuration options. For a quick start, see the [Docker Quick Start](#option-2-using-docker-no-python-required) section above.
 
 ### Available Environment Variables
 
@@ -341,6 +350,8 @@ The web app loads gallery data as JSON at runtime, so it needs a generated galle
 
 `make build-web` builds the web app into `fussel/web_dist`, which is what gets bundled into the Python package. Run it before `uv build`.
 
+**Before `make build-web` or `uv build`, empty `fussel/web/public` of generated data** (`static/`, `assets/`, `index.html` copies). Vite copies all of `public/` into the bundle, so a dev gallery left there ends up in the package.
+
 ### Running Tests
 
 ```bash
@@ -373,6 +384,19 @@ fussel/
 ├── config.yml           # Your configuration (not in git)
 └── sample_config.yml    # Configuration template
 ```
+
+## ⬆️ Upgrading a clone to the prebuilt web app
+
+Fussel now generates a gallery without building the web app each time. The web app is built once, ships in the PyPI package, and loads your gallery data as JSON when the page opens. PyPI and Docker users need to do nothing. If you run Fussel from a clone, note these changes:
+
+- **Run `make build-web` after pulling and after changing anything in `fussel/web/src/`.** `make generate` does this for you. Running `python -m fussel.fussel` directly without a build stops with `prebuilt web app not found`.
+- **Relative `gallery.output_path` now resolves from the directory you run Fussel in.** It used to resolve from the repo root. Use an absolute path to be safe.
+- **`--config` is new.** Without it, Fussel reads `./config.yml` from the current directory.
+- **`overwrite: True` clears only `<output_path>/static/_gallery`.** Other files in the output directory are left alone.
+- **`make dev` needs generated data in `fussel/web/public`.** See [Development Mode](#development-mode).
+- **Delete leftovers from earlier versions before building:** `fussel/web/public/static`, `fussel/web/src/_gallery` and `fussel/web/build`. Vite copies everything in `public/` into the bundle, so old photos left there end up in the build and in the package.
+- **Regenerate into the same `output_path`** to update an existing gallery. Old `assets/index-*.js` files from earlier builds stay in the output but are no longer used. Delete them if you want a tidy directory.
+- **`http_root` no longer sets the web app's base URL.** The bundle uses relative URLs, so it works under any path. `http_root` still sets the photo URLs.
 
 ## ⬆️ Migrating from v2 to v3
 
@@ -439,11 +463,19 @@ Your existing `output_path` will be updated in-place.
 
 ### How do I update Fussel?
 
-If installed via `make install`:
+If installed from PyPI:
+```bash
+pipx upgrade fussel
+```
+
+If installed via `make install` (a clone):
 ```bash
 git pull
 make install
+make build-web
 ```
+
+If you are coming from 3.2 or earlier, read "Upgrading a clone to the prebuilt web app" below.
 
 If using Docker:
 ```bash

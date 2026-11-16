@@ -12,6 +12,7 @@ fussel/.venv
 fussel/.venv
 fussel/web/src/_gallery
 fussel/web/build/
+fussel/web_dist/
 fussel/web/public/static/_gallery
 fussel/web/node_modules
 fussel/web/logs
