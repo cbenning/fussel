@@ -74,14 +74,6 @@ jobs:
         run: yarn install --frozen-lockfile
         working-directory: fussel/web
 
-      - name: Create gallery data stubs
-        run: |
-          mkdir -p fussel/web/src/_gallery
-          echo 'export const albums_data = {};' > fussel/web/src/_gallery/albums_data.js
-          echo 'export const people_data = {};' > fussel/web/src/_gallery/people_data.js
-          echo 'export const photos_data = [];' > fussel/web/src/_gallery/photos_data.js
-          printf 'export const site_data = { site_name: "", people_enabled: false, albums_enabled: false, photos_enabled: false };\n' > fussel/web/src/_gallery/site_data.js
-
       - name: Run JS tests
         run: yarn test
         working-directory: fussel/web
@@ -89,3 +81,33 @@ jobs:
       - name: Build web app
         run: yarn build
         working-directory: fussel/web
+
+  package:
+    name: Package (build and smoke test the wheel)
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: yarn
+          cache-dependency-path: fussel/web/yarn.lock
+
+      - name: Install JS dependencies
+        run: yarn install --frozen-lockfile
+        working-directory: fussel/web
+
+      - name: Build web app
+        run: make build-web
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+
+      - name: Build wheel and sdist
+        run: uv build
+
+      - name: Smoke test the wheel
+        run: scripts/smoke_test_wheel.sh dist/*.whl
