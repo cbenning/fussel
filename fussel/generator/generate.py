@@ -16,6 +16,7 @@ from PIL.Image import registered_extensions
 from rich import print
 
 from .config import Config
+from .people_manifest import write_people_manifest
 from .util import (
     apply_watermark,
     calculate_face_crop_dimensions,
@@ -943,6 +944,14 @@ class SiteGenerator:
 
         write_json(output_albums_data_file, Albums.instance())
         write_json(output_people_data_file, People.instance())
+
+        # people.json sits at the site root for other sites to fetch
+        write_people_manifest(
+            site_root,
+            People.instance().people,
+            Config.instance().people_enabled,
+            Config.instance().people_manifest_photos,
+        )
 
         # Always write photos.json so the web app can fetch it
         if Config.instance().photos_enabled:

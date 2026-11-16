@@ -255,6 +255,7 @@ gallery:
 gallery:
   people:
     enable: True                     # Enable face detection from XMP tags
+    manifest_photos: 6               # Photos listed per person in people.json (the count is always complete)
 ```
 
 ### Watermark Settings
@@ -338,6 +339,39 @@ Once generated, your gallery is a static site. You can host it anywhere:
    python -m http.server --directory <output_path>
    ```
 
+## 🔌 Using Gallery Data From Another Site
+
+When people detection is enabled, Fussel also writes `people.json` at the root of the gallery, next to `index.html`. Another site (a family tree, a blog) can fetch it to show a few thumbnails for a person and link to their gallery, without knowing how Fussel names things.
+
+```json
+{
+  "version": 1,
+  "people": [
+    {
+      "name": "Jane Doe",
+      "slug": "jane-doe",
+      "url": "#/collections/people/jane-doe",
+      "count": 12,
+      "thumb": "static/_gallery/albums/trip/jane-doe_beach.jpg",
+      "photos": [
+        {
+          "name": "beach.jpg",
+          "thumb": "static/_gallery/albums/trip/500x500_beach-jpg.jpg",
+          "src": "static/_gallery/albums/trip/1600x1600_beach-jpg.jpg",
+          "url": "#/collections/people/jane-doe/beach-jpg"
+        }
+      ]
+    }
+  ]
+}
+```
+
+- `thumb` is a cropped face; each photo's `thumb` is its smallest size and its `src` is its largest, for showing the photo bigger. `url` links open the gallery on that person or photo.
+- Every path is relative to the gallery root, so resolve it against the address of `people.json` itself. It works under any `site.http_root`.
+- `photos` holds the newest `gallery.people.manifest_photos` photos (default 6); `count` is the true total.
+- People are sorted by `slug`. Nothing is listed that the People page does not already show.
+- A site on another domain can only fetch `people.json` if the gallery's host sends an `Access-Control-Allow-Origin` header (GitHub Pages does). Images load either way.
+
 ## 🛠️ Development
 
 ### Development Mode
@@ -350,7 +384,7 @@ The web app loads gallery data as JSON at runtime, so it needs a generated galle
 
 `make build-web` builds the web app into `fussel/web_dist`, which is what gets bundled into the Python package. Run it before `uv build`.
 
-**Before `make build-web` or `uv build`, empty `fussel/web/public` of generated data** (`static/`, `assets/`, `index.html` copies). Vite copies all of `public/` into the bundle, so a dev gallery left there ends up in the package.
+**Before `make build-web` or `uv build`, empty `fussel/web/public` of generated data** (`static/`, `assets/`, `people.json`, `index.html` copies). Vite copies all of `public/` into the bundle, so a dev gallery left there ends up in the package.
 
 ### Running Tests
 
@@ -394,6 +428,7 @@ Fussel now generates a gallery without building the web app each time. The web a
 - **`--config` is new.** Without it, Fussel reads `./config.yml` from the current directory.
 - **`overwrite: True` clears only `<output_path>/static/_gallery`.** Other files in the output directory are left alone.
 - **`make dev` needs generated data in `fussel/web/public`.** See [Development Mode](#development-mode).
+- **`people.json` is now written to the output directory,** next to `index.html`, not into `fussel/web/public`. Delete any old `fussel/web/public/people.json`.
 - **Delete leftovers from earlier versions before building:** `fussel/web/public/static`, `fussel/web/src/_gallery` and `fussel/web/build`. Vite copies everything in `public/` into the bundle, so old photos left there end up in the build and in the package.
 - **Regenerate into the same `output_path`** to update an existing gallery. Old `assets/index-*.js` files from earlier builds stay in the output but are no longer used. Delete them if you want a tidy directory.
 - **`http_root` no longer sets the web app's base URL.** The bundle uses relative URLs, so it works under any path. `http_root` still sets the photo URLs.

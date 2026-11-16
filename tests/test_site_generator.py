@@ -80,6 +80,21 @@ class TestSiteGenerator:
         assert json.loads((data_dir / "people.json").read_text()) == {}
         assert (output / "static" / "_gallery" / "albums" / "trip").is_dir()
 
+    def test_generate_writes_people_manifest_at_site_root(self, tmp_path):
+        """people.json goes next to index.html, and is removed again when people are disabled."""
+        output = self._generate(tmp_path)
+        # people are disabled in the helper config, so there is no manifest
+        assert not (output / "people.json").exists()
+
+        (output / "people.json").write_text("stale")
+        with patch("fussel.generator.generate.write_people_manifest") as mock_write:
+            SiteGenerator(YamlConfig(str(tmp_path / "config.yml"))).generate()
+        mock_write.assert_called_once()
+        site_root, _people, enabled, count = mock_write.call_args.args
+        assert site_root == str(output)
+        assert enabled is False
+        assert count == 6
+
     def test_generate_with_overwrite_only_clears_gallery_files(self, tmp_path):
         """Overwrite wipes stale generated files but leaves the rest of the output dir alone."""
         output = tmp_path / "site"
