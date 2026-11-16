@@ -40,7 +40,8 @@ fussel = "fussel.fussel:main"
 packages = ["fussel", "fussel.generator"]
 
 [tool.setuptools.package-data]
-"*" = ["*.txt", "*.md"]
+# web_dist is the prebuilt web app. Build it with `make build-web` before building the package.
+fussel = ["web_dist/**/*", "web/src/images/fussel-watermark.png"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

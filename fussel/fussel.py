@@ -1,20 +1,22 @@
 #!/usr/bin/env python3
 
+import argparse
 import os
-import pathlib
 import shutil
+from importlib import resources
 
 import yaml
 
-from .generator import SiteGenerator
+from .generator import Config, SiteGenerator
 
 
 class YamlConfig:
     def __init__(self, config_file=None):
         if config_file is None:
-            # When running as a module, find config.yml relative to project root
-            project_root = pathlib.Path(__file__).parent.parent
-            config_file = str(project_root / "config.yml")
+            config_file = "config.yml"
+        if not os.path.isfile(config_file):
+            print(f"Config file not found: {config_file}")
+            exit(-1)
 
         self.cfg = {}
         with open(config_file, "r") as stream:
@@ -50,37 +52,37 @@ class YamlConfig:
         return cursor.get(k, default)
 
 
-def main():
+def parse_args(argv=None):
+    parser = argparse.ArgumentParser(prog="fussel", description="A static photo gallery generator")
+    parser.add_argument(
+        "-c",
+        "--config",
+        default="config.yml",
+        help="path to the config file (default: ./config.yml)",
+    )
+    return parser.parse_args(argv)
 
-    cfg = YamlConfig()
+
+def web_dist_dir():
+    """The prebuilt web app bundled with the package."""
+    return str(resources.files("fussel").joinpath("web_dist"))
+
+
+def main(argv=None):
+    args = parse_args(argv)
+
+    cfg = YamlConfig(args.config)
 
     generator = SiteGenerator(cfg)
     generator.generate()
 
-    http_root = cfg.getKey("site.http_root", "/")
-    web_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), "web")
-
-    original_cwd = os.getcwd()
-    os.chdir(web_dir)
-    if not shutil.which("yarn"):
-        print("Error: yarn is required but not found. Please install yarn first.")
-        print("Visit https://yarnpkg.com/getting-started/install for installation instructions.")
+    site_location = web_dist_dir()
+    if not os.path.isfile(os.path.join(site_location, "index.html")):
+        print(f"Error: prebuilt web app not found at {site_location}.")
+        print("Run 'make build-web' to build it.")
         exit(-1)
-    os.environ["VITE_BASE_URL"] = http_root
-    if os.system("yarn build") != 0:
-        print("Failed")
-        exit(-1)
-    os.chdir(original_cwd)
 
-    site_location = os.path.normpath(os.path.join(os.path.dirname(os.path.realpath(__file__)), "web", "build"))
-
-    output_path = cfg.getKey("gallery.output_path", "site/")
-    if os.path.isabs(output_path):
-        new_site_location = os.path.normpath(output_path)
-    else:
-        new_site_location = os.path.normpath(
-            os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", output_path)
-        )
+    new_site_location = Config.instance().output_path
     print("Copying site to output location...")
     print(f"  {site_location}  --->  {new_site_location}")
     shutil.copytree(
@@ -97,8 +99,7 @@ def main():
         pass
 
     print(f"site generated at: {new_site_location}")
-    print("\n\n to preview your site, run: \n   make serve")
-    print(f"\n   or manually: \n   python -m http.server --directory {new_site_location}")
+    print(f"\n\n to preview your site, run: \n   python -m http.server --directory {new_site_location}")
 
 
 if __name__ == "__main__":

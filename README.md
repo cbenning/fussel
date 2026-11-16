@@ -89,9 +89,24 @@ docker run \
 
 See [Docker Configuration](#-docker-configuration) below for all available options.
 
-### Option 2: Local Installation
+### Option 2: Install from PyPI
 
-If you prefer not to use Docker or want to develop Fussel, you can install it locally.
+Needs only Python 3.11+ ([uv](https://docs.astral.sh/uv/getting-started/installation/) recommended). No Node.js or Yarn: the web app ships prebuilt in the package.
+
+```bash
+# Create config.yml (see sample_config.yml), then run without installing:
+uvx fussel --config config.yml
+
+# or install it:
+pipx install fussel
+fussel --config config.yml
+```
+
+Relative paths in the config (such as `gallery.output_path`) resolve from the directory you run `fussel` in. Without `--config` it reads `./config.yml`.
+
+### Option 3: Local Installation (development)
+
+If you want to develop Fussel, you can install it from a clone.
 
 #### Prerequisites
 
@@ -318,16 +333,13 @@ Once generated, your gallery is a static site. You can host it anywhere:
 
 ### Development Mode
 
-Run the web app in development/watch mode with hot reload:
+The web app loads gallery data as JSON at runtime, so it needs a generated gallery to show. The dev server serves `fussel/web/public`, so point the generator there:
 
-```bash
-make dev
-```
+1. Set `gallery.output_path` to `fussel/web/public` in `config.yml`.
+2. Run `make generate` once.
+3. Run `make dev` (or `cd fussel/web && yarn start`) for hot reload.
 
-Or manually:
-```bash
-cd fussel/web && yarn start
-```
+`make build-web` builds the web app into `fussel/web_dist`, which is what gets bundled into the Python package. Run it before `uv build`.
 
 ### Running Tests
 

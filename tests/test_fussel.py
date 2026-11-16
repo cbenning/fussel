@@ -4,12 +4,12 @@ Tests for fussel.fussel module (YamlConfig and main).
 
 import os
 import pickle
-from unittest.mock import Mock, mock_open, patch
+from unittest.mock import patch
 
 import pytest
 import yaml
 
-from fussel.fussel import YamlConfig, main
+from fussel.fussel import YamlConfig, main, parse_args
 
 
 class TestYamlConfig:
@@ -131,93 +131,42 @@ class TestYamlConfig:
 class TestMain:
     """Tests for main function."""
 
-    @patch("fussel.fussel.open", new_callable=mock_open, create=True)
     @patch("fussel.fussel.SiteGenerator")
-    @patch("fussel.fussel.shutil")
-    @patch("fussel.fussel.os")
+    @patch("fussel.fussel.Config")
     @patch("fussel.fussel.YamlConfig")
-    def test_main_success(self, mock_yaml_config_class, mock_os, mock_shutil, mock_site_generator_class, mock_file):
-        """Test successful main execution."""
-        # Setup mocks
-        mock_config = Mock()
-        mock_config.getKey = Mock(
-            side_effect=lambda key, default=None: {"site.http_root": "/", "gallery.output_path": "/test/output"}.get(
-                key, default
-            )
-        )
-        mock_yaml_config_class.return_value = mock_config
+    def test_main_success(self, mock_yaml_config_class, mock_config_class, mock_site_generator_class, tmp_path):
+        """The generated data and the prebuilt web app both end up in the output dir."""
+        web_dist = tmp_path / "web_dist"
+        (web_dist / "assets").mkdir(parents=True)
+        (web_dist / "index.html").write_text("<html></html>")
+        (web_dist / "assets" / "app.js").write_text("//")
+        output = tmp_path / "site"
+        mock_config_class.instance.return_value.output_path = str(output)
 
-        mock_generator = Mock()
-        mock_generator.generate = Mock()
-        mock_site_generator_class.return_value = mock_generator
+        with patch("fussel.fussel.web_dist_dir", return_value=str(web_dist)):
+            main(["--config", "my.yml"])
 
-        mock_os.path.dirname.return_value = "/fussel/fussel"
-        mock_os.path.realpath.return_value = "/fussel/fussel/fussel.py"
-        mock_os.path.join.side_effect = os.path.join
-        mock_os.path.normpath.side_effect = os.path.normpath
-        mock_os.getcwd.return_value = "/current"
-        mock_os.chdir = Mock()
-        mock_os.system.return_value = 0
-
-        mock_shutil.which.return_value = "/usr/bin/yarn"
-
-        # Run main
-        main()
-
-        # Verify SiteGenerator was created and generate called
-        mock_site_generator_class.assert_called_once()
-        mock_generator.generate.assert_called_once()
-
-        # Verify .nojekyll is written to the output location
-        mock_file.assert_called_once_with(os.path.join("/test/output", ".nojekyll"), "w")
+        mock_yaml_config_class.assert_called_once_with("my.yml")
+        mock_site_generator_class.return_value.generate.assert_called_once()
+        assert (output / "index.html").read_text() == "<html></html>"
+        assert (output / "assets" / "app.js").exists()
+        assert (output / ".nojekyll").exists()
 
     @patch("fussel.fussel.SiteGenerator")
-    @patch("fussel.fussel.shutil")
-    @patch("fussel.fussel.os")
+    @patch("fussel.fussel.Config")
     @patch("fussel.fussel.YamlConfig")
-    def test_main_yarn_not_found(self, mock_yaml_config_class, mock_os, mock_shutil, mock_site_generator_class):
-        """Test main when yarn is not found."""
-        mock_config = Mock()
-        mock_config.getKey = Mock(return_value="/")
-        mock_yaml_config_class.return_value = mock_config
+    def test_main_web_app_not_built(
+        self, mock_yaml_config_class, mock_config_class, mock_site_generator_class, tmp_path
+    ):
+        """A missing prebuilt web app is a clear error, not a crash."""
+        with patch("fussel.fussel.web_dist_dir", return_value=str(tmp_path / "missing")):
+            with pytest.raises(SystemExit):
+                main([])
 
-        mock_generator = Mock()
-        mock_site_generator_class.return_value = mock_generator
+    def test_main_defaults_to_config_yml_in_cwd(self):
+        assert parse_args([]).config == "config.yml"
+        assert parse_args(["-c", "x.yml"]).config == "x.yml"
 
-        mock_os.path.dirname.return_value = "/fussel/fussel"
-        mock_os.path.realpath.return_value = "/fussel/fussel/fussel.py"
-        mock_os.path.join.side_effect = os.path.join
-        mock_os.path.normpath.side_effect = os.path.normpath
-        mock_os.getcwd.return_value = "/current"
-        mock_os.chdir = Mock()
-
-        mock_shutil.which.return_value = None  # yarn not found
-
+    def test_missing_config_file_exits(self, temp_dir):
         with pytest.raises(SystemExit):
-            main()
-
-    @patch("fussel.fussel.SiteGenerator")
-    @patch("fussel.fussel.shutil")
-    @patch("fussel.fussel.os")
-    @patch("fussel.fussel.YamlConfig")
-    def test_main_yarn_build_fails(self, mock_yaml_config_class, mock_os, mock_shutil, mock_site_generator_class):
-        """Test main when yarn build fails."""
-        mock_config = Mock()
-        mock_config.getKey = Mock(return_value="/")
-        mock_yaml_config_class.return_value = mock_config
-
-        mock_generator = Mock()
-        mock_site_generator_class.return_value = mock_generator
-
-        mock_os.path.dirname.return_value = "/fussel/fussel"
-        mock_os.path.realpath.return_value = "/fussel/fussel/fussel.py"
-        mock_os.path.join.side_effect = os.path.join
-        mock_os.path.normpath.side_effect = os.path.normpath
-        mock_os.getcwd.return_value = "/current"
-        mock_os.chdir = Mock()
-        mock_os.system.return_value = 1  # yarn build failed
-
-        mock_shutil.which.return_value = "/usr/bin/yarn"
-
-        with pytest.raises(SystemExit):
-            main()
+            YamlConfig(os.path.join(temp_dir, "nope.yml"))

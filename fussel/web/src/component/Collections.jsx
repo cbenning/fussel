@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
-import { albums_data } from "../_gallery/albums_data.js"
-import { people_data } from "../_gallery/people_data.js"
+import { albums_data } from "../gallery.js"
+import { people_data } from "../gallery.js"
 import { Link } from "react-router";
 import "./Collections.css";
 

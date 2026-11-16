@@ -5,7 +5,7 @@ DEFAULT_WATERMARK_PATH = "web/src/images/fussel-watermark.png"
 PACKAGE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DEFAULT_WATERMARK_SIZE_RATIO = 0.3
 DEFAULT_RECURSIVE_ALBUMS_NAME_PATTERN = "{parent_album} > {album}"
-DEFAULT_OUTPUT_PHOTOS_PATH = "site/"
+DEFAULT_OUTPUT_PATH = "site/"
 DEFAULT_SITE_TITLE = "Fussel Gallery"
 DEFAULT_PHOTO_SIZES = [(500, 500), (800, 800), (1024, 1024), (1600, 1600)]
 
@@ -38,7 +38,7 @@ class Config:
     recursive_albums: bool
     recursive_albums_name_pattern: str
     overwrite: bool
-    output_photos_path: str
+    output_path: str
     http_root: str
     site_name: str
     supported_extensions: tuple[str, ...]
@@ -84,7 +84,7 @@ class Config:
             yaml_config.getKey("gallery.albums.recursive_name_pattern", DEFAULT_RECURSIVE_ALBUMS_NAME_PATTERN)
         )
         instance.overwrite = bool(yaml_config.getKey("gallery.overwrite", False))
-        instance.output_photos_path = str(yaml_config.getKey("gallery.output_path", DEFAULT_OUTPUT_PHOTOS_PATH))
+        instance.output_path = os.path.abspath(str(yaml_config.getKey("gallery.output_path", DEFAULT_OUTPUT_PATH)))
         instance.http_root = str(yaml_config.getKey("site.http_root", "/"))
         instance.site_name = str(yaml_config.getKey("site.title", DEFAULT_SITE_TITLE))
         instance.supported_extensions = (".avif", ".jpg", ".jpeg", ".gif", ".png", ".webp")

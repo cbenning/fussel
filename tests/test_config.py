@@ -88,7 +88,7 @@ class TestConfigInitialization:
         instance = Config.instance()
 
         assert instance.input_photos_dir == "/test/input"
-        assert instance.output_photos_path == "/test/output"
+        assert instance.output_path == "/test/output"
         assert instance.people_enabled is True
         assert instance.watermark_enabled is True
         assert instance.watermark_path == "/custom/watermark.png"
