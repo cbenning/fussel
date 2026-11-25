@@ -7,7 +7,7 @@ name = "fussel"
 version = "1.0.0"
 description = "A static photo gallery generator"
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.11.5"
 license = {text = "MIT"}
 authors = [
     {name = "Fussel Contributors"}
