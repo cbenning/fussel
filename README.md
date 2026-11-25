@@ -40,7 +40,7 @@
 
 ### Option 1: Install from PyPI (Recommended)
 
-The quickest way to run Fussel. It needs only Python 3.11+ ([uv](https://docs.astral.sh/uv/getting-started/installation/) recommended). No Node.js or Yarn: the web app ships prebuilt in the package.
+The quickest way to run Fussel. It needs only Python 3.11.5+ ([uv](https://docs.astral.sh/uv/getting-started/installation/) recommended). No Node.js or Yarn: the web app ships prebuilt in the package.
 
 ```bash
 # 1. Get the config template and edit it. At minimum set gallery.input_path and gallery.output_path
@@ -119,7 +119,7 @@ For developing Fussel, or running it from a clone. Most users want Option 1 or 2
 
 #### Prerequisites
 
-- **Python** 3.11+ (3.10 is no longer supported: Pillow 13 fixes many security vulnerabilities and requires 3.11+)
+- **Python** 3.11.5+ (3.10 is no longer supported: Pillow 13 fixes many security vulnerabilities and requires 3.11+. Soup Sieve 4, which fixes several security issues, requires 3.11.5+)
 - **uv** - Python package manager ([install](https://docs.astral.sh/uv/getting-started/installation/))
 - **Node.js** v22.22.2+ or v24.15+ (v20.19+ / v22.13+ is enough to build a site, but the JS tests need the newer versions)
 - **Yarn** 1.22+ (required)
