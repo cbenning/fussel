@@ -18,10 +18,10 @@ jobs:
     name: Lint (Python)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v4
+        uses: astral-sh/setup-uv@v10.4.0
 
       - name: Install dependencies
         run: uv sync --locked --extra dev
@@ -33,22 +33,26 @@ jobs:
         run: uv run ruff check .
 
   python-tests:
-    # Keep in step with the Python and Node versions in the Docker image (alpine:latest),
-    # which is how Fussel is shipped.
-    name: Python tests (3.14)
+    # 3.14 matches the Docker image (alpine:latest), which is how most people run
+    # Fussel. 3.11 is the oldest version pyproject.toml allows for the PyPI package.
+    name: Python tests (${{ matrix.python-version }})
     runs-on: ubuntu-latest
     needs: lint
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.14"]
     env:
-      UV_PYTHON: "3.14"
+      UV_PYTHON: ${{ matrix.python-version }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v4
+        uses: astral-sh/setup-uv@v10.4.0
 
-      - name: Set up Python 3.14
-        run: uv python install 3.14
+      - name: Set up Python ${{ matrix.python-version }}
+        run: uv python install ${{ matrix.python-version }}
 
       - name: Install dependencies
         run: uv sync --locked --extra dev
@@ -61,10 +65,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Set up Node.js 24
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: "24"
           cache: yarn
@@ -87,10 +91,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Set up Node.js 24
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: "24"
           cache: yarn
@@ -104,7 +108,7 @@ jobs:
         run: make build-web
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v4
+        uses: astral-sh/setup-uv@v10.4.0
 
       - name: Build wheel and sdist
         run: uv build
