@@ -27,11 +27,11 @@ jobs:
         uses: actions/setup-node@v7
         with:
           node-version: "24"
-          cache: yarn
-          cache-dependency-path: fussel/web/yarn.lock
+          cache: npm
+          cache-dependency-path: fussel/web/package-lock.json
 
       - name: Install JS dependencies
-        run: yarn install --frozen-lockfile
+        run: npm ci
         working-directory: fussel/web
 
       - name: Build web app

@@ -40,7 +40,7 @@
 
 ### Option 1: Install from PyPI (Recommended)
 
-The quickest way to run Fussel. It needs only Python 3.11.5+ ([uv](https://docs.astral.sh/uv/getting-started/installation/) recommended). No Node.js or Yarn: the web app ships prebuilt in the package.
+The quickest way to run Fussel. It needs only Python 3.11.5+ ([uv](https://docs.astral.sh/uv/getting-started/installation/) recommended). No Node.js or npm: the web app ships prebuilt in the package.
 
 ```bash
 # 1. Get the config template and edit it. At minimum set gallery.input_path and gallery.output_path
@@ -121,8 +121,7 @@ For developing Fussel, or running it from a clone. Most users want Option 1 or 2
 
 - **Python** 3.11.5+ (3.10 is no longer supported: Pillow 13 fixes many security vulnerabilities and requires 3.11+. Soup Sieve 4, which fixes several security issues, requires 3.11.5+)
 - **uv** - Python package manager ([install](https://docs.astral.sh/uv/getting-started/installation/))
-- **Node.js** v22.22.2+ or v24.15+ (v20.19+ / v22.13+ is enough to build a site, but the JS tests need the newer versions)
-- **Yarn** 1.22+ (required)
+- **Node.js** v22.22.2+ or v24.15+, with the npm that comes with it
 - **Make** (optional, but recommended for easier setup)
 
 #### Installation Steps
@@ -380,7 +379,7 @@ The web app loads gallery data as JSON at runtime, so it needs a generated galle
 
 1. Set `gallery.output_path` to `fussel/web/public` in `config.yml`.
 2. Run `make generate` once.
-3. Run `make dev` (or `cd fussel/web && yarn start`) for hot reload.
+3. Run `make dev` (or `cd fussel/web && npm start`) for hot reload.
 
 `make build-web` builds the web app into `fussel/web_dist`, which is what gets bundled into the Python package. Run it before `uv build`.
 
@@ -394,7 +393,7 @@ make test
 
 This runs:
 - Python tests via pytest with coverage (output in `htmlcov/`)
-- JavaScript tests via Vitest (`cd fussel/web && yarn test`)
+- JavaScript tests via Vitest (`cd fussel/web && npm test`)
 
 ### Code Formatting & Linting
 
@@ -418,6 +417,17 @@ fussel/
 ├── config.yml           # Your configuration (not in git)
 └── sample_config.yml    # Configuration template
 ```
+
+## ⬆️ Upgrading a clone from Yarn to npm
+
+The web app now uses npm instead of Yarn 1, and `fussel/web/package-lock.json` replaces `yarn.lock`. PyPI and Docker users need to do nothing. In a clone, after pulling:
+
+```bash
+rm -rf fussel/web/node_modules
+make install-js
+```
+
+`make install-js` runs `npm ci`, which installs the exact versions in `package-lock.json`. You no longer need Yarn installed. Use `npm start`, `npm test` and `npm run build` in place of the `yarn` commands.
 
 ## ⬆️ Upgrading a clone to the prebuilt web app
 
@@ -454,7 +464,7 @@ The build toolchain has changed from `react-scripts` (Create React App) to Vite.
 ```bash
 cd fussel/web
 rm -rf node_modules
-yarn install
+npm ci
 ```
 
 ### 3. Update your `config.yml`
@@ -519,7 +529,7 @@ docker pull ghcr.io/cbenning/fussel:latest
 
 ### Can I customize the gallery appearance?
 
-The gallery uses a React-based frontend built with Vite. You can modify styles and components in `fussel/web/src/` and rebuild with `make generate` or `cd fussel/web && yarn build`.
+The gallery uses a React-based frontend built with Vite. You can modify styles and components in `fussel/web/src/` and rebuild with `make generate` or `cd fussel/web && npm run build`.
 
 ### Does Fussel modify my original photos?
 
