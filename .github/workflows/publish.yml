@@ -9,7 +9,7 @@ jobs:
     name: Build package
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Set version from the release tag
         env:
@@ -24,7 +24,7 @@ jobs:
           grep '^version = ' pyproject.toml
 
       - name: Set up Node.js 24
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: "24"
           cache: yarn
@@ -38,7 +38,7 @@ jobs:
         run: make build-web
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v4
+        uses: astral-sh/setup-uv@v10.4.0
 
       - name: Build wheel and sdist
         run: uv build
@@ -47,7 +47,7 @@ jobs:
         run: scripts/smoke_test_wheel.sh dist/*.whl
 
       - name: Upload distributions
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: dist
           path: dist/
@@ -61,7 +61,7 @@ jobs:
       id-token: write # PyPI trusted publishing
     steps:
       - name: Download distributions
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: dist
           path: dist/

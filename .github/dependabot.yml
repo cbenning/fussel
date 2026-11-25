@@ -1,0 +1,29 @@
+version: 2
+
+# Weekly version updates, grouped so each ecosystem opens at most one PR
+# for minor and patch bumps. Major bumps still get their own PR so their
+# breaking changes can be reviewed one at a time.
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      github-actions:
+        update-types: [minor, patch]
+
+  - package-ecosystem: uv
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      python:
+        update-types: [minor, patch]
+
+  - package-ecosystem: npm
+    directory: /fussel/web
+    schedule:
+      interval: weekly
+    groups:
+      web:
+        update-types: [minor, patch]
