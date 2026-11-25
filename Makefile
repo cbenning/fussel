@@ -39,17 +39,17 @@ install-python:
 # Install JavaScript dependencies
 install-js:
 	@echo "Installing JavaScript dependencies..."
-	@if ! command -v yarn >/dev/null 2>&1; then \
-		echo "Error: yarn is required but not found. Please install yarn first."; \
-		echo "Visit https://yarnpkg.com/getting-started/install for installation instructions."; \
+	@if ! command -v npm >/dev/null 2>&1; then \
+		echo "Error: npm is required but not found. It comes with Node.js."; \
+		echo "Visit https://nodejs.org/en/download for installation instructions."; \
 		exit 1; \
 	fi
-	cd fussel/web && yarn install
+	cd fussel/web && npm ci
 
 # Build the web app into fussel/web_dist, which is bundled into the Python package
 build-web:
 	@echo "Building web app..."
-	cd fussel/web && yarn build
+	cd fussel/web && npm run build
 
 # Generate the gallery site
 generate: build-web
@@ -60,19 +60,19 @@ generate: build-web
 # The dev server serves fussel/web/public, so generate a gallery into it first:
 #   set gallery.output_path to fussel/web/public in config.yml, then run 'make generate'
 dev:
-	@if ! command -v yarn >/dev/null 2>&1; then \
-		echo "Error: yarn is required but not found. Please install yarn first."; \
-		echo "Visit https://yarnpkg.com/getting-started/install for installation instructions."; \
+	@if ! command -v npm >/dev/null 2>&1; then \
+		echo "Error: npm is required but not found. It comes with Node.js."; \
+		echo "Visit https://nodejs.org/en/download for installation instructions."; \
 		exit 1; \
 	fi
-	cd fussel/web && yarn start
+	cd fussel/web && npm start
 
 # Run tests
 test:
 	@echo "Running Python tests..."
 	$(PYTEST) tests/ -v --cov=fussel --cov-report=html --cov-report=term
 	@echo "Running JS tests..."
-	cd fussel/web && yarn test
+	cd fussel/web && npm test
 
 # Format Python source
 fmt:
